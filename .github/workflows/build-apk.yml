@@ -1,0 +1,37 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Copier l'app web dans les assets Android
+        run: |
+          rm -rf android/app/src/main/assets/www
+          mkdir -p android/app/src/main/assets/www
+          cp -r www/* android/app/src/main/assets/www/
+
+      - name: Générer le wrapper Gradle
+        working-directory: android
+        run: gradle wrapper --gradle-version 8.7
+
+      - name: Construire l'APK (debug)
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Publier l'APK en artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: des-du-comptoir-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

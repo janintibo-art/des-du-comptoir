@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>421 — Charge & Décharge</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.babylonjs.com/cannon.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="dice-engine.js"></script>
+</head>
+<body>
+<canvas id="render"></canvas>
+<div id="hud">
+  <div class="bar">
+    <div class="brand"><a href="index.html">421</a><small><a href="index.html">← MENU</a></small></div>
+    <select id="skin" aria-label="Style des dés"></select>
+    <span class="pill">Phase : <b id="phase">Charge</b></span>
+    <div id="scores">
+      <span class="pill">Pot : <b id="pot">21</b></span>
+      <span class="pill">Vous : <b id="you">0</b></span>
+      <span class="pill">Le Patron : <b id="ai">0</b></span>
+    </div>
+  </div>
+  <div id="bottom">
+    <div id="msg"></div>
+    <div id="combo"></div>
+    <div id="actions">
+      <button id="roll" class="primary">Lancer</button>
+      <button id="stay">Je reste</button>
+    </div>
+    <div id="hint">Après un premier lancer, cliquez sur un dé pour le garder. Moins vous ramassez de fiches, mieux c'est !</div>
+  </div>
+</div>
+<div id="overlay">
+  <h1 id="ovTitle"></h1>
+  <p id="ovText"></p>
+  <button id="replay" class="primary">Rejouer</button>
+</div>
+<script>
+'use strict';
+const T = DiceTable({diceCount:3});
+const dice = T.dice;
+const $ = id => document.getElementById(id);
+T.buildSkinSelect($('skin'));
+
+/* ---- Règles : 421 > 111 > 611 > 666 > 511 > 555 > … > suites > autres > nénette ---- */
+function evaluate(vals){
+  const s = [...vals].sort((a,b)=>b-a);
+  const code = s.join('');
+  if(code === '421') return {rank:1000, name:'421 !', fiches:8, code};
+  if(code === '111') return {rank:990, name:'Brelan d’as', fiches:7, code};
+  if(code === '221') return {rank:0, name:'Nénette (2·2·1)', fiches:4, code};
+  if(s[1]===1 && s[2]===1) return {rank:600 + s[0], name:'Paire d’as + '+s[0], fiches:s[0], code};
+  if(s[0]===s[1] && s[1]===s[2]) return {rank:600 + s[0] - 0.5, name:'Brelan de '+s[0], fiches:s[0], code};
+  if(s[0]===s[1]+1 && s[1]===s[2]+1) return {rank:500 + s[0], name:'Suite '+s[2]+'-'+s[1]+'-'+s[0], fiches:2, code};
+  return {rank:100 + s[0]*10 + s[1] + s[2]/10, name:s[2]+' · '+s[1]+' · '+s[0], fiches:1, code};
+}
+
+const S = { pot:21, you:0, ai:0, phase:'charge', leader:'you', gameOver:false };
+function refreshScores(){
+  $('pot').textContent = S.pot; $('you').textContent = S.you; $('ai').textContent = S.ai;
+  $('phase').textContent = S.phase === 'charge' ? 'Charge' : 'Décharge';
+}
+function say(t){ $('msg').textContent = t; }
+function showCombo(t){ $('combo').textContent = t; }
+const sleep = ms => new Promise(r=>setTimeout(r, ms));
+function resetKept(){ dice.forEach(d=>{ d.kept=false; T.setHalo(d, null); }); }
+
+T.onPick(d=>{
+  if(!d.selectable) return;
+  d.kept = !d.kept;
+  T.setHalo(d, d.kept ? '#e0a34c' : null);
+});
+
+let resolveAction = null;
+$('roll').addEventListener('click', ()=> resolveAction && resolveAction('roll'));
+$('stay').addEventListener('click', ()=> resolveAction && resolveAction('stay'));
+function setButtons(canRoll, canStay, rollLabel){
+  $('roll').disabled = !canRoll; $('stay').disabled = !canStay;
+  if(rollLabel) $('roll').textContent = rollLabel;
+}
+
+async function playerTurn(maxThrows){
+  resetKept();
+  let throws = 0, combo = null;
+  while(throws < maxThrows){
+    setButtons(true, throws > 0, 'Lancer ('+(throws+1)+'/'+maxThrows+')');
+    dice.forEach(d=> d.selectable = throws > 0);
+    const action = await new Promise(r=> resolveAction = r);
+    resolveAction = null;
+    if(action === 'stay') break;
+    setButtons(false, false);
+    dice.forEach(d=> d.selectable = false);
+    await T.throwDice(dice.filter(d=>!d.kept));
+    throws++;
+    combo = evaluate(dice.map(d=>d.value));
+    showCombo(combo.name);
+    if(combo.code === '421') break;
+  }
+  setButtons(false, false);
+  dice.forEach(d=> d.selectable = false);
+  return {combo, throws};
+}
+
+/* ---- IA ---- */
+function aiChooseKeeps(){
+  resetKept();
+  const counts = {}; dice.forEach(d=> counts[d.value]=(counts[d.value]||0)+1);
+  const used = {}, have = [];
+  dice.forEach(d=>{
+    if([4,2,1].includes(d.value) && !used[d.value]){ used[d.value]=true; have.push(d); }
+  });
+  if(have.length >= 2){ have.forEach(d=>{ d.kept = true; T.setHalo(d,'#e0a34c'); }); return; }
+  if(counts[1]){ dice.forEach(d=>{ if(d.value===1){ d.kept = true; T.setHalo(d,'#e0a34c'); } }); return; }
+  const pairVal = [6,5,4,3].find(v=> counts[v] >= 2);
+  if(pairVal){ let n=0; dice.forEach(d=>{ if(d.value===pairVal && n<2){ d.kept=true; T.setHalo(d,'#e0a34c'); n++; } }); }
+}
+async function aiTurn(maxThrows, toBeat){
+  resetKept();
+  let throws = 0, combo = null;
+  while(throws < maxThrows){
+    say('Le Patron lance les dés…');
+    await T.throwDice(dice.filter(d=>!d.kept));
+    throws++;
+    combo = evaluate(dice.map(d=>d.value));
+    showCombo('Le Patron : ' + combo.name);
+    await sleep(900);
+    const goodEnough = combo.rank >= 604.5;
+    const beating = toBeat ? combo.rank > toBeat.rank : false;
+    if(combo.code === '421' || (toBeat ? beating : goodEnough) || throws >= maxThrows) break;
+    aiChooseKeeps();
+    const n = dice.filter(d=>d.kept).length;
+    say(n ? 'Le Patron garde '+n+' dé'+(n>1?'s':'')+' et relance.' : 'Le Patron relance tout.');
+    await sleep(900);
+  }
+  resetKept();
+  return {combo, throws};
+}
+
+/* ---- Boucle ---- */
+function transfer(loser, amount){
+  if(S.phase === 'charge'){
+    const n = Math.min(amount, S.pot);
+    S.pot -= n; S[loser] += n; return n;
+  }
+  const winner = loser === 'you' ? 'ai' : 'you';
+  const n = Math.min(amount, S[winner]);
+  S[winner] -= n; S[loser] += n; return n;
+}
+function checkEnd(){
+  if(S.phase === 'charge' && S.pot === 0){
+    S.phase = 'decharge'; refreshScores();
+    if(S.you === 0) return endGame(true);
+    if(S.ai === 0) return endGame(false);
+    say('⚡ La charge est terminée : place à la décharge ! Débarrassez-vous de vos fiches.');
+    return 'pause';
+  }
+  if(S.phase === 'decharge'){
+    if(S.you === 0) return endGame(true);
+    if(S.ai === 0) return endGame(false);
+  }
+  return false;
+}
+function endGame(youWin){
+  S.gameOver = true;
+  $('ovTitle').textContent = youWin ? 'Victoire !' : 'Perdu…';
+  $('ovText').textContent = youWin
+    ? 'Vous vous êtes débarrassé de toutes vos fiches. Le Patron paie sa tournée.'
+    : 'Le Patron a vidé ses fiches avant vous. C’est votre tournée !';
+  $('overlay').style.display = 'flex';
+  return 'over';
+}
+
+async function playRound(){
+  refreshScores(); showCombo('');
+  const leaderIsYou = S.leader === 'you';
+  let a, b;
+  if(leaderIsYou){
+    say('À vous de jouer — vous menez, jusqu’à 3 lancers.');
+    a = await playerTurn(3);
+    say('Vous restez sur : ' + a.combo.name + '. Le Patron a droit à ' + a.throws + ' lancer' + (a.throws>1?'s':'') + '.');
+    await sleep(1100);
+    b = await aiTurn(a.throws, a.combo);
+  } else {
+    say('Le Patron mène ce tour.');
+    await sleep(700);
+    a = await aiTurn(3, null);
+    say('Le Patron reste sur : ' + a.combo.name + '. À vous, ' + a.throws + ' lancer' + (a.throws>1?'s':'') + ' maximum.');
+    b = await playerTurn(a.throws);
+  }
+  const youCombo = leaderIsYou ? a.combo : b.combo;
+  const aiCombo  = leaderIsYou ? b.combo : a.combo;
+
+  if(youCombo.rank === aiCombo.rank){
+    say('Rampeau ! Égalité (' + youCombo.name + ') — on rejoue le tour.');
+    showCombo('⚖ Rampeau');
+    await sleep(1800);
+    return;
+  }
+  const youLose = youCombo.rank < aiCombo.rank;
+  const winCombo = youLose ? aiCombo : youCombo;
+  const loser = youLose ? 'you' : 'ai';
+  const n = transfer(loser, winCombo.fiches);
+  refreshScores();
+  if(S.phase === 'charge'){
+    say((youLose ? 'Vous ramassez ' : 'Le Patron ramasse ') + n + ' fiche' + (n>1?'s':'') +
+        ' (' + winCombo.name + ' contre ' + (youLose ? youCombo.name : aiCombo.name) + ').');
+  } else {
+    say((youLose ? 'Le Patron vous refile ' : 'Vous refilez au Patron ') + n + ' fiche' + (n>1?'s':'') +
+        ' (' + winCombo.name + ').');
+  }
+  showCombo(youLose ? '✗ Tour perdu' : '✓ Tour gagné');
+  S.leader = loser;
+  const st = checkEnd();
+  await sleep(st === 'pause' ? 2600 : 2000);
+}
+
+async function game(){ while(!S.gameOver){ await playRound(); } }
+$('replay').addEventListener('click', ()=>{
+  Object.assign(S, {pot:21, you:0, ai:0, phase:'charge', leader:'you', gameOver:false});
+  $('overlay').style.display = 'none';
+  refreshScores(); game();
+});
+refreshScores();
+setButtons(false, false);
+game();
+</script>
+</body>
+</html>

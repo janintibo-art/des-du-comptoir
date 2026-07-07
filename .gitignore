@@ -1,0 +1,14 @@
+# Android / Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/app/src/main/assets/www/
+
+# Divers
+.DS_Store
+*.iml
+.idea/

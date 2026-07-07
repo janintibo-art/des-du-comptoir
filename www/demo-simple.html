@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>421 — Dés Babylon.js</title>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<style>
+  :root{
+    --felt:#1d4a33; --cream:#f2e8d5; --ink:#141410; --accent:#e0a34c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);
+    font-family:Georgia,'Times New Roman',serif;color:var(--cream)}
+  #render{width:100%;height:100%;display:block;outline:none}
+  #hud{position:fixed;inset:0;pointer-events:none;display:flex;flex-direction:column;
+    justify-content:space-between;padding:18px}
+  .bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;pointer-events:auto}
+  .brand{font-size:26px;letter-spacing:.18em;color:var(--accent);font-weight:bold}
+  .brand small{display:block;font-size:11px;letter-spacing:.3em;color:var(--cream);opacity:.7}
+  select,button{pointer-events:auto;font-family:inherit;font-size:15px;border-radius:6px;
+    border:1px solid rgba(242,232,213,.35);background:rgba(20,20,16,.75);color:var(--cream);
+    padding:9px 14px;cursor:pointer}
+  select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  button.primary{background:var(--accent);color:var(--ink);font-weight:bold;
+    letter-spacing:.06em;border-color:transparent;padding:11px 26px;font-size:17px}
+  button:disabled{opacity:.45;cursor:default}
+  #result{text-align:center;pointer-events:none;padding-bottom:6px}
+  #combo{font-size:clamp(28px,6vw,54px);letter-spacing:.1em;color:var(--accent);
+    text-shadow:0 2px 12px rgba(0,0,0,.6);min-height:1.2em}
+  #detail{font-size:16px;opacity:.85;margin-top:4px}
+  #hint{font-size:13px;opacity:.6;margin-top:8px;font-style:italic}
+  .pill{background:rgba(20,20,16,.75);border:1px solid rgba(242,232,213,.25);
+    border-radius:999px;padding:8px 16px;font-size:14px}
+  @media (prefers-reduced-motion:reduce){ .noop{} }
+</style>
+</head>
+<body>
+<canvas id="render"></canvas>
+<div id="hud">
+  <div class="bar">
+    <div class="brand">421<small>JEU DE DÉS</small></div>
+    <select id="skin" aria-label="Style des dés"></select>
+    <button id="roll" class="primary">Lancer</button>
+    <span class="pill" id="turns">Lancers restants : 3</span>
+    <button id="newturn">Nouveau tour</button>
+  </div>
+  <div id="result">
+    <div id="combo"></div>
+    <div id="detail"></div>
+    <div id="hint">Cliquez sur un dé pour le garder entre deux lancers.</div>
+  </div>
+</div>
+<script>
+'use strict';
+const SKINS = ['fantasy','neon','tribal','ocean','candy','ice','gothic','crystal','steampunk','biomech','streetart','origami'];
+const SKIN_LABELS = {fantasy:'Fantaisie',neon:'Néon sci-fi',tribal:'Tribal',ocean:'Océan & perles',
+  candy:'Pâtisserie',ice:'Glace',gothic:'Gothique',crystal:'Cristal arcane',steampunk:'Steampunk',
+  biomech:'Biomécanique',streetart:'Street art',origami:'Origami'};
+
+const canvas = document.getElementById('render');
+const engine = new BABYLON.Engine(canvas, true, {antialias:true});
+const scene = new BABYLON.Scene(engine);
+scene.clearColor = BABYLON.Color4.FromHexString('#141410FF');
+
+const camera = new BABYLON.ArcRotateCamera('cam', -Math.PI/2, 0.92, 13, new BABYLON.Vector3(0,0,0), scene);
+camera.attachControl(canvas, true);
+camera.lowerRadiusLimit = 7; camera.upperRadiusLimit = 22;
+camera.upperBetaLimit = 1.35; camera.wheelPrecision = 40;
+
+new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0,1,0), scene).intensity = 0.55;
+const sun = new BABYLON.DirectionalLight('sun', new BABYLON.Vector3(-0.4,-1,0.3), scene);
+sun.position = new BABYLON.Vector3(6,12,-4); sun.intensity = 0.9;
+const shadows = new BABYLON.ShadowGenerator(1024, sun);
+shadows.useBlurExponentialShadowMap = true; shadows.blurScale = 2;
+
+// Tapis de jeu
+const table = BABYLON.MeshBuilder.CreateGround('table', {width:40, height:40}, scene);
+const feltMat = new BABYLON.StandardMaterial('felt', scene);
+feltMat.diffuseColor = BABYLON.Color3.FromHexString('#1d4a33');
+feltMat.specularColor = new BABYLON.Color3(0.02,0.02,0.02);
+table.material = feltMat; table.receiveShadows = true;
+
+// ---- Mapping faces Babylon (CreateBox) : 0 avant(+z) 1 arrière(-z) 2 droite(+x) 3 gauche(-x) 4 dessus(+y) 5 dessous(-y)
+// Valeurs : dessus=1, dessous=6, avant=2, arrière=5, droite=3, gauche=4 (faces opposées = 7)
+const FACE_VALUE = [2,5,3,4,1,6];
+function faceUVFor(){ // atlas 3 colonnes x 2 lignes, valeurs 1..6 en ordre de lecture
+  return FACE_VALUE.map(v => {
+    const col=(v-1)%3, row=Math.floor((v-1)/3);
+    return new BABYLON.Vector4(col/3, 1-(row+1)/2, (col+1)/3, 1-row/2);
+  });
+}
+// Quaternion amenant la face de valeur v vers le haut
+const UP_ROT = {
+  1: BABYLON.Quaternion.Identity(),
+  6: BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, Math.PI),
+  2: BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, -Math.PI/2),
+  5: BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X,  Math.PI/2),
+  3: BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z,  Math.PI/2),
+  4: BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, -Math.PI/2),
+};
+
+const matCache = {};
+function skinMaterial(skin){
+  if(!matCache[skin]){
+    const m = new BABYLON.StandardMaterial('m_'+skin, scene);
+    m.diffuseTexture = new BABYLON.Texture('textures/'+skin+'/atlas.jpg', scene);
+    m.specularColor = new BABYLON.Color3(0.12,0.12,0.12);
+    matCache[skin] = m;
+  }
+  return matCache[skin];
+}
+
+const D = 1.6, POS = [-2.4, 0, 2.4];
+const dice = POS.map((x,i)=>{
+  const mesh = BABYLON.MeshBuilder.CreateBox('die'+i, {size:D, faceUV:faceUVFor(), wrap:true}, scene);
+  mesh.position = new BABYLON.Vector3(x, D/2, 0);
+  mesh.rotationQuaternion = UP_ROT[1].clone();
+  shadows.addShadowCaster(mesh);
+  const halo = BABYLON.MeshBuilder.CreateTorus('halo'+i, {diameter:D*1.7, thickness:0.07}, scene);
+  halo.position = new BABYLON.Vector3(x, 0.02, 0);
+  const hm = new BABYLON.StandardMaterial('hm'+i, scene);
+  hm.emissiveColor = BABYLON.Color3.FromHexString('#e0a34c');
+  hm.disableLighting = true; halo.material = hm; halo.isVisible = false;
+  return {mesh, halo, value:1, kept:false};
+});
+
+// ---- UI
+const selSkin = document.getElementById('skin');
+SKINS.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=SKIN_LABELS[s]; selSkin.appendChild(o); });
+function applySkin(){ dice.forEach(d=> d.mesh.material = skinMaterial(selSkin.value)); }
+selSkin.addEventListener('change', applySkin);
+applySkin();
+
+const btnRoll = document.getElementById('roll');
+const btnNew = document.getElementById('newturn');
+const elTurns = document.getElementById('turns');
+const elCombo = document.getElementById('combo');
+const elDetail = document.getElementById('detail');
+
+let rollsLeft = 3, rolling = false;
+function refreshUI(){
+  elTurns.textContent = 'Lancers restants : ' + rollsLeft;
+  btnRoll.disabled = rolling || rollsLeft === 0;
+}
+
+// Garder / relâcher un dé au clic
+scene.onPointerObservable.add(pi=>{
+  if(pi.type !== BABYLON.PointerEventTypes.POINTERPICK || rolling) return;
+  const hit = pi.pickInfo && pi.pickInfo.pickedMesh;
+  if(!hit) return;
+  const d = dice.find(dd => dd.mesh === hit);
+  if(d && rollsLeft < 3 && rollsLeft > 0){ d.kept = !d.kept; d.halo.isVisible = d.kept; }
+});
+
+// ---- Évaluation 421 (barème courant)
+function evaluate(vals){
+  const s = [...vals].sort((a,b)=>b-a);
+  const k = s.join('');
+  if(k === '421') return {name:'421 !', pts:8};
+  if(k === '111') return {name:'Brelan d’as', pts:7};
+  if(s[0]===s[1] && s[1]===s[2]) return {name:'Brelan de '+s[0], pts:s[0]};
+  if(s[1]===1 && s[2]===1) return {name:'Paire d’as + '+s[0], pts:s[0]};
+  if(k === '221') return {name:'Nénette', pts:4};
+  if(s[0]===s[1]+1 && s[1]===s[2]+1) return {name:'Suite '+s[2]+'-'+s[1]+'-'+s[0], pts:2};
+  return {name:s[2]+' · '+s[1]+' · '+s[0], pts:1};
+}
+
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FPS = 60;
+function rand(a,b){ return a + Math.random()*(b-a); }
+function randomQuat(){
+  return BABYLON.Quaternion.RotationAxis(new BABYLON.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-0.5).normalize(), rand(1.5,4.5));
+}
+
+function tumble(d, value, delay){
+  d.value = value;
+  const target = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, rand(0,Math.PI*2)).multiply(UP_ROT[value]);
+  if(reduceMotion){ d.mesh.rotationQuaternion = target; return Promise.resolve(); }
+  const dur = 55 + delay;
+  const rotA = new BABYLON.Animation('rot','rotationQuaternion',FPS,BABYLON.Animation.ANIMATIONTYPE_QUATERNION,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+  let q = d.mesh.rotationQuaternion.clone();
+  const keys = [{frame:0, value:q}];
+  for(let f=12; f<dur-14; f+=12){ q = q.multiply(randomQuat()); keys.push({frame:f, value:q}); }
+  keys.push({frame:dur, value:target});
+  rotA.setKeys(keys);
+  const posA = new BABYLON.Animation('pos','position.y',FPS,BABYLON.Animation.ANIMATIONTYPE_FLOAT,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+  posA.setKeys([{frame:0,value:D/2},{frame:dur*0.25,value:D*2.6},{frame:dur*0.55,value:D/2},
+                {frame:dur*0.72,value:D*1.1},{frame:dur*0.88,value:D/2},{frame:dur,value:D/2}]);
+  const ease = new BABYLON.QuadraticEase(); ease.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+  posA.setEasingFunction(ease);
+  return new Promise(res => scene.beginDirectAnimation(d.mesh, [rotA, posA], 0, dur, false, 1, res));
+}
+
+async function roll(){
+  if(rolling || rollsLeft === 0) return;
+  rolling = true; refreshUI();
+  elCombo.textContent = ''; elDetail.textContent = '';
+  const moving = dice.filter(d=>!d.kept);
+  await Promise.all(moving.map((d,i)=> tumble(d, 1+Math.floor(Math.random()*6), i*8)));
+  rollsLeft--; rolling = false; refreshUI();
+  const r = evaluate(dice.map(d=>d.value));
+  elCombo.textContent = r.name;
+  elDetail.textContent = r.pts + (r.pts>1?' fiches':' fiche') + (rollsLeft>0 ? ' — vous pouvez relancer' : ' — tour terminé');
+}
+btnRoll.addEventListener('click', roll);
+btnNew.addEventListener('click', ()=>{
+  rollsLeft = 3; rolling = false;
+  dice.forEach(d=>{ d.kept=false; d.halo.isVisible=false; });
+  elCombo.textContent=''; elDetail.textContent='';
+  refreshUI();
+});
+refreshUI();
+
+engine.runRenderLoop(()=> scene.render());
+addEventListener('resize', ()=> engine.resize());
+</script>
+</body>
+</html>
