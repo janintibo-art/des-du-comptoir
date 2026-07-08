@@ -243,4 +243,14 @@ matador: { title:'Le Matador', html:`
 <p><b>Les matadors</b> (les tuiles qui totalisent 7 : 6-1, 5-2, 4-3, et le double-blanc 0-0)
 sont des <b>jokers</b> : ils se posent sur n'importe quel bout, et vous choisissez alors la
 valeur expos\u00e9e. Ils sont surlign\u00e9s en rouge dans votre main.</p>`},
+train: { title:'Le Train mexicain', html:`
+<p>Dominos double-six, 2 \u00e0 4 joueurs. Le <b>6-6</b> est le moteur central : tous les
+trains d\u00e9marrent sur la valeur 6. Chaque joueur a <b>son train</b> ; il existe aussi un
+<b>Train mexicain</b> commun. Premier \u00e0 vider son jeu gagne (sinon, plus petit total).</p>
+<p><b>Le tour.</b> Posez une tuile au bout d'un train autoris\u00e9 : le <b>v\u00f4tre</b>, le
+<b>Mexicain</b>, ou le train <b>ouvert</b> 🔓 d'un autre joueur. La valeur doit correspondre
+au bout du train.</p>
+<p><b>Doubles :</b> jouer un double vous fait <b>rejouer</b> une tuile. Si vous ne pouvez pas
+jouer, vous <b>piochez</b> ; toujours rien ? votre train <b>s'ouvre</b> (les autres peuvent
+y jouer) et vous passez. En jouant sur votre propre train ouvert, vous le refermez.</p>`},
 };

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Train mexicain</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+.domino{--dh:clamp(112px,23vh,168px);height:var(--dh);width:calc(var(--dh)*.5);min-width:calc(var(--dh)*.5);background:transparent;border:none;padding:0;cursor:pointer;overflow:visible}
+.domino img{height:var(--dh);width:auto;display:block;border-radius:calc(var(--dh)*.05);filter:drop-shadow(0 3px 7px rgba(0,0,0,.5))}
+.domino.txt{background:#f7f2e6;color:#141410;border:1px solid #b9b09b;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:calc(var(--dh)*.16)}
+.domino.off{opacity:.3;cursor:default}
+.domino.play{outline:3px solid var(--accent);outline-offset:1px;border-radius:10px}
+#cHand{display:flex;gap:6px;overflow-x:auto;padding:14px 6px 4px;-webkit-overflow-scrolling:touch}
+.hub{text-align:center;font-size:13px;opacity:.7;margin-bottom:6px}
+.hub b{color:var(--accent)}
+.trains{display:flex;flex-direction:column;gap:5px;width:100%;max-height:46vh;overflow:auto}
+.train{display:flex;align-items:center;gap:6px;border:1px solid rgba(242,232,213,.16);border-radius:8px;padding:4px 6px;background:rgba(20,20,16,.4)}
+.train.mine{border-color:rgba(224,163,76,.5)}
+.train.mex .tlabel{color:#e06a5a}
+.train.target{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);cursor:pointer;background:rgba(224,163,76,.12)}
+.train .tlabel{font-size:12px;min-width:92px;line-height:1.2}
+.train .tend{color:var(--accent);font-weight:bold;font-size:16px;min-width:20px;text-align:center}
+.train .ttiles{display:flex;gap:2px;overflow-x:auto;flex:1}
+.train .domino{--dh:clamp(38px,7.5vh,56px)}
+.train .empty{opacity:.4;font-size:12px}
+</style>
+<script src="dominos.js"></script>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+const pip=t=>t.a+t.b, isD=t=>t.a===t.b, ENG=6;
+CardShell({
+  id:'train', title:'LE TRAIN MEXICAIN', minPlayers:2, maxPlayers:4, skinModule:Dominos,
+  run: async GC => {
+    const P=GC.players, N=P.length;
+    const set=Dominos.shuffle(Dominos.fullSet().filter(t=>!(t.a===6&&t.b===6)));
+    const per=N===2?8:(N===3?7:6);
+    P.forEach(p=> p.hand=set.splice(0,per).sort((a,b)=>pip(a)-pip(b)));
+    let yard=set;
+    const trains=[];
+    for(let i=0;i<N;i++) trains.push({owner:i, tiles:[], end:ENG, open:false});
+    trains.push({owner:'mex', tiles:[], end:ENG, open:true});
+    const mexIdx=trains.length-1;
+
+    const label=(tr)=> tr.owner==='mex' ? '🚂 Mexicain' : (P[tr.owner]===undefined?'':P[tr.owner].name);
+    const allowedFor=(tr,me)=> tr.owner===me || tr.owner==='mex' || tr.open;
+    const legalTrains=(tile,me)=> trains.map((tr,i)=>i).filter(i=>{
+      const tr=trains[i]; return allowedFor(tr,me) && (tile.a===tr.end||tile.b===tr.end); });
+    const legalMoves=(hand,me)=> hand.some(t=> legalTrains(t,me).length>0);
+    function placeMove(tile, ti, me){
+      const tr=trains[ti]; const conn=(tile.a===tr.end)?tile.a:tile.b; const other=(tile.a===conn)?tile.b:tile.a;
+      tr.tiles.push({a:conn,b:other}); tr.end=other; if(tr.owner===me) tr.open=false; return isD(tile);
+    }
+    const refresh=turn=>GC.scores(P.map((p,i)=>({label:p.name,value:p.hand.length,active:i===turn})));
+    const showOpps=(me,turn)=>GC.opponents(P.filter(p=>p!==me).map(p=>({name:p.name,count:p.hand.length,turn:P.indexOf(p)===turn})));
+
+    function renderTrains(me, targetSet, onPickTrain){
+      const wrap=document.createElement('div'); wrap.style.width='100%';
+      const hub=document.createElement('div'); hub.className='hub'; hub.innerHTML='Moteur central : <b>6-6</b> — tous les trains démarrent sur 6';
+      const list=document.createElement('div'); list.className='trains';
+      trains.forEach((tr,ti)=>{
+        const row=document.createElement('div');
+        row.className='train'+(tr.owner===me?' mine':'')+(tr.owner==='mex'?' mex':'')+((targetSet&&targetSet.has(ti))?' target':'');
+        const lab=document.createElement('div'); lab.className='tlabel';
+        lab.innerHTML=label(tr)+(tr.open&&tr.owner!=='mex'?' 🔓':'')+(tr.owner===me?' (vous)':'');
+        const end=document.createElement('div'); end.className='tend'; end.textContent=tr.end;
+        const tt=document.createElement('div'); tt.className='ttiles';
+        if(tr.tiles.length) tr.tiles.forEach(t=>tt.appendChild(Dominos.el(t,{})));
+        else { const e=document.createElement('span'); e.className='empty'; e.textContent='(vide)'; tt.appendChild(e); }
+        row.appendChild(lab); row.appendChild(end); row.appendChild(tt);
+        if(targetSet&&targetSet.has(ti)&&onPickTrain) row.addEventListener('click',()=>onPickTrain(ti));
+        list.appendChild(row);
+        if(targetSet&&targetSet.has(ti)) requestAnimationFrame(()=>{ tt.scrollLeft=tt.scrollWidth; });
+      });
+      wrap.appendChild(hub); wrap.appendChild(list);
+      const yd=document.createElement('div'); yd.className='hub'; yd.textContent='Pioche : '+yard.length+' domino'+(yard.length>1?'s':'');
+      wrap.appendChild(yd);
+      GC.center(wrap);
+    }
+    function renderHand(p, me, onPick){
+      const hand=document.getElementById('cHand'); hand.innerHTML='';
+      p.hand.forEach(t=>{ const ok=onPick&&legalTrains(t,me).length>0;
+        const el=Dominos.el(t,{onClick: ok?()=>onPick(t):null, disabled:!ok});
+        if(ok) el.classList.add('play'); hand.appendChild(el); });
+    }
+
+    async function humanTurn(p, pi){
+      await GC.handOff(p.name);
+      let moved=false, drew=false;
+      while(true){
+        refresh(pi); showOpps(p,pi); renderTrains(pi,null,null);
+        if(!legalMoves(p.hand,pi)){
+          if(!moved && !drew && yard.length){
+            GC.say('Aucun coup possible — piochez.'); renderHand(p,pi,null);
+            await GC.ask([{id:'d',label:'Piocher',primary:true}]); GC.setButtons([]);
+            p.hand.push(yard.shift()); p.hand.sort((a,b)=>pip(a)-pip(b)); drew=true; GC.play(); continue;
+          }
+          const mine=trains.find(tr=>tr.owner===pi); if(mine) mine.open=true;
+          renderTrains(pi,null,null); renderHand(p,pi,null);
+          if(!moved){ GC.say('Toujours rien — votre train s\u2019ouvre et vous passez.');
+            await GC.ask([{id:'p',label:'Passer',primary:true}]); GC.setButtons([]); return {passed:true}; }
+          GC.say('Double non couvert — votre train reste ouvert.');
+          await GC.ask([{id:'p',label:'Fin du tour',primary:true}]); GC.setButtons([]); return {passed:false};
+        }
+        GC.say('Touchez une tuile jouable'+(moved?' (rejouez après le double)':'')+'.'); GC.setButtons([]);
+        const chosen=await new Promise(res=>{
+          renderHand(p, pi, tile=>{
+            const trs=legalTrains(tile,pi);
+            if(trs.length===1){ res({tile, ti:trs[0]}); return; }
+            const set=new Set(trs);
+            GC.say('Sur quel train ? (touchez-le)');
+            renderTrains(pi, set, ti=> res({tile, ti}));
+            GC.setButtons([{id:'cancel',label:'Changer de tuile'}]);
+            GC.waitAction().then(()=>{ GC.setButtons([]); res(null); });
+          });
+        });
+        if(!chosen) continue;
+        const dbl=placeMove(chosen.tile, chosen.ti, pi);
+        p.hand.splice(p.hand.findIndex(x=>x.a===chosen.tile.a&&x.b===chosen.tile.b),1);
+        moved=true; GC.play();
+        GC.combo(p.name+' pose le '+chosen.tile.a+'-'+chosen.tile.b+' sur '+label(trains[chosen.ti])+'.');
+        refresh(pi);
+        if(p.hand.length===0) return {won:true};
+        if(dbl){ GC.combo('Double ! '+p.name+' rejoue.'); await GC.sleep(600); continue; }
+        return {passed:false};
+      }
+    }
+
+    async function aiTurn(p, pi){
+      refresh(pi); showOpps(p,pi); renderTrains(pi,null,null);
+      GC.say(p.name+' réfléchit…'); await GC.sleep(750);
+      let moved=false, drew=false;
+      while(true){
+        if(!legalMoves(p.hand,pi)){
+          if(!moved && !drew && yard.length){ p.hand.push(yard.shift()); drew=true; GC.combo(p.name+' pioche.'); renderTrains(pi,null,null); await GC.sleep(450); continue; }
+          const mine=trains.find(tr=>tr.owner===pi); if(mine) mine.open=true;
+          GC.combo(moved?p.name+' ne peut couvrir son double.':p.name+' passe (train ouvert).');
+          renderTrains(pi,null,null); await GC.sleep(700); return {passed:!moved};
+        }
+        // choisir un coup : fermer son train ouvert d'abord, sinon plus lourd
+        let best=null;
+        p.hand.forEach(t=>{ legalTrains(t,pi).forEach(ti=>{
+          const tr=trains[ti]; let sc=pip(t);
+          if(tr.owner===pi && tr.open) sc+=100;
+          if(isD(t)) sc+=5;
+          if(tr.owner==='mex'||tr.open) sc+=2;
+          if(!best||sc>best.sc) best={t,ti,sc};
+        }); });
+        const dbl=placeMove(best.t, best.ti, pi);
+        p.hand.splice(p.hand.findIndex(x=>x.a===best.t.a&&x.b===best.t.b),1);
+        moved=true; GC.combo(p.name+' pose le '+best.t.a+'-'+best.t.b+' sur '+label(trains[best.ti])+'.'); GC.play();
+        renderTrains(pi,null,null); refresh(pi); await GC.sleep(650);
+        if(p.hand.length===0) return {won:true};
+        if(dbl){ GC.combo('Double ! '+p.name+' rejoue.'); await GC.sleep(500); continue; }
+        return {passed:false};
+      }
+    }
+
+    GC.say('Chacun son train ; posez sur le vôtre, le Mexicain, ou un train ouvert 🔓. Videz votre jeu !');
+    refresh(-1); renderTrains(-1,null,null); await GC.sleep(1400);
+    let turn=Math.floor(Math.random()*N), passes=0;
+    while(true){
+      const p=P[turn];
+      const res = p.ai ? await aiTurn(p,turn) : await humanTurn(p,turn);
+      refresh(-1);
+      if(res.won) return GC.gameOver('Victoire de '+p.name+' !', p.name+' a vidé son jeu — terminus !');
+      if(res.passed){ passes++; if(passes>=N){
+        const scored=P.map(x=>({x,s:x.hand.reduce((a,t)=>a+pip(t),0)})).sort((a,b)=>a.s-b.s);
+        return GC.gameOver('Victoire de '+scored[0].x.name+' !','Plus personne ne peut jouer — le plus petit total gagne :<br>'+scored.map(s=>s.x.name+' : '+s.s+' points').join('<br>')); } }
+      else passes=0;
+      await GC.sleep(320); turn=(turn+1)%N;
+    }
+  }
+});
+</script>
+</body>
+</html>

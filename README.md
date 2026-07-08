@@ -28,7 +28,8 @@ américain en réseau ; les autres jeux de cartes en réseau viendront ensuite.
 ## Dominos 🁢
 Trois jeux de dominos double-six, 2-4 joueurs : **Le Domino** (block/draw, `domino-classique.html`),
 **Le Tout-Cinq / All Fives** (score sur les multiples de 5, `domino-toutcinq.html`) et **Le Matador**
-(bouts qui totalisent 7, matadors jokers, `domino-matador.html`), avec **10 styles de tuiles** (`www/dominos/<style>/<a>-<b>.webp`, découpés
+(bouts qui totalisent 7, `domino-matador.html`) et **Le Train mexicain** (trains personnels + train
+commun, doubles qui rejouent, `domino-train.html`), avec **10 styles de tuiles** (`www/dominos/<style>/<a>-<b>.webp`, découpés
 de vos planches) sélectionnables en jeu. Module réutilisable `www/dominos.js`.
 
 ## Menu par catégories
