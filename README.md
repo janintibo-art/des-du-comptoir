@@ -19,6 +19,11 @@ bistrot, jouables dans le navigateur et empaquetés en APK Android via GitHub Ac
 | La Boîte | 2 | 1-4 | Shut the Box |
 | Martinetti | 3 | 2-4 | La série de 1 à 12 |
 
+**Jeux de cartes** (contre l'ordinateur ou à tour de rôle) : La Bataille (2 j.),
+Le Président (3-4 j.), Le 8 loco (2-4 j.) et **Le Tarot** simplifié à 4 joueurs
+(atouts, Excuse, comptage des bouts — 91 points en jeu). Le Salon héberge le 8
+américain en réseau ; les autres jeux de cartes en réseau viendront ensuite.
+
 ## Multi-téléphones 🌐
 Le **Salon** (`salon.html`) connecte 2 à 4 téléphones : l'hôte crée une table, obtient
 un code de 4 lettres, les autres le saisissent. Chaque joueur a **son propre écran et

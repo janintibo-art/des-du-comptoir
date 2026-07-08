@@ -156,4 +156,16 @@ Premier \u00e0 vider sa main gagne.</p>
 ma\u00eetres (choisissez la couleur). Cartes sp\u00e9ciales : le <b>2</b> fait piocher 2 cartes au
 suivant (cumulable si lui aussi pose un 2), le <b>Valet</b> saute le joueur suivant, l'<b>As</b>
 change le sens du jeu (\u00e0 2 joueurs, il fait rejouer). Rien \u00e0 poser ? Piochez.</p>`},
+tarot: { title:'Le Tarot (simplifi\u00e9)', html:`
+<p>Jeu de <b>78 cartes</b> \u00e0 4 joueurs. Version simplifi\u00e9e, <b>sans ench\u00e8res</b> :
+chacun joue pour soi et ramasse le plus de <b>points</b> possible dans ses plis.</p>
+<p><b>Les cartes.</b> Quatre couleurs de 14 cartes (As\u2026 10, Valet, Cavalier, Dame, Roi),
+21 <b>atouts</b> num\u00e9rot\u00e9s, et l'<b>Excuse</b>. Les atouts battent toutes les couleurs ;
+l'atout 21 est le plus fort, l'atout 1 (le « Petit ») le plus faible.</p>
+<p><b>Jouer.</b> On doit fournir la couleur demand\u00e9e ; \u00e0 d\u00e9faut, on est oblig\u00e9 de
+<b>couper \u00e0 l'atout</b> (et de monter plus haut qu'un atout d\u00e9j\u00e0 pos\u00e9 si possible).
+L'<b>Excuse</b> se joue quand on veut, ne remporte jamais le pli, et reste dans vos points.</p>
+<p><b>Les points</b> (les fameux « bouts ») : le 21, le Petit (atout 1) et l'Excuse valent
+4,5 chacun ; Roi 4,5 ; Dame 3,5 ; Cavalier 2,5 ; Valet 1,5 ; les autres 0,5. Le dernier pli
+ramasse le <b>chien</b> (6 cartes mises de c\u00f4t\u00e9). 91 points en jeu : le plus haut total gagne.</p>`},
 };

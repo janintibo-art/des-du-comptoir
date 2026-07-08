@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Tarot</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<style>
+.pcard{width:50px;height:78px;min-width:50px;background:#f7f2e6;border:1px solid #b9b09b;border-radius:8px;
+  color:#141410;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-family:inherit;cursor:pointer}
+.pcard .rk{font-size:15px;font-weight:bold} .pcard .st{font-size:19px;line-height:1}
+.pcard.red{color:#c2543f} .pcard.back{background:#33523f;border-color:#1d3328;color:var(--cream)}
+.pcard.img{padding:0;background:transparent;border:none;width:auto;min-width:0}
+.pcard.img img{height:78px;border-radius:6px;filter:drop-shadow(0 2px 5px rgba(0,0,0,.4))}
+.pcard.play{outline:3px solid var(--accent);outline-offset:-2px}
+.pcard.off{opacity:.36;cursor:default}
+#cHand{display:flex;gap:4px;overflow-x:auto;padding:12px 4px 4px;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+.trick{display:flex;gap:10px;justify-content:center;align-items:flex-end;flex-wrap:wrap}
+.trick .slot{display:flex;flex-direction:column;align-items:center;gap:3px}
+.trick .nm{font-size:12px;opacity:.75}
+.trick .slot.win .nm{color:var(--accent);font-weight:bold}
+</style>
+<script src="cards.js"></script>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+/* ---- logique pure du Tarot simplifié (testée hors-ligne) ---- */
+const SUIT_RANK={A:1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,V:11,C:12,D:13,R:14};
+function isTrump(c){ return !!c.atout; }
+function tpts(c){ if(c.excuse)return 4.5; if(c.atout)return (c.atout===21||c.atout===1)?4.5:0.5;
+  return {R:4.5,D:3.5,C:2.5,V:1.5}[c.r]||0.5; }
+function ledOf(trick){ for(const t of trick){ if(!t.card.excuse) return t.card; } return null; }
+function legalMoves(hand, trick){
+  const excuse=hand.filter(c=>c.excuse), led=ledOf(trick), nonExc=hand.filter(c=>!c.excuse);
+  let base;
+  if(!led){ base=nonExc.slice(); }
+  else if(isTrump(led)){
+    const tr=hand.filter(isTrump);
+    if(tr.length){ const hi=Math.max(...trick.filter(t=>isTrump(t.card)).map(t=>t.card.atout));
+      const h=tr.filter(c=>c.atout>hi); base=h.length?h:tr; } else base=nonExc.slice();
+  } else {
+    const suit=hand.filter(c=>!c.excuse&&!c.atout&&c.s===led.s);
+    if(suit.length) base=suit;
+    else{ const tr=hand.filter(isTrump);
+      if(tr.length){ const pl=trick.filter(t=>isTrump(t.card)).map(t=>t.card.atout);
+        if(pl.length){ const hi=Math.max(...pl); const h=tr.filter(c=>c.atout>hi); base=h.length?h:tr; }
+        else base=tr; } else base=nonExc.slice(); }
+  }
+  return base.concat(excuse);
+}
+function trickWinner(trick){
+  const led=ledOf(trick), trumps=trick.filter(t=>isTrump(t.card));
+  if(trumps.length){ let b=trumps[0]; trumps.forEach(t=>{if(t.card.atout>b.card.atout)b=t;}); return trick.indexOf(b); }
+  let b=null; trick.forEach(t=>{ if(!t.card.excuse&&t.card.s===led.s){ if(!b||SUIT_RANK[t.card.r]>SUIT_RANK[b.card.r])b=t; } });
+  return trick.indexOf(b);
+}
+function aiPlay(hand, trick){
+  const legal=legalMoves(hand,trick);
+  const noExc=legal.filter(c=>!c.excuse), pool=noExc.length?noExc:legal;
+  const rankv=c=>c.atout?c.atout:SUIT_RANK[c.r];
+  if(!trick.length){ const low=pool.filter(c=>tpts(c)<1), set=low.length?low:pool;
+    return set.reduce((a,b)=>rankv(a)<rankv(b)?a:b); }
+  const trickPts=trick.reduce((s,t)=>s+tpts(t.card),0), last=trick.length===3;
+  const wins=pool.filter(c=> trickWinner(trick.concat([{card:c,by:-1}]))===trick.length );
+  if(wins.length && (trickPts>=3||last)) return wins.reduce((a,b)=>rankv(a)<rankv(b)?a:b);
+  const set=noExc.length?noExc:legal;
+  return set.reduce((a,b)=> tpts(a)<tpts(b)?a : (tpts(a)>tpts(b)?b : (rankv(a)<rankv(b)?a:b)));
+}
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+const fmt=n=> (Math.round(n*10)/10).toString().replace('.',',');
+CardShell({
+  id:'tarot', title:'LE TAROT', minPlayers:4, maxPlayers:4,
+  run: async GC => {
+    const P=GC.players, N=4;
+    // le Tarot exige un style de cartes tarot (les jeux de 52 n'ont pas d'atouts)
+    (function(){
+      const sel=document.getElementById('cardSkinSel');
+      [...sel.options].forEach(o=>{ const sk=Cards.SKINS.find(k=>k.id===o.value);
+        if(!sk||!sk.tarot){ o.disabled=true; if(!/^🂠/.test(o.textContent)) o.textContent='🂠 '+o.textContent; } });
+      const cur=Cards.SKINS.find(k=>k.id===Cards.skin());
+      if(!cur||!cur.tarot){ sel.value='taverne'; sel.dispatchEvent(new Event('change')); }
+    })();
+    const deck=Cards.shuffle(Cards.deckTarot());
+    P.forEach(p=>{ p.hand=[]; p.pile=[]; });
+    for(let i=0;i<72;i++) P[i%N].hand.push(deck[i]);
+    const dog=deck.slice(72);
+    P.forEach(p=> p.hand.sort(sortCards));
+    let lead=0;
+    const score=p=> p.pile.reduce((s,c)=>s+tpts(c),0);
+    const refresh=(turn)=>GC.scores(P.map((p,i)=>({label:p.name,value:fmt(score(p)),active:i===turn})));
+    const showOpps=(me,turn)=>GC.opponents(P.filter(p=>p!==me).map(p=>({
+      name:p.name, count:p.hand.length, turn:P.indexOf(p)===turn})));
+
+    function sortCards(a,b){
+      const grp=c=> c.excuse?99:(c.atout?50:['pique','coeur','carreau','trefle'].indexOf(c.s));
+      const val=c=> c.atout?c.atout:(c.excuse?0:SUIT_RANK[c.r]);
+      return grp(a)-grp(b) || val(a)-val(b);
+    }
+    function drawTrick(trick, winIdx){
+      const w=document.createElement('div'); w.className='trick';
+      trick.forEach((t,i)=>{ const s=document.createElement('div');
+        s.className='slot'+(winIdx===i?' win':'');
+        const nm=document.createElement('div'); nm.className='nm'; nm.textContent=P[t.by].name;
+        s.appendChild(Cards.el(t.card,{})); s.appendChild(nm); w.appendChild(s); });
+      GC.center(w);
+    }
+
+    async function turnCard(p, trick, pIdx){
+      showOpps(p, pIdx); refresh(pIdx);
+      if(p.ai){
+        GC.say(p.name+' réfléchit…'); await GC.sleep(720);
+        return aiPlay(p.hand, trick);
+      }
+      await GC.handOff(p.name);
+      showOpps(p, pIdx); refresh(pIdx); drawTrick(trick, -1);
+      GC.say(trick.length? 'À vous, '+p.name+' — suivez ou coupez.' : 'À vous, '+p.name+' — vous entamez.');
+      const legal=legalMoves(p.hand, trick);
+      const hand=document.getElementById('cHand'); hand.innerHTML='';
+      return new Promise(res=>{
+        p.hand.forEach(card=>{
+          const ok=legal.includes(card);
+          const el=Cards.el(card,{onClick: ok?(c=>{ GC.play(); res(c); }):null, disabled:!ok});
+          if(ok) el.classList.add('play');
+          hand.appendChild(el);
+        });
+      });
+    }
+
+    GC.say('Tarot à 4 : ramassez le plus de points. Les bouts (21, Petit, Excuse) valent gros.');
+    await GC.sleep(700);
+    for(let tr=0; tr<18; tr++){
+      const trick=[];
+      for(let s=0; s<N; s++){
+        const pIdx=(lead+s)%N, p=P[pIdx];
+        const c=await turnCard(p, trick, pIdx);
+        p.hand.splice(p.hand.indexOf(c),1);
+        trick.push({card:c, by:pIdx});
+        drawTrick(trick, -1);
+        GC.combo(p.name+' joue '+Cards.label(c));
+        await GC.sleep(p.ai?450:250);
+      }
+      const wRel=trickWinner(trick);
+      const winnerIdx=trick[wRel].by;
+      drawTrick(trick, wRel);
+      // Excuse : reste à son joueur ; le reste au gagnant
+      trick.forEach(t=>{ if(t.card.excuse) P[t.by].pile.push(t.card); else P[winnerIdx].pile.push(t.card); });
+      GC.combo('Pli pour '+P[winnerIdx].name+'.');
+      lead=winnerIdx;
+      refresh(-1);
+      await GC.sleep(950);
+      GC.center('');
+    }
+    // le chien va au dernier gagnant
+    P[lead].pile.push(...dog);
+    GC.combo(P[lead].name+' ramasse le chien ('+fmt(dog.reduce((s,c)=>s+tpts(c),0))+' pts).');
+    refresh(-1);
+    await GC.sleep(1200);
+
+    const ranked=[...P].sort((a,b)=>score(b)-score(a));
+    const win=ranked[0];
+    return GC.gameOver('Victoire de '+win.name+' !',
+      ranked.map(p=>p.name+' : '+fmt(score(p))+' pts').join('<br>') +
+      '<br><small style="opacity:.6">(91 points en jeu au total)</small>');
+  }
+});
+</script>
+</body>
+</html>
