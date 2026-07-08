@@ -256,4 +256,17 @@ au bout du train.</p>
 <p><b>Doubles :</b> jouer un double vous fait <b>rejouer</b> une tuile. Si vous ne pouvez pas
 jouer, vous <b>piochez</b> ; toujours rien ? votre train <b>s'ouvre</b> (les autres peuvent
 y jouer) et vous passez. En jouant sur votre propre train ouvert, vous le refermez.</p>`},
+awale: { title:"L'Awal\u00e9 (Oware)", html:`
+<p>Jeu de semailles africain (famille mancala), \u00e0 2 joueurs. Le plateau a <b>12 trous</b>
+(6 par joueur, votre rang\u00e9e devant vous) et 2 <b>greniers</b>. On d\u00e9marre avec
+<b>4 graines</b> par trou (48 en tout). Le but : r\u00e9colter le <b>plus de graines</b>
+(25 assurent la victoire).</p>
+<p><b>Semer.</b> \u00c0 votre tour, prenez toutes les graines d'un de <b>vos</b> trous et
+d\u00e9posez-les une par une dans les trous suivants, dans le sens <b>anti-horaire</b>.</p>
+<p><b>Capturer.</b> Si votre <b>derni\u00e8re</b> graine tombe dans un trou <b>adverse</b> qui
+compte alors <b>2 ou 3</b> graines, vous les r\u00e9coltez \u2014 ainsi que les trous adverses
+pr\u00e9c\u00e9dents contigus \u00e0 2 ou 3. Une prise qui viderait <b>tout</b> le camp adverse
+est refus\u00e9e (les graines restent).</p>
+<p><b>Nourrir.</b> Si l'adversaire n'a plus de graines, vous <b>devez</b> jouer un coup qui lui
+en donne. Sinon la partie s'ach\u00e8ve et chacun r\u00e9colte son camp.</p>`},
 };

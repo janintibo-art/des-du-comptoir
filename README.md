@@ -36,6 +36,12 @@ de vos planches) sélectionnables en jeu. Module réutilisable `www/dominos.js`.
 Le menu (`index.html`) est organisé en trois familles — 🎲 Dés, 🃏 Cartes, 🁢 Dominos —
 avec une barre de navigation qui saute à chaque section.
 
+## Awalé 🌰
+L'**Awalé / Oware** (`awale-oware.html`), jeu de semailles à 2 joueurs (famille mancala),
+contre une **IA négamax** (alpha-bêta) ou à tour de rôle. Plateaux et graines détourés de vos
+images (`www/awale/boards`, `www/awale/seeds`), rendu par `www/awale.js` — **2 plateaux** et
+**14 modèles de graines** au choix. Logique validée (48 graines conservées, terminaison).
+
 ## Multi-téléphones 🌐
 Le **Salon** (`salon.html`) connecte 2 à 4 téléphones : l'hôte crée une table, obtient
 un code de 4 lettres, les autres le saisissent. Chaque joueur a **son propre écran et
