@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Matador</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+.domino{--dh:clamp(120px,25vh,178px);height:var(--dh);width:calc(var(--dh)*.5);min-width:calc(var(--dh)*.5);background:transparent;border:none;padding:0;cursor:pointer;overflow:visible}
+.domino img{height:var(--dh);width:auto;display:block;border-radius:calc(var(--dh)*.05);filter:drop-shadow(0 3px 7px rgba(0,0,0,.5))}
+.domino.txt{background:#f7f2e6;color:#141410;border:1px solid #b9b09b;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:calc(var(--dh)*.16)}
+.domino.off{opacity:.34;cursor:default}
+.domino.play{outline:3px solid var(--accent);outline-offset:1px;border-radius:10px}
+.domino.mat.play{outline-color:#e06a5a}
+#cHand{display:flex;gap:6px;overflow-x:auto;padding:16px 6px 4px;-webkit-overflow-scrolling:touch}
+.board{display:flex;align-items:center;gap:8px;width:100%}
+.chain{display:flex;gap:3px;overflow-x:auto;padding:4px;flex:1;-webkit-overflow-scrolling:touch}
+.chain .domino{--dh:clamp(64px,13vh,96px)}
+.endbadge{flex-shrink:0;min-width:44px;height:56px;border-radius:10px;background:rgba(224,163,76,.15);border:1px solid var(--accent);color:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:bold;font-size:20px;line-height:1}
+.endbadge small{font-size:10px;opacity:.7;font-weight:normal}
+.endbadge b{font-size:11px;opacity:.6;font-weight:normal}
+.yard{text-align:center;font-size:13px;opacity:.65;margin-top:6px}
+</style>
+<script src="dominos.js"></script>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+const pip=t=>t.a+t.b;
+const isMatador=t=> (t.a+t.b===7)||(t.a===0&&t.b===0);
+CardShell({
+  id:'matador', title:'LE MATADOR', minPlayers:2, maxPlayers:4, skinModule:Dominos,
+  run: async GC => {
+    const P=GC.players, N=P.length;
+    const set=Dominos.shuffle(Dominos.fullSet());
+    const per=N===2?7:5;
+    P.forEach(p=> p.hand=set.splice(0,per).sort((a,b)=>pip(a)-pip(b)));
+    let yard=set, chain=[], L=null, R=null;
+    const canPlay=(t,E)=> isMatador(t) || t.a===7-E || t.b===7-E;
+    const playable=t=> canPlay(t,L)||canPlay(t,R);
+
+    const refresh=turn=>GC.scores(P.map((p,i)=>({label:p.name,value:p.hand.length,active:i===turn})));
+    const showOpps=(me,turn)=>GC.opponents(P.filter(p=>p!==me).map(p=>({name:p.name,count:p.hand.length,turn:P.indexOf(p)===turn})));
+    function renderBoard(){
+      const wrap=document.createElement('div'); wrap.style.width='100%';
+      const board=document.createElement('div'); board.className='board';
+      const bl=document.createElement('div'); bl.className='endbadge'; bl.innerHTML='<small>gauche</small>'+L+'<b>vise '+(7-L)+'</b>';
+      const ch=document.createElement('div'); ch.className='chain'; chain.forEach(t=>ch.appendChild(Dominos.el(t,{})));
+      const br=document.createElement('div'); br.className='endbadge'; br.innerHTML='<small>droite</small>'+R+'<b>vise '+(7-R)+'</b>';
+      board.appendChild(bl); board.appendChild(ch); board.appendChild(br);
+      const yd=document.createElement('div'); yd.className='yard'; yd.textContent='Pioche : '+yard.length+' · les bouts doivent totaliser 7 (matadors = jokers)';
+      wrap.appendChild(board); wrap.appendChild(yd); GC.center(wrap);
+      requestAnimationFrame(()=>{ ch.scrollLeft=ch.scrollWidth; });
+    }
+    function renderHand(p,opts,onPick){ const hand=document.getElementById('cHand'); hand.innerHTML='';
+      p.hand.forEach(t=>{ const ok=opts.includes(t); const el=Dominos.el(t,{onClick:ok?()=>onPick(t):null,disabled:!ok});
+        if(isMatador(t)) el.classList.add('mat'); if(ok) el.classList.add('play'); hand.appendChild(el); }); }
+    async function place(t, side, chooseExpose){
+      const E = side==='R'?R:L;
+      let newEnd;
+      if(t.a===7-E || t.b===7-E){ const conn=7-E; newEnd=(t.a===conn)?t.b:t.a; }
+      else { // matador joker (souvent sur un blanc) : on choisit la valeur exposée
+        if(t.a!==t.b && chooseExpose) newEnd=await chooseExpose(t);
+        else newEnd=t.a;
+      }
+      if(side==='R'){ chain.push({a:E,b:newEnd}); R=newEnd; }
+      else { chain.unshift({a:newEnd,b:E}); L=newEnd; }
+    }
+
+    async function humanTurn(p){
+      await GC.handOff(p.name);
+      while(true){
+        refresh(P.indexOf(p)); showOpps(p,P.indexOf(p)); renderBoard();
+        const opts=p.hand.filter(playable);
+        if(opts.length){
+          GC.say('À vous, '+p.name+' — un bout + la tuile doivent faire 7 (matadors = jokers).'); GC.setButtons([]);
+          const mv=await new Promise(res=> renderHand(p,opts, async t=>{
+            const eR=canPlay(t,R), eL=canPlay(t,L); let side;
+            if(eR&&eL&&L!==R){ side=await GC.ask([{id:'L',label:'◀ Gauche ('+L+')'},{id:'R',label:'Droite ('+R+') ▶',primary:true}]); GC.setButtons([]); }
+            else side=eR?'R':'L';
+            res({t,side}); }));
+          await place(mv.t, mv.side, async t=>{
+            const a=await GC.ask([{id:'a',label:'Exposer '+t.a,primary:true},{id:'b',label:'Exposer '+t.b}]); GC.setButtons([]);
+            return a==='a'?t.a:t.b; });
+          p.hand.splice(p.hand.indexOf(mv.t),1); GC.play();
+          GC.combo(p.name+' pose le '+mv.t.a+'-'+mv.t.b+(isMatador(mv.t)?' (matador)':'')+'.'); renderBoard();
+          return {passed:false};
+        }
+        if(yard.length){ GC.say('Aucune tuile jouable — piochez.'); renderHand(p,[],null);
+          await GC.ask([{id:'d',label:'Piocher',primary:true}]); GC.setButtons([]);
+          p.hand.push(yard.shift()); p.hand.sort((a,b)=>pip(a)-pip(b)); GC.play(); continue; }
+        GC.say('Bloqué — vous passez.'); renderHand(p,[],null);
+        await GC.ask([{id:'p',label:'Passer',primary:true}]); GC.setButtons([]); return {passed:true};
+      }
+    }
+    async function aiTurn(p){
+      refresh(P.indexOf(p)); showOpps(p,P.indexOf(p)); renderBoard(); GC.say(p.name+' réfléchit…'); await GC.sleep(750);
+      let opts=p.hand.filter(playable);
+      while(!opts.length&&yard.length){ p.hand.push(yard.shift()); opts=p.hand.filter(playable); GC.combo(p.name+' pioche.'); renderBoard(); await GC.sleep(350); }
+      if(!opts.length){ GC.combo(p.name+' passe.'); return {passed:true}; }
+      opts.sort((a,b)=>pip(b)-pip(a)); const t=opts[0]; const side=canPlay(t,R)?'R':'L';
+      await place(t,side, async tt=>Math.min(tt.a,tt.b));
+      p.hand.splice(p.hand.indexOf(t),1);
+      GC.combo(p.name+' pose le '+t.a+'-'+t.b+(isMatador(t)?' (matador)':'')+'.'); GC.play(); renderBoard(); await GC.sleep(550);
+      return {passed:false};
+    }
+
+    let starter=0,bv=-1,bt=null;
+    P.forEach((p,i)=>p.hand.forEach(t=>{const v=(t.a===t.b?100:0)+pip(t);if(v>bv){bv=v;starter=i;bt=t;}}));
+    chain=[{a:bt.a,b:bt.b}]; L=bt.a; R=bt.b; P[starter].hand.splice(P[starter].hand.indexOf(bt),1);
+    GC.say((P[starter].ai?P[starter].name:'Vous')+' ouvre avec le '+bt.a+'-'+bt.b+'.');
+    refresh(-1); renderBoard(); await GC.sleep(1200);
+    if(P[starter].hand.length===0) return GC.gameOver('Victoire de '+P[starter].name+' !','Domino dès l\u2019ouverture !');
+    let turn=(starter+1)%N, passes=0;
+    while(true){
+      const p=P[turn]; const res=p.ai?await aiTurn(p):await humanTurn(p);
+      refresh(-1);
+      if(res.passed){ passes++; if(passes>=N){
+        const scored=P.map(x=>({x,s:x.hand.reduce((a,t)=>a+pip(t),0)})).sort((a,b)=>a.s-b.s);
+        return GC.gameOver('Victoire de '+scored[0].x.name+' !','Jeu bloqué — le plus petit total gagne :<br>'+scored.map(s=>s.x.name+' : '+s.s+' points').join('<br>')); } }
+      else { passes=0; if(p.hand.length===0) return GC.gameOver('Victoire de '+p.name+' !', p.name+' pose sa dernière tuile — domino !'); }
+      await GC.sleep(300); turn=(turn+1)%N;
+    }
+  }
+});
+</script>
+</body>
+</html>

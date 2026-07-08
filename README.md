@@ -26,8 +26,9 @@ avec la Lune) **Le Pouilleux / Mistigri** (2-4 j.) **La Scopa** (2-4 j., capture
 américain en réseau ; les autres jeux de cartes en réseau viendront ensuite.
 
 ## Dominos 🁢
-Le **jeu de dominos double-six** (`domino-classique.html`), 2-4 joueurs, contre l'ordinateur
-ou à tour de rôle, avec **10 styles de tuiles** (`www/dominos/<style>/<a>-<b>.webp`, découpés
+Trois jeux de dominos double-six, 2-4 joueurs : **Le Domino** (block/draw, `domino-classique.html`),
+**Le Tout-Cinq / All Fives** (score sur les multiples de 5, `domino-toutcinq.html`) et **Le Matador**
+(bouts qui totalisent 7, matadors jokers, `domino-matador.html`), avec **10 styles de tuiles** (`www/dominos/<style>/<a>-<b>.webp`, découpés
 de vos planches) sélectionnables en jeu. Module réutilisable `www/dominos.js`.
 
 ## Menu par catégories

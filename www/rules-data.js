@@ -225,4 +225,22 @@ ses tuiles</b> gagne. Si le jeu se bloque, le plus petit total de points en main
 <p><b>Le tour.</b> Posez une tuile dont l'une des valeurs correspond \u00e0 l'un des <b>deux
 bouts</b> de la cha\u00eene (gauche ou droite). Si vous ne pouvez pas jouer, <b>piochez</b>
 jusqu'\u00e0 le pouvoir ; si la pioche est vide, vous <b>passez</b>.</p>`},
+toutcinq: { title:'Le Tout-Cinq (All Fives)', html:`
+<p>Dominos double-six, 2 \u00e0 4 joueurs. Comme au domino classique (on pose sur les deux
+bouts, on pioche sinon), mais on <b>marque des points</b>. Premier \u00e0 <b>100</b> gagne.</p>
+<p><b>Marquer :</b> apr\u00e8s votre pose, si la <b>somme des deux bouts</b> de la cha\u00eene est
+un multiple de 5 (5, 10, 15, 20\u2026), vous marquez cette somme. Un double compte double
+(un 5-5 \u00e0 un bout vaut 10).</p>
+<p><b>Fin de manche :</b> celui qui sort (ou, si bloqu\u00e9, celui qui a le moins de points en
+main) marque le total des tuiles adverses, arrondi au multiple de 5 le plus proche.</p>`},
+
+matador: { title:'Le Matador', html:`
+<p>Dominos double-six, 2 \u00e0 4 joueurs. Variante o\u00f9 l'on ne raccorde pas les valeurs
+\u00e9gales : la tuile et le bout doivent <b>totaliser 7</b>. Premier \u00e0 tout poser gagne.</p>
+<p>Sur un bout qui montre 3, il faut donc jouer une tuile ayant un <b>4</b> (3+4=7) ; sur un
+5, il faut un 2, etc. Un bout \u00e0 <b>blanc (0)</b> ne peut \u00eatre continu\u00e9 que par un
+<b>matador</b>.</p>
+<p><b>Les matadors</b> (les tuiles qui totalisent 7 : 6-1, 5-2, 4-3, et le double-blanc 0-0)
+sont des <b>jokers</b> : ils se posent sur n'importe quel bout, et vous choisissez alors la
+valeur expos\u00e9e. Ils sont surlign\u00e9s en rouge dans votre main.</p>`},
 };
