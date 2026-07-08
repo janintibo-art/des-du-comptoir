@@ -40,7 +40,12 @@ avec une barre de navigation qui saute à chaque section.
 L'**Awalé / Oware** (`awale-oware.html`), jeu de semailles à 2 joueurs (famille mancala),
 contre une **IA négamax** (alpha-bêta) ou à tour de rôle. Plateaux et graines détourés de vos
 images (`www/awale/boards`, `www/awale/seeds`), rendu par `www/awale.js` — **2 plateaux** et
-**14 modèles de graines** au choix. Logique validée (48 graines conservées, terminaison).
+**14 modèles de graines** au choix. Trois jeux de la famille : **l'Awalé/Oware** (`awale-oware.html`),
+la variante **« prise 2-3-4 »** (`awale-234.html`) et **le Kalah** (`awale-kalah.html`, mancala où l'on
+sème dans son grenier, avec tours-bonus). Logique validée (48 graines conservées, terminaison).
+
+Le tutoriel (`regles.html`) affiche désormais, sous chaque règle, une **note historique** sur l'origine
+du jeu (`origins-data.js`).
 
 ## Multi-téléphones 🌐
 Le **Salon** (`salon.html`) connecte 2 à 4 téléphones : l'hôte crée une table, obtient

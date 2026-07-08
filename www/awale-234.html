@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Awalé 2-3-4</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+.awtoolbar{display:flex;justify-content:flex-end;gap:8px;align-items:center;margin-bottom:6px;font-size:13px;opacity:.85}
+.awtoolbar select{font-family:inherit;font-size:13px;background:rgba(20,20,16,.8);color:var(--cream);border:1px solid rgba(242,232,213,.3);border-radius:8px;padding:5px 8px}
+.awale-board{position:relative;width:100%;max-width:660px;margin:0 auto;background-size:contain;background-repeat:no-repeat;background-position:center;filter:drop-shadow(0 6px 16px rgba(0,0,0,.5))}
+.awale-pit{position:absolute;transform:translate(-50%,-50%);aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.awale-pit.play{cursor:pointer;box-shadow:0 0 0 3px var(--accent),0 0 16px 2px rgba(224,163,76,.6);background:rgba(224,163,76,.10)}
+.awale-pit.play:hover{background:rgba(224,163,76,.2)}
+.awale-pit .seeds{position:absolute;inset:0}
+.awale-pit .seed{position:absolute;width:34%;transform:translate(-50%,-50%);filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));pointer-events:none}
+.awale-pit .cnt{position:relative;z-index:2;font-weight:bold;font-size:clamp(15px,3.4vw,22px);color:#fff;text-shadow:0 1px 3px #000,0 0 5px #000}
+.awale-store{position:absolute;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.awale-store .stlbl{font-size:11px;opacity:.8;color:var(--cream);text-shadow:0 1px 2px #000}
+.awale-store .stcnt{font-weight:bold;font-size:clamp(20px,5vw,30px);color:#fff;text-shadow:0 1px 3px #000,0 0 6px #000}
+.awale-store.turn .stcnt{color:var(--accent)}
+</style>
+<script src="awale.js"></script>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+/* ---- moteur Oware ---- */
+const ownRange=p=> p===0?[0,1,2,3,4,5]:[6,7,8,9,10,11];
+const isOpp=(p,i)=> p===0? i>=6 : i<6;
+function initState(){ return {pits:new Array(12).fill(4), stores:[0,0], turn:0}; }
+function sideSum(pits,p){ let s=0; ownRange(p).forEach(i=>s+=pits[i]); return s; }
+function sow(pits,i){ const np=pits.slice(); let seeds=np[i]; np[i]=0; let pos=i;
+  while(seeds>0){ pos=(pos+1)%12; if(pos===i) continue; np[pos]++; seeds--; } return {pits:np,last:pos}; }
+function captures(pits,p,last){ const list=[]; let c=last;
+  while(isOpp(p,c) && (pits[c]===2||pits[c]===3||pits[c]===4)){ list.push(c); c=(c-1+12)%12; }
+  const oppTot=ownRange(1-p).reduce((s,i)=>s+pits[i],0); const grab=list.reduce((s,i)=>s+pits[i],0);
+  if(grab===oppTot) return []; return list; }
+function moveFeeds(pits,i){ const {pits:np}=sow(pits,i); return sideSum(np, (i<6?0:1)===0?1:0)>0; }
+function legalMoves(s){ const p=s.turn; const raw=ownRange(p).filter(i=>s.pits[i]>0);
+  if(sideSum(s.pits,1-p)===0){ const f=raw.filter(i=>moveFeeds(s.pits,i)); return {moves:f,raw}; }
+  return {moves:raw,raw}; }
+function applyMove(s,i){ const p=s.turn; const r=sow(s.pits,i); const caps=captures(r.pits,p,r.last);
+  let g=0; caps.forEach(c=>{ g+=r.pits[c]; r.pits[c]=0; }); const stores=s.stores.slice(); stores[p]+=g;
+  return {pits:r.pits, stores, turn:1-p}; }
+function terminalCollect(s){ const stores=s.stores.slice(); const pits=s.pits.slice(); const {raw}=legalMoves(s);
+  if(raw.length===0){ const opp=1-s.turn; for(let i=0;i<12;i++){ stores[opp]+=pits[i]; pits[i]=0; } }
+  else { [0,1].forEach(p=>ownRange(p).forEach(i=>{ stores[p]+=pits[i]; pits[i]=0; })); }
+  return {pits, stores, turn:s.turn, over:true}; }
+function isOver(s){ if(s.over) return true; if(s.stores[0]>24||s.stores[1]>24) return true;
+  if(s.stores[0]===24&&s.stores[1]===24) return true; return legalMoves(s).moves.length===0; }
+/* ---- IA négamax alpha-bêta ---- */
+function nega(s,depth,alpha,beta){
+  if(isOver(s)){ const f=s.over?s:terminalCollect(s); const p=s.turn; return (f.stores[p]-f.stores[1-p])*100; }
+  if(depth===0){ const p=s.turn; return (s.stores[p]-s.stores[1-p])*10 + (sideSum(s.pits,p)-sideSum(s.pits,1-p)); }
+  const {moves}=legalMoves(s); if(!moves.length){ const f=terminalCollect(s); const p=s.turn; return (f.stores[p]-f.stores[1-p])*100; }
+  let best=-1e9;
+  for(const mv of moves){ const v=-nega(applyMove(s,mv),depth-1,-beta,-alpha); if(v>best)best=v; if(best>alpha)alpha=best; if(alpha>=beta)break; }
+  return best; }
+function pickAI(s,depth){ const {moves}=legalMoves(s); let best=moves[0],bv=-1e9;
+  for(const mv of moves){ const v=-nega(applyMove(s,mv),depth-1,-1e9,1e9); if(v>bv){bv=v;best=mv;} } return best; }
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+CardShell({
+  id:'awale234', title:"AWALÉ 2-3-4", minPlayers:2, maxPlayers:2, skinModule:Awale,
+  run: async GC => {
+    const P=GC.players, names=[P[0].name,P[1].name];
+    const humans=P.filter(p=>!p.ai).length;
+    const depth = GC.aiRisk<0.8?3 : (GC.aiRisk>1.1?7:5);
+    let s=initState(), curLegal=null, curOnPit=null;
+
+    function scores(){ GC.scores([
+      {label:names[0],value:s.stores[0],active:s.turn===0},
+      {label:names[1],value:s.stores[1],active:s.turn===1}]); }
+    function drawBoard(){
+      const c=GC.center('');
+      const bar=document.createElement('div'); bar.className='awtoolbar';
+      const lab=document.createElement('label'); lab.textContent='Graines : ';
+      const sel=document.createElement('select'); Awale.buildSeedSelect(sel, drawBoard); lab.appendChild(sel);
+      bar.appendChild(lab); c.appendChild(bar);
+      const board=document.createElement('div'); c.appendChild(board);
+      Awale.render(board, s, {names, legalPits:curLegal, onPit: curOnPit});
+    }
+    GC._rerender=drawBoard;
+
+    GC.say('Semez vos graines dans le sens anti-horaire. Capturez les trous adverses qui atteignent 2, 3 ou 4 !');
+    scores(); drawBoard(); await GC.sleep(1000);
+
+    let guard=0;
+    while(!isOver(s)){
+      if(++guard>250){ s=terminalCollect(s); break; }
+      const p=s.turn, player=P[p];
+      const {moves}=legalMoves(s);
+      if(!moves.length){ s=terminalCollect(s); break; }
+      scores();
+      if(player.ai){
+        curLegal=null; curOnPit=null; drawBoard();
+        GC.say(player.name+' réfléchit…'); await GC.sleep(650);
+        const mv=pickAI(s,depth); const disp=(p===0?mv+1:mv-5); const before=s.stores[p];
+        s=applyMove(s,mv); const gain=s.stores[p]-before;
+        drawBoard(); GC.combo(player.name+' sème le trou '+disp+(gain?(' et capture '+gain+' graines !'):'.'));
+        await GC.sleep(750);
+      } else {
+        if(humans>1) await GC.handOff(player.name);
+        curLegal=new Set(moves);
+        GC.say('À vous, '+player.name+' — touchez un de vos trous (surlignés).');
+        const mv=await new Promise(res=>{ curOnPit=i=>{ curOnPit=null; res(i); }; drawBoard(); });
+        curLegal=null; const disp=(p===0?mv+1:mv-5); const before=s.stores[p];
+        s=applyMove(s,mv); const gain=s.stores[p]-before;
+        drawBoard(); GC.combo(gain?('Vous capturez '+gain+' graines !'):'Vous semez le trou '+disp+'.');
+        await GC.sleep(600);
+      }
+    }
+    if(s.pits.reduce((a,b)=>a+b,0)>0) s=terminalCollect(s);
+    scores(); drawBoard();
+    const a=s.stores[0], b=s.stores[1];
+    if(a===b) return GC.gameOver('Match nul !', 'Égalité parfaite : '+a+' graines chacun.');
+    const wi=a>b?0:1;
+    return GC.gameOver('Victoire de '+names[wi]+' !',
+      names[0]+' : <b>'+a+'</b> graines<br>'+names[1]+' : <b>'+b+'</b> graines');
+  }
+});
+</script>
+</body>
+</html>

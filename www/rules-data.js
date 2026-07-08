@@ -269,4 +269,20 @@ pr\u00e9c\u00e9dents contigus \u00e0 2 ou 3. Une prise qui viderait <b>tout</b> 
 est refus\u00e9e (les graines restent).</p>
 <p><b>Nourrir.</b> Si l'adversaire n'a plus de graines, vous <b>devez</b> jouer un coup qui lui
 en donne. Sinon la partie s'ach\u00e8ve et chacun r\u00e9colte son camp.</p>`},
+kalah: { title:'Le Kalah', html:`
+<p>Version « occidentale » du mancala, \u00e0 2 joueurs, sur le m\u00eame plateau (12 trous +
+2 greniers, 4 graines par trou). Le plus de graines dans son grenier gagne.</p>
+<p><b>Semer.</b> Prenez un de vos trous et semez anti-horaire, <b>en incluant votre propre
+grenier</b> (\u00e0 votre droite) mais en <b>sautant</b> celui de l'adversaire.</p>
+<p><b>Rejouer :</b> si votre derni\u00e8re graine tombe dans <b>votre grenier</b>, vous
+<b>rejouez</b> aussit\u00f4t.</p>
+<p><b>Capturer :</b> si votre derni\u00e8re graine atterrit dans un de <b>vos</b> trous
+<b>vide</b>, vous raflez cette graine <b>et toutes celles du trou d'en face</b>.</p>
+<p>La partie s'arr\u00eate d\u00e8s qu'un camp est vide ; l'autre joueur ramasse ses graines
+restantes.</p>`},
+
+awale234: { title:'Awalé « prise 2-3-4 »', html:`
+<p>Variante plus vive de l'Awal\u00e9. Toutes les r\u00e8gles sont identiques, mais on
+<b>capture aussi les trous qui atteignent 4</b> (en plus de 2 et 3). Les prises sont donc
+plus fr\u00e9quentes et les parties plus rapides \u2014 id\u00e9al pour d\u00e9buter.</p>`},
 };

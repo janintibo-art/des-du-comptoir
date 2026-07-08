@@ -119,3 +119,8 @@ nav.cats .catbtn small{opacity:.6;font-weight:normal;margin-left:4px}
 nav.cats .catbtn:hover{border-color:var(--accent);color:var(--accent)}
 .secttl{text-align:center;color:var(--accent);letter-spacing:.12em;margin:26px 0 4px;font-size:22px}
 section[id]{scroll-margin-top:64px}
+
+/* ---- Notes historiques dans le tutoriel ---- */
+.origin{margin-top:16px;padding:12px 14px;border-left:3px solid var(--accent);background:rgba(224,163,76,.08);border-radius:0 8px 8px 0}
+.origin h4{color:var(--accent);margin:0 0 4px;font-size:14px;letter-spacing:.03em}
+.origin p{margin:0;opacity:.9;font-size:14.5px;line-height:1.5}

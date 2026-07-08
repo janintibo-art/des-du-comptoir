@@ -6,6 +6,7 @@
 <link rel="icon" href="favicon.png">
 <link rel="stylesheet" href="style.css">
 <script src="rules-data.js"></script>
+<script src="origins-data.js"></script>
 <style>
 .book{max-width:760px;margin:0 auto;padding:24px 16px 60px;text-align:left}
 .book h1{color:var(--accent);letter-spacing:.14em;text-align:center;margin:18px 0 6px}
@@ -32,7 +33,7 @@
 </div>
 <script>
 'use strict';
-const ORDER=['general','salon','bataille','president','huit','tarot','hearts','pouilleux','scopa','menteur','rami','domino','toutcinq','matador','train','awale','421','10000','yams','poker','zanzibar','mexico','chicago','cochon','passedix','boston','boite','martinetti'];
+const ORDER=['general','salon','bataille','president','huit','tarot','hearts','pouilleux','scopa','menteur','rami','domino','toutcinq','matador','train','awale','awale234','kalah','421','10000','yams','poker','zanzibar','mexico','chicago','cochon','passedix','boston','boite','martinetti'];
 const nav=document.getElementById('nav'), content=document.getElementById('content');
 ORDER.forEach(id=>{
   const r=window.RULES[id]; if(!r) return;
@@ -41,7 +42,8 @@ ORDER.forEach(id=>{
   nav.appendChild(a);
   const s=document.createElement('section');
   s.id='r-'+id;
-  s.innerHTML='<h2>'+r.title+'</h2>'+r.html;
+  const o=(window.ORIGINS&&window.ORIGINS[id])?('<div class="origin"><h4>🏛️ Un peu d\'histoire</h4><p>'+window.ORIGINS[id]+'</p></div>'):'';
+  s.innerHTML='<h2>'+r.title+'</h2>'+r.html+o;
   content.appendChild(s);
 });
 </script>
