@@ -206,4 +206,15 @@ cette valeur \u2014 en disant la v\u00e9rit\u00e9\u2026 ou en <b>bluffant</b> av
 <p><b>Menteur !</b> Apr\u00e8s chaque annonce, les autres peuvent crier « Menteur ! ». On
 retourne les cartes pos\u00e9es : si le joueur mentait, <b>il ramasse tout le tas</b> ; s'il
 disait vrai, c'est le <b>douteur</b> qui ramasse. Le ramasseur relance \u00e0 l'As.</p>`},
+rami: { title:'Le Rami', html:`
+<p>52 cartes, 2 \u00e0 4 joueurs. Le premier \u00e0 <b>vider sa main</b> gagne. Si la pioche
+s'\u00e9puise, c'est le joueur avec le <b>moins de cartes non combin\u00e9es</b> qui l'emporte.</p>
+<p><b>Combinaisons :</b> le <b>brelan</b> (3 ou 4 cartes de m\u00eame valeur, couleurs
+diff\u00e9rentes) et la <b>suite</b> (au moins 3 cartes qui se suivent dans la m\u00eame couleur,
+l'As \u00e9tant bas).</p>
+<p><b>Le tour.</b> 1) <b>Piochez</b> une carte (la pioche, ou la carte du dessus de la
+d\u00e9fausse). 2) <b>Posez</b> vos combinaisons sur la table et <b>\u00e9talez</b> des cartes sur
+les combinaisons d\u00e9j\u00e0 pos\u00e9es (les v\u00f4tres ou celles des autres). 3) <b>D\u00e9faussez</b>
+une carte pour finir votre tour.</p>
+<p>Le nombre de cartes distribu\u00e9es : 10 \u00e0 deux joueurs, 7 \u00e0 trois ou quatre.</p>`},
 };

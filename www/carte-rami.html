@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Rami</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+.ramitop{display:flex;gap:18px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+.pilebox{display:flex;flex-direction:column;align-items:center;gap:4px}
+.pilebox .lbl{font-size:12px;opacity:.6}
+.melds{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:8px;max-height:34vh;overflow:auto}
+.meld{display:flex;gap:3px;justify-content:center;flex-wrap:wrap}
+.meld .pcard{--ch:clamp(56px,11vh,84px)}
+.meldlabel{font-size:11px;opacity:.5;text-align:center;margin-bottom:2px}
+#cCenter{align-items:flex-start}
+</style>
+<script src="cards.js"></script>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+const RV={A:1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,V:11,D:12,R:13};
+const RS=['A','2','3','4','5','6','7','8','9','10','V','D','R'];
+function dwVal(c){ return c.r==='A'?1 : (RV[c.r]>=10?10:RV[c.r]); }
+function isSet(cs){ if(cs.length<3||cs.length>4) return false; const r=cs[0].r;
+  if(!cs.every(c=>c.r===r)) return false; return new Set(cs.map(c=>c.s)).size===cs.length; }
+function isRun(cs){ if(cs.length<3) return false; const s=cs[0].s;
+  if(!cs.every(c=>c.s===s)) return false; const vs=cs.map(c=>RV[c.r]).sort((a,b)=>a-b);
+  for(let i=1;i<vs.length;i++) if(vs[i]!==vs[i-1]+1) return false; return true; }
+function isMeld(cs){ return isSet(cs)||isRun(cs); }
+function pushRuns(res,run){ for(let len=run.length;len>=3;len--) for(let i=0;i+len<=run.length;i++) res.push(run.slice(i,i+len)); }
+function candidateMelds(cards){ const res=[]; const byR={}; cards.forEach(c=>(byR[c.r]=byR[c.r]||[]).push(c));
+  Object.values(byR).forEach(g=>{ const u=[],seen=new Set(); g.forEach(c=>{ if(!seen.has(c.s)){seen.add(c.s);u.push(c);} }); if(u.length>=3) res.push(u.slice(0,4)); });
+  const byS={}; cards.forEach(c=>(byS[c.s]=byS[c.s]||[]).push(c));
+  Object.values(byS).forEach(g=>{ const u=[],seen=new Set(); g.forEach(c=>{ if(!seen.has(RV[c.r])){seen.add(RV[c.r]);u.push(c);} }); u.sort((a,b)=>RV[a.r]-RV[b.r]);
+    let run=[u[0]]; for(let i=1;i<u.length;i++){ if(RV[u[i].r]===RV[u[i-1].r]+1) run.push(u[i]); else { if(run.length>=3) pushRuns(res,run); run=[u[i]]; } } if(run.length>=3) pushRuns(res,run); });
+  return res; }
+function findMelds(cards){ let cand=candidateMelds(cards).filter(isMeld); cand.sort((a,b)=>b.length-a.length);
+  const used=new Set(),ch=[]; const k=c=>c.r+c.s;
+  for(const m of cand){ if(m.some(c=>used.has(k(c)))) continue; m.forEach(c=>used.add(k(c))); ch.push(m); } return ch; }
+function deadwood(cards){ const m=findMelds(cards),u=new Set(); m.forEach(x=>x.forEach(c=>u.add(c.r+c.s)));
+  return cards.filter(c=>!u.has(c.r+c.s)); }
+function dwSum(cards){ return deadwood(cards).reduce((s,c)=>s+dwVal(c),0); }
+function canExtend(meld,card){ if(isSet(meld)) return meld[0].r===card.r && !meld.some(c=>c.s===card.s) && meld.length<4;
+  if(isRun(meld)){ if(card.s!==meld[0].s) return false; const vs=meld.map(c=>RV[c.r]),mn=Math.min(...vs),mx=Math.max(...vs);
+    return RV[card.r]===mn-1||RV[card.r]===mx+1; } return false; }
+function sortRun(m){ if(isRun(m)) m.sort((a,b)=>RV[a.r]-RV[b.r]); return m; }
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+CardShell({
+  id:'rami', title:'LE RAMI', minPlayers:2, maxPlayers:4,
+  run: async GC => {
+    const P=GC.players, N=P.length;
+    const deck=Cards.shuffle(Cards.deck());
+    const per=N===2?10:7;
+    P.forEach(p=> p.hand=deck.splice(0,per).sort(sortHand));
+    let discard=[deck.shift()], stock=deck, melds=[];
+    const rm=(h,c)=> h.splice(h.findIndex(x=>x.r===c.r&&x.s===c.s),1);
+    function sortHand(a,b){ const o=['pique','coeur','carreau','trefle'];
+      return o.indexOf(a.s)-o.indexOf(b.s) || RV[a.r]-RV[b.r]; }
+
+    const refresh=turn=>GC.scores(P.map((p,i)=>({label:p.name,value:p.hand.length,active:i===turn})));
+    const showOpps=(me,turn)=>GC.opponents(P.filter(p=>p!==me).map(p=>({name:p.name,count:p.hand.length,turn:P.indexOf(p)===turn})));
+    function renderCenter(opts){
+      opts=opts||{};
+      const wrap=document.createElement('div'); wrap.style.width='100%';
+      const top=document.createElement('div'); top.className='ramitop';
+      const sb=document.createElement('div'); sb.className='pilebox';
+      const stk=Cards.el({r:'A',s:'pique'},{back:true}); if(!stock.length) stk.style.opacity='.3';
+      sb.appendChild(stk); const sl=document.createElement('div'); sl.className='lbl'; sl.textContent='Pioche ('+stock.length+')'; sb.appendChild(sl);
+      const db=document.createElement('div'); db.className='pilebox';
+      const dtop=discard[discard.length-1];
+      const dc=dtop?Cards.el(dtop,{onClick:opts.onDiscardTake||null, disabled:!opts.onDiscardTake}):
+                    (()=>{const e=document.createElement('div');e.textContent='(vide)';e.style.opacity='.5';return e;})();
+      db.appendChild(dc); const dl=document.createElement('div'); dl.className='lbl'; dl.textContent='Défausse'; db.appendChild(dl);
+      top.appendChild(sb); top.appendChild(db); wrap.appendChild(top);
+      if(melds.length){ const mc=document.createElement('div'); mc.className='melds';
+        melds.forEach(m=>{ const row=document.createElement('div'); row.className='meld';
+          sortRun(m).forEach(c=> row.appendChild(Cards.el(c,{}))); mc.appendChild(row); });
+        wrap.appendChild(mc); }
+      GC.center(wrap);
+    }
+    function renderHand(p, sel, onToggle){
+      const hand=document.getElementById('cHand'); hand.innerHTML='';
+      p.hand.forEach(card=>{ const el=Cards.el(card,{onClick:onToggle?()=>onToggle(card):null});
+        if(sel&&sel.includes(card)) el.classList.add('sel'); if(onToggle) el.classList.add('play'); hand.appendChild(el); });
+    }
+    function drawCard(p, fromDiscard){ if(fromDiscard) p.hand.push(discard.pop());
+      else p.hand.push(stock.shift()); p.hand.sort(sortHand); }
+    function autoLayoff(p){ let any=false,ch=true;
+      while(ch){ ch=false; for(const c of [...p.hand]){ for(const m of melds){ if(canExtend(m,c)){ m.push(c); rm(p.hand,c); ch=true; any=true; break; } } } }
+      return any; }
+
+    async function humanTurn(p){
+      await GC.handOff(p.name);
+      showOpps(p,P.indexOf(p)); refresh(P.indexOf(p));
+      // PIOCHE
+      const dtop=discard[discard.length-1];
+      GC.say('À vous, '+p.name+' — piochez la pile ou prenez '+(dtop?Cards.label(dtop):'—')+' à la défausse.');
+      renderHand(p,null,null);
+      const src=await new Promise(res=>{
+        renderCenter({onDiscardTake: dtop?()=>res('disc'):null});
+        GC.setButtons([{id:'stock',label:'Piocher la pile',primary:true, disabled:!stock.length}]);
+        GC.waitAction().then(id=>res(id));
+      });
+      GC.setButtons([]);
+      drawCard(p, src==='disc' && discard.length>0);
+      GC.play();
+      // ACTIONS (poser / étaler / défausser)
+      while(true){
+        let sel=[];
+        const render=()=>{
+          renderCenter({});
+          renderHand(p, sel, card=>{ const i=sel.indexOf(card); i>=0?sel.splice(i,1):sel.push(card); render(); });
+          const meldOK=isMeld(sel);
+          const canLay=p.hand.some(c=>melds.some(m=>canExtend(m,c)));
+          GC.setButtons([
+            {id:'poser',label:'Poser'+(sel.length?' ('+sel.length+')':''),disabled:!meldOK},
+            {id:'etaler',label:'Étaler',disabled:!canLay},
+            {id:'defausser',label:'Défausser',primary:true},
+          ]);
+          GC.say('Posez des combinaisons (brelan ou suite ≥3), étalez sur la table, puis défaussez.');
+        };
+        render();
+        const a=await GC.waitAction();
+        if(a==='poser'){ const m=sel.slice(); sel.forEach(c=>rm(p.hand,c)); melds.push(sortRun(m));
+          GC.combo(p.name+' pose '+(isRun(m)?'une suite':'un brelan')+' !'); GC.play();
+          if(p.hand.length===0){ GC.setButtons([]); return true; } continue; }
+        if(a==='etaler'){ if(autoLayoff(p)){ GC.combo(p.name+' étale des cartes.'); GC.play(); }
+          if(p.hand.length===0){ GC.setButtons([]); return true; } continue; }
+        if(a==='defausser') break;
+      }
+      // DÉFAUSSE
+      GC.setButtons([]);
+      GC.say('Touchez la carte à défausser.');
+      renderCenter({});
+      const card=await new Promise(res=> renderHand(p, null, c=>res(c)) );
+      rm(p.hand,card); discard.push(card); GC.play();
+      GC.combo(p.name+' défausse '+Cards.label(card)+'.');
+      return p.hand.length===0;
+    }
+
+    async function aiTurn(p){
+      showOpps(p,P.indexOf(p)); refresh(P.indexOf(p)); renderCenter({});
+      GC.say(p.name+' réfléchit…'); await GC.sleep(800);
+      const top=discard[discard.length-1];
+      const takeDisc = top && (dwSum(p.hand.concat([top]))<dwSum(p.hand) || melds.some(m=>canExtend(m,top)));
+      drawCard(p, takeDisc && discard.length>0);
+      GC.combo(p.name+(takeDisc?' prend '+Cards.label(top)+' à la défausse.':' pioche.')); GC.play();
+      renderCenter({}); await GC.sleep(700);
+      findMelds(p.hand).forEach(m=>{ m.forEach(c=>rm(p.hand,c)); melds.push(sortRun(m));
+        GC.combo(p.name+' pose '+(isRun(m)?'une suite':'un brelan')+'.'); });
+      autoLayoff(p);
+      renderCenter({}); refresh(P.indexOf(p)); showOpps(p,P.indexOf(p));
+      await GC.sleep(700);
+      if(p.hand.length===0) return true;
+      const dw=deadwood(p.hand), pool=dw.length?dw:p.hand;
+      let worst=pool[0]; pool.forEach(c=>{ if(dwVal(c)>dwVal(worst)) worst=c; });
+      rm(p.hand,worst); discard.push(worst);
+      GC.combo(p.name+' défausse '+Cards.label(worst)+'.'); GC.play();
+      renderCenter({});
+      return p.hand.length===0;
+    }
+
+    GC.say('Formez des brelans (même valeur) et des suites (même couleur). Videz votre main !');
+    refresh(-1); renderCenter({}); await GC.sleep(1100);
+    let turn=0;
+    while(true){
+      const p=P[turn];
+      const out = p.ai ? await aiTurn(p) : await humanTurn(p);
+      refresh(-1);
+      if(out){ await GC.sleep(600);
+        return GC.gameOver('Victoire de '+p.name+' !', p.name+' a vidé sa main le premier !'); }
+      if(!stock.length){
+        // manche bornée : le plus petit total de cartes non combinées gagne
+        const scored=P.map(x=>({x, d:dwSum(x.hand)})).sort((a,b)=>a.d-b.d);
+        const w=scored[0].x;
+        return GC.gameOver('Victoire de '+w.name+' !',
+          'Pioche épuisée — le plus petit total gagne :<br>'+
+          scored.map(s=>s.x.name+' : '+s.d+' pts de cartes en main').join('<br>'));
+      }
+      await GC.sleep(400);
+      turn=(turn+1)%N;
+    }
+  }
+});
+</script>
+</body>
+</html>
