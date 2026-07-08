@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tournoi — Les Dés du Comptoir</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<script src="rules-data.js"></script>
+<style>
+.wrap{max-width:640px;margin:0 auto;padding:24px 16px 60px;text-align:center}
+.wrap h1{color:var(--accent);letter-spacing:.14em;margin:18px 0 8px}
+.wrap p{opacity:.8;line-height:1.55;margin-bottom:16px}
+.box{background:rgba(20,20,16,.6);border:1px solid rgba(242,232,213,.2);border-radius:12px;padding:20px;margin:14px 0}
+.box h2{color:var(--accent);margin-bottom:12px}
+table.stand{margin:0 auto;border-collapse:collapse;font-size:16px}
+table.stand td,table.stand th{padding:8px 18px;border-bottom:1px solid rgba(242,232,213,.15)}
+table.stand tr:first-child td{color:var(--accent);font-weight:bold}
+.list{opacity:.85;font-size:15px;line-height:1.7}
+.back{display:inline-block;margin:14px;color:var(--cream);text-decoration:none;opacity:.8}
+button.primary{font-size:17px;padding:12px 26px}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+</style>
+</head>
+<body class="menu">
+<a class="back" href="index.html">← Retour au comptoir</a>
+<div class="wrap">
+  <h1>🏆 LE TOURNOI DU COMPTOIR</h1>
+  <div id="content"></div>
+</div>
+<script>
+'use strict';
+const GAMES=['421','10000','yams','poker','zanzibar','mexico','chicago','cochon','passedix','boston','boite','martinetti'];
+const title=id=>(window.RULES[id]||{title:id}).title;
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
+          set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}},
+          del(k){try{localStorage.removeItem(k);}catch(e){}}};
+const box=document.getElementById('content');
+const t=LS.get('gc-tour',null);
+
+function pickGames(n){
+  const pool=[...GAMES];
+  const out=[];
+  while(out.length<n){ out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]); }
+  return out;
+}
+function start(n){
+  LS.set('gc-tour',{games:pickGames(n),idx:0,wins:{}});
+  location.href='game-'+LS.get('gc-tour').games[0]+'.html';
+}
+function menuNew(extra){
+  box.innerHTML=(extra||'')+`
+  <div class="box">
+    <h2>Nouveau tournoi</h2>
+    <p>Des jeux tirés au sort, une manche chacun, et un classement final.
+    Les joueurs configurés dans le dernier jeu sont repris automatiquement.</p>
+    <div class="row">
+      <button class="primary" onclick="start(3)">3 manches</button>
+      <button class="primary" onclick="start(5)">5 manches</button>
+    </div>
+  </div>`;
+}
+if(t && t.idx<t.games.length){
+  box.innerHTML=`
+  <div class="box">
+    <h2>Tournoi en cours — manche ${t.idx+1}/${t.games.length}</h2>
+    <p class="list">${t.games.map((g,i)=> (i<t.idx?'✅ ':i===t.idx?'▶ ':'· ')+title(g)).join('<br>')}</p>
+    <div class="row">
+      <button class="primary" onclick="location.href='game-${t.games[t.idx]}.html'">Reprendre la manche</button>
+      <button onclick="localStorage.removeItem('gc-tour');location.reload()">Abandonner</button>
+    </div>
+  </div>`;
+} else if(t){
+  const names=Object.keys(t.wins);
+  const rows=names.sort((a,b)=>t.wins[b]-t.wins[a])
+    .map(n=>'<tr><td>'+n.replace(/[<>&]/g,'')+'</td><td>'+t.wins[n]+'</td></tr>').join('');
+  menuNew(`
+  <div class="box">
+    <h2>Classement final</h2>
+    <p class="list">${t.games.map(g=>title(g)).join(' · ')}</p>
+    <table class="stand"><tr><th>Joueur</th><th>Manches</th></tr>${rows||'<tr><td colspan=2>Que des égalités !</td></tr>'}</table>
+  </div>`);
+  LS.del('gc-tour');
+} else menuNew();
+</script>
+</body>
+</html>

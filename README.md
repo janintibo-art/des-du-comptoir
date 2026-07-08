@@ -20,11 +20,18 @@ bistrot, jouables dans le navigateur et empaquetés en APK Android via GitHub Ac
 | Martinetti | 3 | 2-4 | La série de 1 à 12 |
 
 ## Fonctionnalités
-- **1 à 4 joueurs** sur le même appareil : chaque joueur peut être **humain ou ordinateur**.
+- **1 à 4 joueurs** sur le même appareil : chaque joueur peut être **humain ou ordinateur**,
+  avec trois niveaux d'IA (prudent / normal / audacieux).
 - **📳 Secouez le téléphone** pour lancer les dés (activez le bouton dans un jeu).
+- **🔊 Sons et vibrations** (synthèse Web Audio, aucun fichier) — coupables d'un bouton.
+- **📜 Journal de partie** : tout l'historique des coups à portée de pouce.
+- **🏆 Mode tournoi** : 3 ou 5 jeux tirés au sort, classement final (`tournoi.html`).
+- **📊 Statistiques** : parties et victoires par jeu (`stats.html`).
+- **🎨 12 styles de dés à débloquer** : 3 au départ, un nouveau à chaque victoire
+  (bouton « tout débloquer » dans les statistiques pour les impatients).
 - **❓ Tutoriel** : règles complètes dans `regles.html` et bouton Règles dans chaque jeu.
-- **12 styles de dés** (fantasy, néon, tribal, océan, bonbon, glace, gothique, cristal,
-  steampunk, biomécanique, street art, origami) — préférences mémorisées.
+- **Hors-ligne complet** : la CI embarque Babylon.js/Cannon.js dans l'APK ; pour un usage
+  local sans réseau, lancez `./get-libs.sh` une fois (sinon, repli automatique sur le CDN).
 
 ## Structure
 - `www/` — le jeu web complet (ouvrez `www/index.html` dans un navigateur).

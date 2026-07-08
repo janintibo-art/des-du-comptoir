@@ -4,8 +4,10 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Yams</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.babylonjs.com/cannon.js"></script>
-<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="lib/cannon.js"></script>
+<script>if(typeof CANNON==='undefined')document.write('<script src="https://cdn.babylonjs.com/cannon.js"><\/script>')</script>
+<script src="lib/babylon.js"></script>
+<script>if(typeof BABYLON==='undefined')document.write('<script src="https://cdn.babylonjs.com/babylon.js"><\/script>')</script>
 <script src="dice-engine.js"></script>
 <script src="rules-data.js"></script>
 <script src="game-core.js"></script>

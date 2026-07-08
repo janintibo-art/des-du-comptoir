@@ -4,8 +4,10 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zanzibar</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.babylonjs.com/cannon.js"></script>
-<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="lib/cannon.js"></script>
+<script>if(typeof CANNON==='undefined')document.write('<script src="https://cdn.babylonjs.com/cannon.js"><\/script>')</script>
+<script src="lib/babylon.js"></script>
+<script>if(typeof BABYLON==='undefined')document.write('<script src="https://cdn.babylonjs.com/babylon.js"><\/script>')</script>
 <script src="dice-engine.js"></script>
 <script src="rules-data.js"></script>
 <script src="game-core.js"></script>
@@ -58,7 +60,7 @@ GameShell({
         GC.combo(p.name+' : '+combo.name);
         if(p.ai){
           await GC.sleep(800);
-          const good = toBeat!=null ? combo.rank>toBeat : combo.rank>=700;
+          const good = toBeat!=null ? combo.rank>toBeat : combo.rank >= (GC.aiRisk<1?180:GC.aiRisk>1?800:700);
           if(good || combo.rank===1000 || throws>=maxT) break;
           resetKept();
           const c={}; dice.forEach(d=>c[d.value]=(c[d.value]||0)+1);

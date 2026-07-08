@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Statistiques — Les Dés du Comptoir</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<script src="rules-data.js"></script>
+<style>
+.wrap{max-width:640px;margin:0 auto;padding:24px 16px 60px;text-align:center}
+.wrap h1{color:var(--accent);letter-spacing:.14em;margin:18px 0 16px}
+table.st{margin:0 auto 20px;border-collapse:collapse;font-size:15px;width:100%;max-width:520px}
+table.st td,table.st th{padding:8px 12px;border-bottom:1px solid rgba(242,232,213,.15)}
+table.st th{color:var(--accent);letter-spacing:.06em}
+table.st td:first-child{text-align:left}
+.skins{opacity:.85;margin:14px 0;line-height:1.6}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:16px 0}
+.back{display:inline-block;margin:14px;color:var(--cream);text-decoration:none;opacity:.8}
+.muted{opacity:.6;font-size:14px}
+</style>
+</head>
+<body class="menu">
+<a class="back" href="index.html">← Retour au comptoir</a>
+<div class="wrap">
+  <h1>📊 VOS STATISTIQUES</h1>
+  <div id="content"></div>
+  <div class="row">
+    <button onclick="unlockAll()">🎨 Tout débloquer (styles de dés)</button>
+    <button onclick="if(confirm('Effacer toutes les statistiques ?')){localStorage.removeItem('gc-stats');location.reload();}">🗑 Réinitialiser les stats</button>
+  </div>
+  <p class="muted">Un style de dés se débloque à chaque victoire d'un joueur humain.</p>
+</div>
+<script>
+'use strict';
+const ORDER=['421','10000','yams','poker','zanzibar','mexico','chicago','cochon','passedix','boston','boite','martinetti'];
+const ALL=['fantasy','neon','ocean','gothic','steampunk','crystal','tribal','candy','ice','streetart','biomech','origami'];
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
+          set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+const stats=LS.get('gc-stats',{});
+const skins=LS.get('gc-skins',['fantasy','neon','ocean']);
+let played=0, won=0;
+let rows=ORDER.map(id=>{
+  const s=stats[id]||{played:0,won:0};
+  played+=s.played; won+=s.won;
+  const pct=s.played?Math.round(100*s.won/s.played)+' %':'—';
+  return '<tr><td>'+(window.RULES[id]||{title:id}).title+'</td><td>'+s.played+'</td><td>'+s.won+'</td><td>'+pct+'</td></tr>';
+}).join('');
+document.getElementById('content').innerHTML=
+  '<table class="st"><tr><th>Jeu</th><th>Parties</th><th>Victoires</th><th>%</th></tr>'+rows+
+  '<tr><th>Total</th><th>'+played+'</th><th>'+won+'</th><th>'+(played?Math.round(100*won/played)+' %':'—')+'</th></tr></table>'+
+  '<p class="skins">🎨 Styles de dés débloqués : <b>'+skins.length+' / '+ALL.length+'</b></p>';
+function unlockAll(){ LS.set('gc-skins', ALL); location.reload(); }
+</script>
+</body>
+</html>

@@ -81,3 +81,15 @@ git push
 La copie préserve votre dossier `.git` : l'historique et le lien GitHub restent intacts.
 GitHub Actions reconstruit l'APK automatiquement après le push (`gh run watch`, puis
 `gh run download -n des-du-comptoir-apk -D ~/storage/downloads`).
+
+## Rendre le jeu 100 % hors-ligne en local (facultatif)
+
+L'APK construit par GitHub Actions est déjà autonome. Pour que la version web locale
+fonctionne aussi sans réseau :
+
+```bash
+cd ~/des-du-comptoir
+./get-libs.sh
+```
+
+Les deux bibliothèques sont ignorées par git (téléchargées par la CI au build).
