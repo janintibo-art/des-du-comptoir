@@ -186,4 +186,15 @@ gagne ; celui qui reste avec le Pouilleux \u00e0 la fin a perdu.</p>
 valeur). Puis, chacun \u00e0 son tour, on <b>pioche une carte cach\u00e9e</b> chez le voisin : si
 elle compl\u00e8te une paire, on la jette. On continue jusqu'\u00e0 ce qu'il ne reste qu'un joueur,
 tenant la dame solitaire.</p>`},
+scopa: { title:'La Scopa', html:`
+<p>Jeu italien \u00e0 40 cartes (on retire les 8, 9 et 10), 2 \u00e0 4 joueurs. On <b>ramasse</b>
+des cartes de la table, et on marque des points \u00e0 la fin de chaque donne. Premier \u00e0
+<b>11 points</b>.</p>
+<p><b>Valeurs :</b> As = 1, 2 \u00e0 7 \u00e0 leur valeur, Valet = 8, Dame = 9, Roi = 10.</p>
+<p><b>Jouer.</b> Posez une carte : si elle a la m\u00eame valeur qu'une carte de la table, ou
+si elle \u00e9gale la <b>somme</b> de plusieurs cartes, vous les ramassez (avec la v\u00f4tre). Une
+carte identique est prioritaire sur une somme. Sinon, la carte reste sur la table.</p>
+<p><b>La scopa (\ud83e\uddf9) :</b> ramasser <b>toute la table</b> d'un coup rapporte 1 point
+bonus. En fin de donne, on compte : le plus de <b>cartes</b> (+1), le plus de <b>deniers</b>
+(carreau, +1), le <b>7 de carreau</b> « settebello » (+1), plus les scope.</p>`},
 };

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Scopa</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+.tablewrap{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
+.tablelabel{font-size:13px;opacity:.6;letter-spacing:.1em}
+.tablecards{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;min-height:10px}
+#cCenter .pcard.tsel{outline:4px solid var(--accent);outline-offset:-3px;transform:translateY(-8px)}
+#cCenter .pcard.tdim{opacity:.4}
+</style>
+<script src="cards.js"></script>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+const SVAL={A:1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,V:8,D:9,R:10};
+function sval(c){ return SVAL[c.r]; }
+function subsetsSum(vals, target){ const n=vals.length,out=[];
+  for(let m=1;m<(1<<n);m++){ let s=0,set=[]; for(let i=0;i<n;i++) if(m&(1<<i)){s+=vals[i];set.push(i);} if(s===target)out.push(set);} return out; }
+function captureOptions(table, v){ const singles=[]; table.forEach((c,i)=>{ if(sval(c)===v) singles.push([i]); });
+  if(singles.length) return singles; return subsetsSum(table.map(sval), v); }
+function isCoin(c){ return c.s==='carreau'; }
+function isSette(c){ return c.r==='7'&&c.s==='carreau'; }
+function aiChoose(hand, table){
+  let best=null,bs=-1;
+  hand.forEach((card,ci)=>{ const opts=captureOptions(table,sval(card));
+    opts.forEach(cap=>{ const cards=cap.map(i=>table[i]); let sc=10+cards.length;
+      if(cap.length===table.length) sc+=50;
+      if(cards.some(isSette)) sc+=20; sc+=cards.filter(isCoin).length*3; sc+=cards.filter(c=>c.r==='7').length*4;
+      if(sc>bs){bs=sc;best={ci,cap};} }); });
+  if(best) return best;
+  let wi=0,ws=1e9; hand.forEach((card,ci)=>{ const s=sval(card)+(isCoin(card)?20:0)+(card.r==='7'?30:0); if(s<ws){ws=s;wi=ci;} });
+  return {ci:wi,cap:null};
+}
+const sameSet=(a,b)=>a.length===b.length&&[...a].sort((x,y)=>x-y).every((v,i)=>v===[...b].sort((x,y)=>x-y)[i]);
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+const TARGET=11;
+CardShell({
+  id:'scopa', title:'LA SCOPA', minPlayers:2, maxPlayers:4,
+  run: async GC => {
+    const P=GC.players, N=P.length;
+    P.forEach(p=> p.total=0);
+    const totals=turn=>GC.scores(P.map((p,i)=>({label:p.name,value:p.total,active:i===turn})));
+
+    async function playDeal(){
+      const deck=Cards.shuffle(Cards.deck().filter(c=>!['8','9','10'].includes(c.r))); // 40 cartes
+      let table=deck.splice(0,4);
+      P.forEach(p=>{ p.pile=[]; p.scope=0; p.hand=[]; });
+      let last=0, turn=(dealer+1)%N;
+
+      const showOpps=(me,tn)=>GC.opponents(P.filter(p=>p!==me).map(p=>({
+        name:p.name, count:p.hand.length, tag:(p.scope?('🧹'+p.scope):''), turn:P.indexOf(p)===tn})));
+      function renderTable(opts){ // opts:{selectable:Set part-of-option, selected:Set, onToggle}
+        const wrap=document.createElement('div'); wrap.className='tablewrap';
+        const lab=document.createElement('div'); lab.className='tablelabel'; lab.textContent='TABLE ('+table.length+')';
+        const row=document.createElement('div'); row.className='tablecards';
+        table.forEach((c,i)=>{
+          const o=opts||{};
+          const can=o.selectable&&o.selectable.has(i);
+          const el=Cards.el(c,{onClick:(o.onToggle&&can)?()=>o.onToggle(i):null, disabled:!(o.onToggle&&can)});
+          if(o.selectable){ if(!can) el.classList.add('tdim'); if(o.selected&&o.selected.has(i)) el.classList.add('tsel'); }
+          row.appendChild(el);
+        });
+        wrap.appendChild(lab); wrap.appendChild(row); GC.center(wrap);
+      }
+      const moreToPlay=()=> deck.length>0 || P.some(p=>p.hand.length>0);
+      function doCapture(p, card, capIdx){
+        const cards=capIdx.map(i=>table[i]);
+        capIdx.slice().sort((a,b)=>b-a).forEach(i=>table.splice(i,1));
+        p.pile.push(card, ...cards); last=P.indexOf(p);
+        if(table.length===0 && moreToPlay()){ p.scope++; GC.combo(p.name+' fait une SCOPA ! 🧹'); GC.Snd.good(); }
+      }
+
+      totals(turn);
+      while(true){
+        // redistribuer quand toutes les mains sont vides
+        if(P.every(p=>p.hand.length===0)){
+          if(!deck.length) break;
+          for(let k=0;k<N;k++) P[(dealer+1+k)%N].hand=deck.splice(0,3);
+        }
+        const p=P[turn];
+        showOpps(p,turn); totals(turn);
+        if(p.hand.length===0){ turn=(turn+1)%N; continue; }
+        if(p.ai){
+          renderTable(null);
+          GC.say(p.name+' joue…'); await GC.sleep(750);
+          const mv=aiChoose(p.hand,table); const card=p.hand.splice(mv.ci,1)[0];
+          if(mv.cap){ GC.combo(p.name+' ramasse avec '+Cards.label(card)+'.'); doCapture(p,card,mv.cap); }
+          else { table.push(card); GC.combo(p.name+' pose '+Cards.label(card)+'.'); }
+          GC.play(); renderTable(null); await GC.sleep(650);
+        } else {
+          await GC.handOff(p.name);
+          await humanPlay(p, table, renderTable, doCapture);
+        }
+        turn=(turn+1)%N;
+      }
+      // fin de donne : reste de la table au dernier qui a capturé
+      if(table.length){ P[last].pile.push(...table); table=[]; }
+      // comptage
+      const cardCount=p=>p.pile.length, coinCount=p=>p.pile.filter(isCoin).length;
+      const most=(fn)=>{ const vals=P.map(fn); const mx=Math.max(...vals);
+        const who=P.filter((p,i)=>vals[i]===mx); return who.length===1?who[0]:null; };
+      const dealScore=P.map(p=>({p, pts:p.scope}));
+      const mc=most(cardCount); if(mc) dealScore.find(d=>d.p===mc).pts++;
+      const mo=most(coinCount); if(mo) dealScore.find(d=>d.p===mo).pts++;
+      const sb=P.find(p=>p.pile.some(isSette)); if(sb) dealScore.find(d=>d.p===sb).pts++;
+      dealScore.forEach(d=> d.p.total+=d.pts);
+      totals(-1);
+      GC.combo('Donne comptée.');
+      const lines=dealScore.map(d=> d.p.name+' +'+d.pts+' (🧹'+d.p.scope+
+        ((mc===d.p)?' · cartes':'')+((mo===d.p)?' · deniers':'')+((sb===d.p)?' · 7♦':'')+')');
+      GC.say(lines.join('  |  '));
+      dealer=(dealer+1)%N;
+      await GC.sleep(2600);
+    }
+
+    function pickHandCard(p){
+      return new Promise(res=>{
+        const hand=document.getElementById('cHand'); hand.innerHTML='';
+        GC.say('À vous, '+p.name+' — touchez une carte de votre main.');
+        p.hand.forEach(card=>{ const el=Cards.el(card,{onClick:()=>res(card)}); el.classList.add('play'); hand.appendChild(el); });
+      });
+    }
+    async function humanPlay(p, table, renderTable, doCapture){
+      renderTable(null); GC.setButtons([]);
+      while(true){
+        const card=await pickHandCard(p);
+        const rm=()=> p.hand.splice(p.hand.indexOf(card),1);
+        const opts=captureOptions(table, sval(card));
+        if(opts.length===0){
+          renderTable(null);
+          GC.say('Aucune prise avec '+Cards.label(card)+'.');
+          const a=await GC.ask([{id:'drop',label:'Poser '+Cards.label(card),primary:true},{id:'back',label:'Changer de carte'}]);
+          GC.setButtons([]); if(a==='back') continue;
+          table.push(card); rm(); GC.play(); return;
+        }
+        if(opts.length===1){
+          renderTable({selectable:new Set(table.map((_,i)=>i)), selected:new Set(opts[0]), onToggle:null});
+          GC.say('Prise avec '+Cards.label(card)+' ('+opts[0].map(i=>Cards.label(table[i])).join(' + ')+').');
+          const a=await GC.ask([{id:'take',label:'Ramasser',primary:true},{id:'back',label:'Changer de carte'}]);
+          GC.setButtons([]); if(a==='back') continue;
+          rm(); GC.play(); doCapture(p,card,opts[0]); return;
+        }
+        // plusieurs options : sélection libre sur la table
+        const partOf=new Set(); opts.forEach(o=>o.forEach(i=>partOf.add(i)));
+        const sel=new Set();
+        const refresh=()=>{
+          renderTable({selectable:partOf, selected:sel, onToggle:i=>{ sel.has(i)?sel.delete(i):sel.add(i); refresh(); }});
+          const cur=[...sel], sum=cur.reduce((s,i)=>s+sval(table[i]),0), ok=opts.some(o=>sameSet(o,cur));
+          GC.setButtons([{id:'take',label:'Ramasser ('+sum+'/'+sval(card)+')',primary:true,disabled:!ok},{id:'back',label:'Changer de carte'}]);
+        };
+        GC.say('Touchez les cartes à ramasser (somme = '+sval(card)+').');
+        refresh();
+        const a=await GC.waitAction();
+        GC.setButtons([]);
+        if(a==='back') continue;
+        rm(); GC.play(); doCapture(p,card,[...sel]); return;
+      }
+    }
+
+    let dealer=Math.floor(Math.random()*N);
+    GC.say('Scopa : ramassez en faisant la somme. Balayer la table = point bonus. Premier à 11 !');
+    totals(-1); await GC.sleep(1000);
+    while(!P.some(p=>p.total>=TARGET) || tie()){
+      await playDeal();
+      if(P.some(p=>p.total>=TARGET) && !tie()) break;
+      GC.combo('Scores : '+P.map(p=>p.name+' '+p.total).join(' · '));
+      await GC.sleep(1400);
+    }
+    function tie(){ const mx=Math.max(...P.map(p=>p.total)); return P.filter(p=>p.total===mx).length>1 && mx>=TARGET; }
+    const ranked=[...P].sort((a,b)=>b.total-a.total);
+    return GC.gameOver('Victoire de '+ranked[0].name+' !',
+      ranked.map(p=>p.name+' : '+p.total+' pts').join('<br>'));
+  }
+});
+</script>
+</body>
+</html>
