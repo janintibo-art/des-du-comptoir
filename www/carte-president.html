@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Président</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<style>
+.pcard{width:52px;height:74px;min-width:52px;background:#f7f2e6;border:1px solid #b9b09b;border-radius:8px;
+  color:#141410;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-family:inherit;cursor:pointer}
+.pcard .rk{font-size:17px;font-weight:bold} .pcard .st{font-size:20px;line-height:1}
+.pcard.red{color:#c2543f} .pcard.back{background:#33523f;border-color:#1d3328;color:var(--cream)}
+.pcard.img{padding:0;background:transparent;border:none;width:auto;min-width:0}
+.pcard.img img{height:74px;border-radius:6px;filter:drop-shadow(0 2px 5px rgba(0,0,0,.4))}
+.pcard.sel{transform:translateY(-12px);outline:3px solid var(--accent);outline-offset:-2px}
+.pcard.off{opacity:.4;cursor:default}
+#cHand{display:flex;gap:5px;overflow-x:auto;padding:14px 4px 4px;-webkit-overflow-scrolling:touch}
+.tablecards{display:flex;gap:8px}
+.tablecards .pcard{cursor:default}
+</style>
+<script src="cards.js"></script>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+/* ---- logique pure (testable hors navigateur) ---- */
+const PVAL={'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,V:11,D:12,R:13,A:14,'2':15};
+function groups(hand){ const m={}; hand.forEach(c=>{ (m[c.r]=m[c.r]||[]).push(c); }); return m; }
+function legalLeads(hand){ // tous les groupes possibles (par rang, taille 1..n)
+  const g=groups(hand), out=[];
+  Object.keys(g).forEach(r=>{ for(let n=1;n<=g[r].length;n++) out.push({r,n,val:PVAL[r]}); });
+  return out;
+}
+function legalFollows(hand,table){ // groupes de taille table.n et rang > table.val
+  const g=groups(hand), out=[];
+  Object.keys(g).forEach(r=>{ if(g[r].length>=table.n && PVAL[r]>table.val) out.push({r,n:table.n,val:PVAL[r]}); });
+  return out;
+}
+function aiChoose(hand, table, risk){
+  // renvoie {r,n} ou null (passe). risk ~0.75/1/1.3
+  const twoOK = risk>1.2;
+  if(!table){ // meneur : jouer le plus petit rang, en lâchant tout le groupe sauf pour les 2
+    const leads=legalLeads(hand).filter(x=>x.r!=='2'||twoOK);
+    if(!leads.length) return {r:'2',n:groups(hand)['2'].length};
+    const minVal=Math.min(...leads.map(x=>x.val));
+    const cand=leads.filter(x=>x.val===minVal);
+    return cand.reduce((a,b)=>b.n>a.n?b:a); // lâche le plus gros paquet du plus petit rang
+  }
+  let follows=legalFollows(hand,table);
+  const hand2=follows.filter(x=>x.r==='2');
+  if(!twoOK) follows=follows.filter(x=>x.r!=='2');
+  if(!follows.length){
+    // ne dégaine un 2 que si peu de cartes restantes et prudent-modéré
+    if(hand2.length && hand.length<=table.n+1) return {r:'2',n:table.n};
+    return null;
+  }
+  const minVal=Math.min(...follows.map(x=>x.val));
+  return follows.filter(x=>x.val===minVal)[0];
+}
+if(typeof module!=='undefined') module.exports={PVAL,groups,legalLeads,legalFollows,aiChoose};
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+const TITLES={president:'👑 Président',vice:'🙂 Vice-président',neutre:'😐 Neutre',vicetrou:'😕 Vice-trou',trou:'💩 Trou du cul'};
+function placeLabel(place,total){
+  if(place===0) return TITLES.president;
+  if(place===total-1) return TITLES.trou;
+  if(place===1) return TITLES.vice;
+  if(place===total-2) return TITLES.vicetrou;
+  return TITLES.neutre;
+}
+CardShell({
+  id:'president', title:'LE PRÉSIDENT', minPlayers:3, maxPlayers:4,
+  run: async GC => {
+    const P=GC.players, N=P.length;
+    const deck=Cards.shuffle(Cards.deck());
+    P.forEach(p=>{ p.hand=[]; p.place=null; });
+    let d=0; while(deck.length){ P[d%N].hand.push(deck.shift()); d++; }
+    P.forEach(p=> p.hand.sort((a,b)=>PVAL[a.r]-PVAL[b.r]));
+    const finished=[];
+    let table=null, lastPlayer=null, passes=0, turn=0;
+    turn=P.findIndex(p=>p.hand.some(c=>c.r==='3'&&c.s==='trefle')); if(turn<0)turn=0;
+
+    const active=()=>P.filter(p=>p.place===null);
+    const nextActive=from=>{ let k=(from+1)%N,h=0; while(P[k].place!==null&&h<N){k=(k+1)%N;h++;} return k; };
+    const refresh=()=>GC.scores(P.map((p,idx)=>({label:p.name,
+      value:p.place!=null?placeLabel(p.place,N).split(' ')[0]:p.hand.length, active:idx===turn&&p.place===null})));
+    const showOpps=me=>GC.opponents(P.filter(p=>p!==me).map(p=>({
+      name:p.name, count:p.place!=null?'—':p.hand.length,
+      tag:p.place!=null?placeLabel(p.place,N).split(' ')[0]:'', turn:P.indexOf(p)===turn&&p.place===null})));
+    function showTable(){
+      if(!table){ GC.center('<span style="opacity:.6">Pli vide — au meneur de jouer</span>'); return; }
+      const w=document.createElement('div'); w.className='tablecards';
+      table.cards.forEach(c=> w.appendChild(Cards.el(c,{}))); GC.center(w);
+    }
+    function take(p,r,n){ const out=[]; for(let k=p.hand.length-1;k>=0&&out.length<n;k--){ if(p.hand[k].r===r) out.push(p.hand.splice(k,1)[0]); } return out; }
+
+    async function humanTurn(p){
+      await GC.handOff(p.name);
+      showOpps(p); showTable(); refresh();
+      let sel=[];
+      const hand=document.getElementById('cHand');
+      const render=()=>{ hand.innerHTML='';
+        p.hand.forEach(card=>{
+          const el=Cards.el(card,{onClick:()=>{
+            if(sel.length&&sel[0].r!==card.r) sel=[];
+            const i=sel.indexOf(card); if(i>=0)sel.splice(i,1); else sel.push(card);
+            render(); updateBtns(); }});
+          if(sel.includes(card)) el.classList.add('sel');
+          hand.appendChild(el);
+        }); };
+      const valid=()=>{ if(!sel.length) return false;
+        if(!sel.every(c=>c.r===sel[0].r)) return false;
+        if(table) return sel.length===table.n && PVAL[sel[0].r]>table.val;
+        return true; };
+      const updateBtns=()=>GC.setButtons([
+        {id:'play',label:table?('Jouer '+sel.length+' carte'+(sel.length>1?'s':'')):'Poser',primary:true,disabled:!valid()},
+        ...(table?[{id:'pass',label:'Passer'}]:[])]);
+      GC.say(table?('À vous, '+p.name+' — '+table.n+' carte'+(table.n>1?'s':'')+' plus fortes, ou passez.')
+                  :('À vous, '+p.name+' — vous menez.'));
+      render(); updateBtns();
+      const a=await GC.waitAction(); GC.setButtons([]);
+      if(a==='pass') return {pass:true};
+      const r=sel[0].r,n=sel.length; return {pass:false,r,n,cards:take(p,r,n),val:PVAL[r]};
+    }
+    async function aiTurn(p){
+      showOpps(p); showTable(); refresh();
+      GC.say(p.name+' réfléchit…'); await GC.sleep(700);
+      const mv=aiChoose(p.hand,table,GC.aiRisk);
+      if(!mv) return {pass:true};
+      return {pass:false,r:mv.r,n:mv.n,cards:take(p,mv.r,mv.n),val:PVAL[mv.r]};
+    }
+
+    refresh();
+    while(active().length>1){
+      const p=P[turn];
+      if(p.place!==null){ turn=nextActive(turn); continue; }
+      const res = p.ai ? await aiTurn(p) : await humanTurn(p);
+      if(res.pass){ passes++; GC.combo(p.name+' passe.'); GC.play(); }
+      else{
+        table={n:res.n,val:res.val,cards:res.cards}; lastPlayer=p; passes=0;
+        GC.combo(p.name+' pose '+res.n+'×'+res.r+'.'); GC.play(); showTable();
+        if(p.hand.length===0){ p.place=finished.length; finished.push(p);
+          GC.say(p.name+' a vidé sa main — '+placeLabel(p.place,N)+' !'); GC.good&&GC.good();
+          await GC.sleep(1100); }
+      }
+      refresh(); showOpps(p); await GC.sleep(450);
+      if(active().length<=1) break;
+      // le pli se ferme-t-il ? (tous les actifs sauf le dernier poseur ont passé)
+      let closed=false;
+      if(table && lastPlayer){
+        const need = lastPlayer.place===null ? active().length-1 : active().length;
+        if(passes>=need) closed=true;
+      }
+      if(closed){
+        if(table){ GC.combo('Pli pour '+lastPlayer.name+' — il relance.'); await GC.sleep(650); }
+        const leaderIdx = lastPlayer.place===null ? P.indexOf(lastPlayer) : nextActive(P.indexOf(lastPlayer));
+        table=null; passes=0; lastPlayer=null; turn=leaderIdx; showTable(); refresh();
+      } else {
+        turn=nextActive(turn);
+      }
+    }
+    const loser=active()[0]; loser.place=finished.length; finished.push(loser);
+    const winner=finished[0];
+    return GC.gameOver('Victoire de '+winner.name+' !',
+      finished.map(p=>placeLabel(p.place,N)+' — '+p.name).join('<br>'));
+  }
+});
+</script>
+</body>
+</html>

@@ -131,4 +131,29 @@ de choisir la couleur demand\u00e9e.</p>
 <p>Rien \u00e0 jouer ? <b>Piochez une carte</b> : si elle est jouable vous pouvez la poser,
 sinon (ou si vous pr\u00e9f\u00e9rez) vous passez. Pioche vide : la d\u00e9fausse est rebattue.</p>
 <p>On distribue 7 cartes \u00e0 2 joueurs, 5 \u00e0 3 ou 4.</p>`},
+bataille: { title:'La Bataille', html:`
+<p>Jeu de 52 cartes, 2 joueurs. Le paquet est partag\u00e9 en deux. \u00c0 chaque tour, chacun
+retourne sa carte du dessus : la plus forte rafle les deux (l'As est la plus forte, puis
+Roi, Dame, Valet, 10\u20262).</p>
+<p><b>Bataille !</b> \u00c9galit\u00e9 : on pose 3 cartes cach\u00e9es puis une face visible ; la plus
+forte emporte tout le tas. Le premier \u00e0 rafler les 52 cartes gagne. Aucun choix : c'est
+le hasard pur, id\u00e9al pour d\u00e9couvrir.</p>`},
+
+president: { title:'Le Pr\u00e9sident', html:`
+<p>52 cartes, 3 \u00e0 4 joueurs, tout le paquet distribu\u00e9. But : se d\u00e9barrasser de ses
+cartes le premier pour devenir <b>Pr\u00e9sident</b> ; le dernier est le <b>Trou du cul</b>.</p>
+<p><b>Ordre des cartes :</b> 3 (faible) &lt; 4 &lt; \u2026 &lt; 10 &lt; V &lt; D &lt; R &lt; As
+&lt; <b>2 (la plus forte)</b>.</p>
+<p><b>Le jeu.</b> Le meneur pose une carte ou un groupe de m\u00eame valeur (paire, brelan,
+carr\u00e9). Chacun \u00e0 son tour doit poser <b>le m\u00eame nombre de cartes</b>, de valeur
+<b>strictement sup\u00e9rieure</b>, ou passer. Quand tout le monde passe, le dernier \u00e0 avoir
+pos\u00e9 ramasse la main et relance.</p>`},
+
+huit: { title:'Le 8 loco', html:`
+<p>52 cartes, 2 \u00e0 4 joueurs. Comme le 8 am\u00e9ricain, mais avec des cartes qui piquent.
+Premier \u00e0 vider sa main gagne.</p>
+<p>Posez une carte de m\u00eame <b>couleur</b> ou m\u00eame <b>valeur</b>. Les <b>8</b> sont
+ma\u00eetres (choisissez la couleur). Cartes sp\u00e9ciales : le <b>2</b> fait piocher 2 cartes au
+suivant (cumulable si lui aussi pose un 2), le <b>Valet</b> saute le joueur suivant, l'<b>As</b>
+change le sens du jeu (\u00e0 2 joueurs, il fait rejouer). Rien \u00e0 poser ? Piochez.</p>`},
 };

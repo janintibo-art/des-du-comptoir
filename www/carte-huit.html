@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le 8 loco</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<style>
+.pcard{width:56px;height:80px;min-width:56px;background:#f7f2e6;border:1px solid #b9b09b;border-radius:8px;
+  color:#141410;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-family:inherit;cursor:pointer}
+.pcard .rk{font-size:18px;font-weight:bold} .pcard .st{font-size:22px;line-height:1}
+.pcard.red{color:#c2543f} .pcard.back{background:#33523f;border-color:#1d3328;color:var(--cream)}
+.pcard.img{padding:0;background:transparent;border:none;width:auto;min-width:0}
+.pcard.img img{height:80px;border-radius:6px;filter:drop-shadow(0 2px 5px rgba(0,0,0,.4))}
+.pcard.play{outline:3px solid var(--accent);outline-offset:-2px}
+.pcard.off{opacity:.42;cursor:default}
+#cHand{display:flex;gap:5px;overflow-x:auto;padding:12px 4px 4px;-webkit-overflow-scrolling:touch}
+.tablezone{display:flex;gap:16px;align-items:center}
+.suitnow{font-size:30px} .suitnow.red{color:#e06a5a}
+.dir{font-size:15px;opacity:.7}
+.suitpick{display:flex;gap:12px;justify-content:center;margin:6px 0}
+.suitpick button{font-size:28px;padding:6px 14px}
+</style>
+<script src="cards.js"></script>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+function playableOn(c, top, suit){ return c.r==='8' || c.r===top.r || c.s===suit; }
+CardShell({
+  id:'huit', title:'LE 8 LOCO', minPlayers:2, maxPlayers:4,
+  run: async GC => {
+    const P=GC.players, N=P.length;
+    let deck=Cards.shuffle(Cards.deck());
+    const per=N===2?7:5;
+    P.forEach(p=>{ p.hand=deck.splice(0,per); });
+    let top=deck.shift(); while(top.r==='8'){ deck.push(top); top=deck.shift(); }
+    let suit=top.s, pile=[], turn=0, dir=1, pending=0;
+
+    const nextIdx=(from,steps)=>{ let k=from; for(let s=0;s<steps;s++) k=(k+dir+N)%N; return k; };
+    const refresh=()=>GC.scores(P.map((p,i)=>({label:p.name,value:p.hand.length,active:i===turn})));
+    const showOpps=me=>GC.opponents(P.filter(p=>p!==me).map(p=>({name:p.name,count:p.hand.length,turn:P.indexOf(p)===turn})));
+    function drawFrom(){ if(!deck.length){ if(pile.length<=1) return null; const t=pile.pop(); deck=Cards.shuffle(pile); pile=[t]; } return deck.shift(); }
+    function showTable(){
+      const w=document.createElement('div'); w.className='tablezone';
+      w.appendChild(Cards.el(top,{}));
+      const s=document.createElement('div'); s.className='suitnow'+((suit==='coeur'||suit==='carreau')?' red':'');
+      s.textContent=Cards.SUIT_CHAR[suit]; w.appendChild(s);
+      const dd=document.createElement('div'); dd.className='dir'; dd.textContent=dir>0?'⟳':'⟲'; w.appendChild(dd);
+      GC.center(w);
+    }
+    function apply(p, c, chosenSuit){
+      pile.push(top); top=c; suit = c.r==='8' ? chosenSuit : c.s;
+      let skip=false;
+      if(c.r==='2') pending+=2;
+      else if(c.r==='V') skip=true;             // Valet : saute le suivant
+      else if(c.r==='A' && N>2) dir*=-1;         // As : change de sens
+      else if(c.r==='A' && N===2) skip=true;     // à 2, l'As fait sauter
+      return skip;
+    }
+    function aiSuit(p){ const c={}; p.hand.forEach(x=>c[x.s]=(c[x.s]||0)+1);
+      return Cards.SUITS.reduce((a,b)=>(c[b]||0)>(c[a]||0)?b:a,'coeur'); }
+
+    async function humanTurn(p){
+      await GC.handOff(p.name);
+      showOpps(p); showTable(); refresh();
+      if(pending>0){
+        const has2=p.hand.some(c=>c.r==='2');
+        GC.say(p.name+' : +'+pending+' cartes en attente. '+(has2?'Posez un 2 pour renvoyer, ou piochez.':'Vous devez piocher.'));
+        if(!has2){ await GC.ask([{id:'take',label:'Piocher '+pending+' cartes',primary:true}]); GC.setButtons([]);
+          for(let k=0;k<pending;k++){ const d=drawFrom(); if(d)p.hand.push(d); } pending=0; GC.play(); return; }
+      } else GC.say('À vous, '+p.name+' — posez une carte ou piochez.');
+      const hand=document.getElementById('cHand');
+      const render=()=>{ hand.innerHTML='';
+        p.hand.forEach(card=>{
+          const ok = pending>0 ? card.r==='2' : playableOn(card,top,suit);
+          const el=Cards.el(card,{onClick: ok?(async cc=>{
+            let cs=null;
+            if(cc.r==='8'){ cs=await pickSuit(); if(!cs) return; }
+            GC.setButtons([]); const skip=apply(p,cc,cs);
+            p.hand.splice(p.hand.indexOf(cc),1); GC.play();
+            resolve({skip}); }):null, disabled:!ok});
+          if(ok) el.classList.add('play');
+          hand.appendChild(el);
+        }); };
+      let resolve; const done=new Promise(r=>resolve=r);
+      GC.setButtons([{id:'draw',label: pending>0?('Poser un 2 ou piocher '+pending):'Piocher',primary:true}]);
+      const actP=GC.waitAction().then(()=> 'draw');
+      render();
+      const r=await Promise.race([done, actP]);
+      GC.setButtons([]);
+      if(r==='draw'){
+        if(pending>0){ for(let k=0;k<pending;k++){const d=drawFrom();if(d)p.hand.push(d);} pending=0; GC.play(); return {skip:false}; }
+        const d=drawFrom(); GC.play();
+        if(d){ p.hand.push(d);
+          if(playableOn(d,top,suit)){
+            GC.say('Pioché '+Cards.label(d)+' — jouable !');
+            const a=await GC.ask([{id:'play',label:'Jouer '+Cards.label(d)},{id:'keep',label:'Garder',primary:true}]);
+            GC.setButtons([]);
+            if(a==='play'){ let cs=d.r==='8'?await pickSuit():null; const skip=apply(p,d,cs); p.hand.pop(); GC.play(); return {skip}; }
+          }
+        }
+        return {skip:false};
+      }
+      return r; // {skip}
+    }
+    function pickSuit(){
+      return new Promise(res=>{
+        const box=document.createElement('div'); box.className='suitpick';
+        Cards.SUITS.forEach(s=>{ const b=document.createElement('button'); b.textContent=Cards.SUIT_CHAR[s];
+          if(s==='coeur'||s==='carreau')b.style.color='#e06a5a';
+          b.addEventListener('click',()=>{ GC.center(''); showTable(); res(s); }); box.appendChild(b); });
+        const c=GC.center(''); showTable(); c.appendChild(box);
+        GC.say('Choisissez la couleur demandée.');
+      });
+    }
+    async function aiTurn(p){
+      showOpps(p); showTable(); refresh();
+      GC.say(p.name+' joue…'); await GC.sleep(750);
+      if(pending>0){
+        const two=p.hand.find(c=>c.r==='2');
+        if(two){ apply(p,two); p.hand.splice(p.hand.indexOf(two),1); GC.combo(p.name+' renvoie un 2 (+'+pending+') !'); GC.play(); return {skip:false}; }
+        for(let k=0;k<pending;k++){ const d=drawFrom(); if(d)p.hand.push(d); }
+        GC.combo(p.name+' pioche '+pending+' cartes.'); pending=0; GC.play(); return {skip:false};
+      }
+      let opts=p.hand.filter(c=>playableOn(c,top,suit));
+      if(!opts.length){ const d=drawFrom(); if(d){ p.hand.push(d);
+          if(playableOn(d,top,suit)) opts=[d]; else { GC.combo(p.name+' pioche et passe.'); GC.play(); return {skip:false}; } }
+        else { GC.combo(p.name+' passe.'); return {skip:false}; } }
+      // préfère spéciales quand un adversaire est proche de gagner, sinon la plus fréquente couleur
+      const danger=P.some(q=>q!==p&&q.hand.length<=2);
+      const rank=c=>{ if(danger&&(c.r==='2'||c.r==='V'||c.r==='A'))return 0; if(c.r==='8')return 3; return 1; };
+      opts.sort((a,b)=>rank(a)-rank(b));
+      const c=opts[0]; const cs=c.r==='8'?aiSuit(p):null;
+      const skip=apply(p,c,cs); p.hand.splice(p.hand.indexOf(c),1);
+      GC.combo(p.name+' pose '+Cards.label(c)+(c.r==='8'?' → '+Cards.SUIT_CHAR[cs]:''));
+      GC.play(); return {skip};
+    }
+
+    refresh(); showTable();
+    GC.say('Le 8 loco commence !'); await GC.sleep(600);
+    while(true){
+      const p=P[turn];
+      const res = p.ai ? await aiTurn(p) : await humanTurn(p);
+      refresh(); showTable(); showOpps(p);
+      if(p.hand.length===0) return GC.gameOver('Victoire de '+p.name+' !', p.name+' se débarrasse de sa dernière carte.');
+      await GC.sleep(450);
+      turn = nextIdx(turn, res && res.skip ? 2 : 1);
+    }
+  }
+});
+</script>
+</body>
+</html>

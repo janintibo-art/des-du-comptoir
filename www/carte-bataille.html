@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Bataille</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<style>
+.pcard{width:66px;height:94px;background:#f7f2e6;border:1px solid #b9b09b;border-radius:9px;
+  color:#141410;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:inherit}
+.pcard .rk{font-size:20px;font-weight:bold} .pcard .st{font-size:24px;line-height:1}
+.pcard.red{color:#c2543f}
+.pcard.back{background:#33523f;border-color:#1d3328;color:var(--cream)}
+.pcard.img{padding:0;background:transparent;border:none}
+.pcard.img img{height:94px;border-radius:7px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
+.side{display:flex;flex-direction:column;align-items:center;gap:4px}
+.side .nm{font-size:14px;color:var(--accent)}
+.vs{font-size:22px;opacity:.6}
+</style>
+<script src="cards.js"></script>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+const VAL={A:14,R:13,D:12,V:11,'10':10,'9':9,'8':8,'7':7,'6':6,'5':5,'4':4,'3':3,'2':2};
+CardShell({
+  id:'bataille', title:'LA BATAILLE', minPlayers:2, maxPlayers:2,
+  run: async GC => {
+    const deck=Cards.shuffle(Cards.deck());
+    const A=GC.players[0], B=GC.players[1];
+    A.pile=deck.slice(0,26); A.win=[]; B.pile=deck.slice(26); B.win=[];
+    const draw=p=>{ if(!p.pile.length){ p.pile=Cards.shuffle(p.win); p.win=[]; } return p.pile.shift(); };
+    const total=p=>p.pile.length+p.win.length;
+    const refresh=()=>GC.scores([{label:A.name,value:total(A)},{label:B.name,value:total(B)}]);
+
+    function show(ca,cb,extra){
+      const wrap=document.createElement('div');
+      wrap.style.cssText='display:flex;gap:18px;align-items:center';
+      const mk=(p,c)=>{ const s=document.createElement('div'); s.className='side';
+        const nm=document.createElement('div'); nm.className='nm'; nm.textContent=p.name; s.appendChild(nm);
+        s.appendChild(c?Cards.el(c,{}):Cards.el({r:'A',s:'pique'},{back:true})); return s; };
+      wrap.appendChild(mk(A,ca));
+      const vs=document.createElement('div'); vs.className='vs'; vs.textContent=extra||'⚔'; wrap.appendChild(vs);
+      wrap.appendChild(mk(B,cb));
+      GC.center(wrap);
+    }
+
+    refresh(); show(null,null,'⚔');
+    GC.say('La Bataille : la plus forte carte ramasse le pli. Le premier à tout rafler gagne.');
+    let guard=0;
+    while(true){
+      const auto=A.ai||B.ai; // si un humain est là, il tape pour retourner
+      await GC.ask([{id:'go',label:'Retourner ▶',primary:true}]);
+      GC.setButtons([]); GC.combo('');
+      let ca=draw(A), cb=draw(B); GC.play();
+      show(ca,cb,'⚔'); refresh();
+      const spoils=[ca,cb];
+      let va=VAL[ca.r], vb=VAL[cb.r];
+      while(va===vb){
+        GC.combo('BATAILLE ! '+Cards.label(ca)+' contre '+Cards.label(cb));
+        await GC.sleep(700);
+        if(total(A)<2||total(B)<2) break;
+        for(let k=0;k<3;k++){ spoils.push(draw(A)); spoils.push(draw(B)); }
+        ca=draw(A); cb=draw(B); spoils.push(ca,cb);
+        GC.play(); show(ca,cb,'⚔⚔'); refresh();
+        va=VAL[ca.r]; vb=VAL[cb.r];
+      }
+      const w = va>vb ? A : B;
+      w.win.push(...spoils);
+      GC.combo((va>vb?A.name:B.name)+' ramasse '+spoils.length+' cartes ('+Cards.label(va>vb?ca:cb)+').');
+      refresh();
+      await GC.sleep(600);
+      if(total(A)===0||total(B)===0){
+        const win = total(A)===0 ? B : A;
+        return GC.gameOver('Victoire de '+win.name+' !', win.name+' rafle tout le paquet.');
+      }
+      if(++guard>4000) return GC.gameOver('Match nul','Partie interminable — égalité déclarée.');
+    }
+  }
+});
+</script>
+</body>
+</html>
