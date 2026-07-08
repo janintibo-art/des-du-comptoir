@@ -285,4 +285,16 @@ awale234: { title:'Awalé « prise 2-3-4 »', html:`
 <p>Variante plus vive de l'Awal\u00e9. Toutes les r\u00e8gles sont identiques, mais on
 <b>capture aussi les trous qui atteignent 4</b> (en plus de 2 et 3). Les prises sont donc
 plus fr\u00e9quentes et les parties plus rapides \u2014 id\u00e9al pour d\u00e9buter.</p>`},
+cochontroue: { title:'Le Cochon troué (Pig Hole)', html:`
+<p>Jeu de d\u00e9, 2 \u00e0 6 joueurs. Chacun re\u00e7oit des cochons ; le <b>premier \u00e0 s'en
+d\u00e9barrasser</b> gagne, et le dernier qui en garde a perdu. (Version rapide, normale ou
+officielle au lancement.)</p>
+<p><b>Le tour.</b> On lance <b>un d\u00e9</b> et on place un cochon dans le trou du num\u00e9ro
+obtenu (1 \u00e0 5). Un <b>6</b> envoie un cochon par le <b>trou du milieu</b> : il sort
+d\u00e9finitivement du jeu.</p>
+<p><b>Attention :</b> si le trou tir\u00e9 est <b>d\u00e9j\u00e0 occup\u00e9</b>, vous devez
+<b>ramasser tous les cochons</b> pr\u00e9sents sur le plateau, et votre tour s'arr\u00eate.</p>
+<p><b>Stop ou encore :</b> au 1er tour on lance une fois, au 2e deux fois ; \u00e0 partir du 3e
+tour on relance tant qu'on veut \u2014 mais un trou occup\u00e9 met fin au tour. \u00c0 vous de savoir
+vous arr\u00eater !</p>`},
 };

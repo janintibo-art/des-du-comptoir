@@ -36,6 +36,12 @@ de vos planches) sélectionnables en jeu. Module réutilisable `www/dominos.js`.
 Le menu (`index.html`) est organisé en trois familles — 🎲 Dés, 🃏 Cartes, 🁢 Dominos —
 avec une barre de navigation qui saute à chaque section.
 
+## Le Cochon troué 🐷
+**Le Cochon troué** (« Pig Hole » d'Engelhart, `cochon-troue.html`) : jeu de dé « stop ou encore »
+2-6 joueurs. On lance un dé, on pose ses cochons dans les trous ; un 6 en fait sortir un, un trou
+occupé oblige à tout ramasser. Plateau et bâtonnet détourés de vos images (`www/cochon/`). Nombre
+de cochons réglable (rapide/normale/officielle). Logique validée (terminaison, 2-6 joueurs).
+
 ## Awalé 🌰
 L'**Awalé / Oware** (`awale-oware.html`), jeu de semailles à 2 joueurs (famille mancala),
 contre une **IA négamax** (alpha-bêta) ou à tour de rôle. Plateaux et graines détourés de vos

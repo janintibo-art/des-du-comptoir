@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Cochon troué</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+.cochonwrap{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
+.cochon-board{position:relative;width:100%;max-width:430px;margin:0 auto;aspect-ratio:1216/1206;background-size:contain;background-repeat:no-repeat;background-position:center;filter:drop-shadow(0 5px 14px rgba(0,0,0,.5))}
+.cochon-hole{position:absolute;transform:translate(-50%,-50%);aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.cochon-hole .peg{width:auto;height:clamp(46px,12vw,76px);transform:translateY(-14%);filter:drop-shadow(0 2px 5px rgba(0,0,0,.6))}
+.cochon-hole.exit{box-shadow:inset 0 0 0 3px rgba(20,20,16,.6);background:radial-gradient(circle,#1a1712 55%,transparent 70%)}
+.cochon-hole.exit.flash{box-shadow:0 0 0 4px var(--accent),0 0 18px 3px rgba(224,163,76,.7)}
+.hlabel{position:absolute;transform:translate(-50%,-50%);font-weight:bold;color:#5a3a22;font-size:clamp(11px,2.6vw,16px);opacity:.7}
+.die{width:clamp(64px,17vw,88px);height:clamp(64px,17vw,88px);border-radius:16%;background:#f7f2e6;border:1px solid #b9b09b;position:relative;box-shadow:0 4px 10px rgba(0,0,0,.4)}
+.die.rolling{animation:shake .3s infinite}
+@keyframes shake{0%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}100%{transform:rotate(-7deg)}}
+.pip{position:absolute;width:18%;height:18%;border-radius:50%;background:#26221c;transform:translate(-50%,-50%)}
+</style>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+const NoSkin={ buildSkinSelect(sel){ sel.style.display='none'; }, el(){ return document.createElement('span'); } };
+const HOLES=[
+  {n:1,x:0.297,y:0.541},{n:2,x:0.492,y:0.599},{n:3,x:0.696,y:0.543},
+  {n:4,x:0.295,y:0.723},{n:5,x:0.495,y:0.761},{n:6,x:0.693,y:0.741}
+];
+const PIPS={1:[[50,50]],2:[[28,28],[72,72]],3:[[28,28],[50,50],[72,72]],
+  4:[[28,28],[72,28],[28,72],[72,72]],5:[[28,28],[72,28],[50,50],[28,72],[72,72]],
+  6:[[28,25],[72,25],[28,50],[72,50],[28,75],[72,75]]};
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+CardShell({
+  id:'cochontroue', title:'LE COCHON TROUÉ', minPlayers:2, maxPlayers:6, skinModule:NoSkin,
+  run: async GC => {
+    const P=GC.players, N=P.length;
+    // choix du nombre de cochons
+    GC.center('<div style="text-align:center;opacity:.85">Chaque joueur reçoit des cochons.<br>Débarrassez-vous des vôtres en premier !</div>');
+    GC.say('Combien de cochons par joueur ?');
+    const off={2:20,3:20,4:15,5:12,6:10}[N]||Math.round(60/N);
+    const choix=await GC.ask([
+      {id:'6',label:'Rapide (6)',primary:true},{id:'10',label:'Normale (10)'},{id:''+off,label:'Officielle ('+off+')'}]);
+    GC.setButtons([]);
+    const pigsEach=parseInt(choix,10);
+    P.forEach(p=>{ p.hand=pigsEach; p.finished=false; });
+    let holes=[false,false,false,false,false];
+    let pegStyle='clair'; try{ const v=localStorage.getItem('cochonPeg'); if(v)pegStyle=v; }catch(e){}
+    let lastArgs=[-1,null,false];
+    const occ=()=>holes.filter(Boolean).length;
+    const finishOrder=[];
+    let round=1, flashExit=false;
+
+    const scores=turn=>GC.scores(P.map((p,i)=>({label:p.name,value:p.finished?'✓':p.hand,active:i===turn&&!p.finished})));
+    function render(turn, dieVal, rolling){
+      lastArgs=[turn,dieVal,rolling];
+      const c=GC.center('');
+      const wrap=document.createElement('div'); wrap.className='cochonwrap';
+      const bar=document.createElement('div'); bar.style.cssText='display:flex;justify-content:flex-end;width:100%;max-width:430px;font-size:13px;opacity:.85';
+      const lab=document.createElement('label'); lab.textContent='Bâtonnet : ';
+      const sel=document.createElement('select'); sel.style.cssText='font-family:inherit;font-size:13px;background:rgba(20,20,16,.8);color:var(--cream);border:1px solid rgba(242,232,213,.3);border-radius:8px;padding:4px 7px;margin-left:4px';
+      [['clair','Clair'],['fonce','Foncé']].forEach(([v,t])=>{ const o=document.createElement('option'); o.value=v; o.textContent=t; sel.appendChild(o); });
+      sel.value=pegStyle; sel.addEventListener('change',()=>{ pegStyle=sel.value; try{localStorage.setItem('cochonPeg',pegStyle);}catch(e){} render.apply(null,lastArgs); });
+      lab.appendChild(sel); bar.appendChild(lab); wrap.appendChild(bar);
+      const board=document.createElement('div'); board.className='cochon-board'; board.style.backgroundImage='url(cochon/board.webp)';
+      HOLES.forEach(h=>{ const d=document.createElement('div'); d.className='cochon-hole'+(h.n===6?' exit'+(flashExit?' flash':''):'');
+        d.style.left=(h.x*100)+'%'; d.style.top=(h.y*100)+'%'; d.style.width='9%';
+        if(h.n<=5 && holes[h.n-1]){ const img=document.createElement('img'); img.className='peg'; img.src='cochon/peg-'+pegStyle+'.webp'; d.appendChild(img); }
+        board.appendChild(d); });
+      wrap.appendChild(board);
+      const die=document.createElement('div'); die.className='die'+(rolling?' rolling':'');
+      if(dieVal){ (PIPS[dieVal]||[]).forEach(([x,y])=>{ const pip=document.createElement('div'); pip.className='pip'; pip.style.left=x+'%'; pip.style.top=y+'%'; die.appendChild(pip); }); }
+      wrap.appendChild(die); c.appendChild(wrap);
+    }
+    async function rollDie(turn){
+      render(turn,null,true);
+      for(let k=0;k<7;k++){ render(turn,1+Math.floor(Math.random()*6),true); await GC.sleep(55); }
+      const v=1+Math.floor(Math.random()*6); render(turn,v,false); GC.play(); return v;
+    }
+    function processRoll(v,p){
+      if(v===6){ flashExit=true; setTimeout(()=>{flashExit=false;},400); if(p.hand>0)p.hand--; return {type:'exit'}; }
+      const h=v-1; if(!holes[h]){ holes[h]=true; if(p.hand>0)p.hand--; return {type:'place',n:v}; }
+      const taken=occ(); p.hand+=taken; holes=[false,false,false,false,false]; return {type:'bust',taken,n:v};
+    }
+    const remaining=()=>P.filter(p=>!p.finished).length;
+
+    GC.say('Un 6 fait sortir un cochon par le trou du milieu. Un trou déjà occupé = vous ramassez tout !');
+    scores(-1); render(-1,null,false); await GC.sleep(1200);
+
+    let turn=0, guard=0;
+    while(remaining()>1){
+      if(++guard>4000) break;
+      const p=P[turn];
+      if(p.finished){ turn=(turn+1)%N; if(turn===0)round++; continue; }
+      scores(turn);
+      const minRolls = round===1?1 : round===2?2 : 1;
+      if(!p.ai){ if(P.filter(x=>!x.ai).length>1) await GC.handOff(p.name); }
+      let rolls=0, busted=false;
+      while(true){
+        if(rolls>=minRolls){
+          if(round<=2) break;
+          if(p.ai){ const stopAt=GC.aiRisk>1.1?4:(GC.aiRisk<0.8?2:3); if(occ()>=stopAt) break; }
+          else { render(turn,null,false); GC.say('Relancer ou s\u2019arrêter ? ('+occ()+' trou(s) occupé(s))');
+            const a=await GC.ask([{id:'roll',label:'Relancer 🎲'},{id:'stop',label:'Je m\u2019arrête ✋'}]); GC.setButtons([]); if(a==='stop') break; }
+        } else {
+          if(p.ai){ GC.say(p.name+' lance le dé…'); await GC.sleep(500); }
+          else { render(turn,null,false); GC.say('À vous, '+p.name+' — lancez le dé.');
+            await GC.ask([{id:'roll',label:'Lancer le dé 🎲'}]); GC.setButtons([]); }
+        }
+        const v=await rollDie(turn); rolls++;
+        const res=processRoll(v,p); render(turn,v,false); scores(turn);
+        if(res.type==='exit') GC.combo((p.ai?p.name:'Vous')+' : 6 ! Un cochon sort du jeu 🐷➡️');
+        else if(res.type==='place') GC.combo((p.ai?p.name:'Vous')+' pose un cochon au trou '+res.n+'.');
+        else { GC.combo('Trou '+res.n+' occupé ! '+(p.ai?p.name+' ramasse ':'Vous ramassez ')+res.taken+' cochon'+(res.taken>1?'s':'')+'.'); busted=true; }
+        if(p.hand===0){ p.finished=true; finishOrder.push(turn);
+          GC.combo('🎉 '+p.name+' n\u2019a plus de cochons !'); await GC.sleep(1300); break; }
+        await GC.sleep(busted?1200:650);
+        if(busted) break;
+      }
+      if(remaining()<=1) break;
+      turn=(turn+1)%N; if(turn===0)round++;
+    }
+    // dernier joueur = perdant
+    const loserIdx=P.findIndex(p=>!p.finished);
+    if(loserIdx>=0){ finishOrder.push(loserIdx); }
+    scores(-1); render(-1,null,false);
+    const winner=P[finishOrder[0]], loser=P[loserIdx];
+    return GC.gameOver('Victoire de '+winner.name+' !',
+      '🐷 <b>'+(loser?loser.name:'?')+'</b> reste avec des cochons et perd.<br><br>'+
+      'Ordre de sortie : '+finishOrder.map(i=>P[i].name).join(', ')+'.');
+  }
+});
+</script>
+</body>
+</html>

@@ -30,4 +30,5 @@ passedix: "Le Passe-dix est l'un des plus anciens jeux de dés connus : joué av
 boston: "Jeu de dés à combinaisons, apparenté à la grande famille des jeux de « figures » façon Yams.",
 boite: "La Boîte (« Shut the Box ») est un jeu de dés traditionnel, qu'on associe volontiers aux marins et aux tavernes de Normandie et des îles anglo-normandes : on y rabat des clapets numérotés.",
 martinetti: "Le Martinetti (« Ronde de l'horloge ») est un jeu de dés où l'on doit réaliser les nombres de 1 à 12 dans l'ordre.",
+cochontroue: "\u00ab Le Cochon trou\u00e9 \u00bb (Pig Hole) est un jeu de d\u00e9 familial \u00e9dit\u00e9 par la marque Engelhart. C\u2019est un \u00ab stop ou encore \u00bb moderne : simple et taquin, o\u00f9 l\u2019on cherche \u00e0 se d\u00e9barrasser de ses cochons sans devoir tout ramasser.",
 };
