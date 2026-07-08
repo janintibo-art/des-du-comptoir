@@ -217,4 +217,12 @@ d\u00e9fausse). 2) <b>Posez</b> vos combinaisons sur la table et <b>\u00e9talez<
 les combinaisons d\u00e9j\u00e0 pos\u00e9es (les v\u00f4tres ou celles des autres). 3) <b>D\u00e9faussez</b>
 une carte pour finir votre tour.</p>
 <p>Le nombre de cartes distribu\u00e9es : 10 \u00e0 deux joueurs, 7 \u00e0 trois ou quatre.</p>`},
+domino: { title:'Le Domino', html:`
+<p>Jeu de dominos double-six (28 tuiles), 2 \u00e0 4 joueurs. Le premier \u00e0 <b>poser toutes
+ses tuiles</b> gagne. Si le jeu se bloque, le plus petit total de points en main l'emporte.</p>
+<p><b>Distribution :</b> 7 tuiles \u00e0 deux joueurs, 5 \u00e0 trois ou quatre. Le reste forme la
+<b>pioche</b>. Celui qui a le plus gros double (ou la plus grosse tuile) ouvre.</p>
+<p><b>Le tour.</b> Posez une tuile dont l'une des valeurs correspond \u00e0 l'un des <b>deux
+bouts</b> de la cha\u00eene (gauche ou droite). Si vous ne pouvez pas jouer, <b>piochez</b>
+jusqu'\u00e0 le pouvoir ; si la pioche est vide, vous <b>passez</b>.</p>`},
 };

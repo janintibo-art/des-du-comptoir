@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Domino</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+.domino{--dh:clamp(120px,25vh,178px);height:var(--dh);width:calc(var(--dh)*.5);min-width:calc(var(--dh)*.5);
+  background:transparent;border:none;padding:0;cursor:pointer;overflow:visible}
+.domino img{height:var(--dh);width:auto;display:block;border-radius:calc(var(--dh)*.05);
+  filter:drop-shadow(0 3px 7px rgba(0,0,0,.5))}
+.domino.txt{background:#f7f2e6;color:#141410;border:1px solid #b9b09b;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:calc(var(--dh)*.16)}
+.domino.off{opacity:.34;cursor:default}
+.domino.play{outline:3px solid var(--accent);outline-offset:1px;border-radius:10px}
+.domino.sel{transform:translateY(-14px)}
+#cHand{display:flex;gap:6px;overflow-x:auto;padding:16px 6px 4px;-webkit-overflow-scrolling:touch}
+.board{display:flex;align-items:center;gap:8px;width:100%;justify-content:flex-start}
+.chain{display:flex;gap:3px;overflow-x:auto;padding:4px;flex:1;-webkit-overflow-scrolling:touch}
+.chain .domino{--dh:clamp(64px,13vh,96px)}
+.endbadge{flex-shrink:0;min-width:44px;height:52px;border-radius:10px;background:rgba(224,163,76,.15);
+  border:1px solid var(--accent);color:var(--accent);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;font-weight:bold;font-size:20px;line-height:1}
+.endbadge small{font-size:10px;opacity:.7;font-weight:normal}
+.yard{text-align:center;font-size:13px;opacity:.65;margin-top:6px}
+</style>
+<script src="dominos.js"></script>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+const pip=t=>t.a+t.b;
+CardShell({
+  id:'domino', title:'LE DOMINO', minPlayers:2, maxPlayers:4, skinModule:Dominos,
+  run: async GC => {
+    const P=GC.players, N=P.length;
+    const set=Dominos.shuffle(Dominos.fullSet());
+    const per=N===2?7:5;
+    P.forEach(p=> p.hand=set.splice(0,per).sort((a,b)=>pip(a)-pip(b)));
+    let yard=set;
+    let chain=[], L=null, R=null;
+
+    const refresh=turn=>GC.scores(P.map((p,i)=>({label:p.name,value:p.hand.length,active:i===turn})));
+    const showOpps=(me,turn)=>GC.opponents(P.filter(p=>p!==me).map(p=>({name:p.name,count:p.hand.length,turn:P.indexOf(p)===turn})));
+    const playable=t=> t.a===L||t.b===L||t.a===R||t.b===R;
+    function place(t, side){
+      if(side==='R'){ const o=(t.a===R)?t.b:t.a; chain.push({a:R,b:o}); R=o; }
+      else { const o=(t.a===L)?t.b:t.a; chain.unshift({a:o,b:L}); L=o; }
+    }
+    function renderBoard(){
+      const wrap=document.createElement('div'); wrap.style.width='100%';
+      const board=document.createElement('div'); board.className='board';
+      const bl=document.createElement('div'); bl.className='endbadge'; bl.innerHTML='<small>gauche</small>'+L;
+      const ch=document.createElement('div'); ch.className='chain';
+      chain.forEach(t=> ch.appendChild(Dominos.el(t,{})));
+      const br=document.createElement('div'); br.className='endbadge'; br.innerHTML='<small>droite</small>'+R;
+      board.appendChild(bl); board.appendChild(ch); board.appendChild(br);
+      const yd=document.createElement('div'); yd.className='yard'; yd.textContent='Pioche : '+yard.length+' domino'+(yard.length>1?'s':'');
+      wrap.appendChild(board); wrap.appendChild(yd); GC.center(wrap);
+      // faire défiler la chaîne vers la droite (dernier coup)
+      requestAnimationFrame(()=>{ ch.scrollLeft=ch.scrollWidth; });
+    }
+    function renderHand(p, opts, onPick){
+      const hand=document.getElementById('cHand'); hand.innerHTML='';
+      p.hand.forEach(t=>{ const ok=opts.includes(t);
+        const el=Dominos.el(t,{onClick: ok?()=>onPick(t):null, disabled:!ok});
+        if(ok) el.classList.add('play'); hand.appendChild(el); });
+    }
+
+    async function humanTurn(p){
+      await GC.handOff(p.name);
+      while(true){
+        refresh(P.indexOf(p)); showOpps(p,P.indexOf(p)); renderBoard();
+        const opts=p.hand.filter(playable);
+        if(opts.length){
+          GC.say('À vous, '+p.name+' — touchez une tuile jouable.');
+          GC.setButtons([]);
+          const move=await new Promise(res=>{
+            renderHand(p, opts, async t=>{
+              const mR=(t.a===R||t.b===R), mL=(t.a===L||t.b===L);
+              let side;
+              if(mR&&mL&&L!==R){ side=await GC.ask([{id:'L',label:'◀ Gauche ('+L+')'},{id:'R',label:'Droite ('+R+') ▶',primary:true}]); GC.setButtons([]); }
+              else side = mR?'R':'L';
+              res({t,side});
+            });
+          });
+          place(move.t, move.side); p.hand.splice(p.hand.indexOf(move.t),1); GC.play();
+          GC.combo(p.name+' pose le '+move.t.a+'-'+move.t.b+'.');
+          renderBoard();
+          return {passed:false};
+        }
+        if(yard.length){
+          GC.say('Aucune tuile jouable — piochez.');
+          renderHand(p, [], null);
+          await GC.ask([{id:'d',label:'Piocher',primary:true}]); GC.setButtons([]);
+          const t=yard.shift(); p.hand.push(t); p.hand.sort((a,b)=>pip(a)-pip(b)); GC.play();
+          GC.combo(p.name+' pioche.');
+          continue;
+        }
+        GC.say('Bloqué — vous passez.');
+        renderHand(p, [], null);
+        await GC.ask([{id:'p',label:'Passer',primary:true}]); GC.setButtons([]);
+        return {passed:true};
+      }
+    }
+    async function aiTurn(p){
+      refresh(P.indexOf(p)); showOpps(p,P.indexOf(p)); renderBoard();
+      GC.say(p.name+' réfléchit…'); await GC.sleep(750);
+      let opts=p.hand.filter(playable);
+      while(!opts.length && yard.length){ const t=yard.shift(); p.hand.push(t); opts=p.hand.filter(playable);
+        GC.combo(p.name+' pioche.'); renderBoard(); await GC.sleep(450); }
+      if(!opts.length){ GC.combo(p.name+' passe.'); return {passed:true}; }
+      opts.sort((a,b)=>pip(b)-pip(a));
+      const t=opts[0]; const side=(t.a===R||t.b===R)?'R':'L';
+      place(t,side); p.hand.splice(p.hand.indexOf(t),1);
+      GC.combo(p.name+' pose le '+t.a+'-'+t.b+'.'); GC.play();
+      renderBoard(); await GC.sleep(500);
+      return {passed:false};
+    }
+
+    // départ : plus gros double, sinon plus grosse tuile
+    let starter=0,bv=-1,bt=null;
+    P.forEach((p,i)=> p.hand.forEach(t=>{ const v=(t.a===t.b?100:0)+pip(t); if(v>bv){bv=v;starter=i;bt=t;} }));
+    chain=[{a:bt.a,b:bt.b}]; L=bt.a; R=bt.b;
+    P[starter].hand.splice(P[starter].hand.indexOf(bt),1);
+    GC.say((P[starter].ai?P[starter].name:'Vous')+' ouvre avec le '+bt.a+'-'+bt.b+'.');
+    refresh(-1); renderBoard(); await GC.sleep(1200);
+    if(P[starter].hand.length===0) return GC.gameOver('Victoire de '+P[starter].name+' !','Domino dès l\u2019ouverture !');
+
+    let turn=(starter+1)%N, passes=0;
+    while(true){
+      const p=P[turn];
+      const res = p.ai ? await aiTurn(p) : await humanTurn(p);
+      refresh(-1);
+      if(res.passed){
+        passes++;
+        if(passes>=N){
+          const scored=P.map(x=>({x, s:x.hand.reduce((a,t)=>a+pip(t),0)})).sort((a,b)=>a.s-b.s);
+          const w=scored[0].x;
+          return GC.gameOver('Victoire de '+w.name+' !',
+            'Jeu bloqué — le plus petit total gagne :<br>'+scored.map(s=>s.x.name+' : '+s.s+' points').join('<br>'));
+        }
+      } else {
+        passes=0;
+        if(p.hand.length===0) return GC.gameOver('Victoire de '+p.name+' !', p.name+' pose son dernier domino — domino !');
+      }
+      await GC.sleep(350);
+      turn=(turn+1)%N;
+    }
+  }
+});
+</script>
+</body>
+</html>

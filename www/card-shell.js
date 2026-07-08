@@ -26,6 +26,7 @@ const Snd = (function(){
 })();
 
 window.CardShell = async function(cfg){
+  const SKIN = cfg.skinModule || Cards;
   document.title = cfg.title + ' — Les Dés du Comptoir';
   document.body.insertAdjacentHTML('afterbegin', `
 <div id="ctable">
@@ -67,7 +68,7 @@ window.CardShell = async function(cfg){
   <button id="cResetup">Changer les joueurs</button></div>
 </div></div>`);
 
-  Cards.buildSkinSelect($c('cardSkinSel'), ()=> GC._rerender && GC._rerender());
+  SKIN.buildSkinSelect($c('cardSkinSel'), ()=> GC._rerender && GC._rerender());
   const sndBtn=$c('cSound'); const updSnd=()=>sndBtn.textContent=Snd.on?'🔊':'🔇'; updSnd();
   sndBtn.addEventListener('click',()=>{Snd.toggle();updSnd();});
   $c('cRules').addEventListener('click',()=>{ const r=(window.RULES||{})[cfg.id];
@@ -159,7 +160,7 @@ window.CardShell = async function(cfg){
     center(node){ const c=$c('cCenter'); c.innerHTML=''; if(typeof node==='string')c.innerHTML=node; else if(node)c.appendChild(node); return c; },
     hand(cards,opts){ opts=opts||{}; const h=$c('cHand'); h.innerHTML='';
       cards.forEach(card=>{ const ok=!opts.playable||opts.playable(card);
-        const el=Cards.el(card,{onClick: (opts.onPick&&ok)?opts.onPick:null, disabled:!ok && !opts.showAll});
+        const el=SKIN.el(card,{onClick: (opts.onPick&&ok)?opts.onPick:null, disabled:!ok && !opts.showAll});
         if(ok&&opts.onPick) el.classList.add('play'); h.appendChild(el); }); },
     clearHand(){ $c('cHand').innerHTML=''; },
     setButtons, waitAction, ask:defs=>{setButtons(defs);return waitAction();},

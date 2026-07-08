@@ -25,6 +25,15 @@ Le Président (3-4 j.), Le 8 loco (2-4 j.), **Le Tarot** simplifié à 4 joueurs
 avec la Lune) **Le Pouilleux / Mistigri** (2-4 j.) **La Scopa** (2-4 j., capture italienne à 11 points) **Le Menteur** (2-4 j., bluff et défis) et **Le Rami** (2-4 j., brelans/suites, manche bornée). Le Salon héberge le 8
 américain en réseau ; les autres jeux de cartes en réseau viendront ensuite.
 
+## Dominos 🁢
+Le **jeu de dominos double-six** (`domino-classique.html`), 2-4 joueurs, contre l'ordinateur
+ou à tour de rôle, avec **10 styles de tuiles** (`www/dominos/<style>/<a>-<b>.webp`, découpés
+de vos planches) sélectionnables en jeu. Module réutilisable `www/dominos.js`.
+
+## Menu par catégories
+Le menu (`index.html`) est organisé en trois familles — 🎲 Dés, 🃏 Cartes, 🁢 Dominos —
+avec une barre de navigation qui saute à chaque section.
+
 ## Multi-téléphones 🌐
 Le **Salon** (`salon.html`) connecte 2 à 4 téléphones : l'hôte crée une table, obtient
 un code de 4 lettres, les autres le saisissent. Chaque joueur a **son propre écran et

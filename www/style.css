@@ -109,3 +109,13 @@ table.sheet tr.total td{border-top:2px solid rgba(242,232,213,.3);font-weight:bo
 .cardpile{position:relative;width:74px;height:104px}
 .cardpile .pcard{position:absolute;top:0;left:0}
 .tomb{font-size:13px;opacity:.7;text-align:center}
+
+/* ---- Menu par catégories ---- */
+nav.cats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:6px 0 22px;position:sticky;top:0;
+  background:linear-gradient(180deg, rgba(20,20,16,.96), rgba(20,20,16,.7));padding:10px 6px;z-index:8;backdrop-filter:blur(4px)}
+nav.cats .catbtn{color:var(--cream);border:1px solid rgba(242,232,213,.3);border-radius:999px;
+  padding:9px 16px;text-decoration:none;font-weight:bold;letter-spacing:.04em}
+nav.cats .catbtn small{opacity:.6;font-weight:normal;margin-left:4px}
+nav.cats .catbtn:hover{border-color:var(--accent);color:var(--accent)}
+.secttl{text-align:center;color:var(--accent);letter-spacing:.12em;margin:26px 0 4px;font-size:22px}
+section[id]{scroll-margin-top:64px}
