@@ -20,8 +20,9 @@ bistrot, jouables dans le navigateur et empaquetés en APK Android via GitHub Ac
 | Martinetti | 3 | 2-4 | La série de 1 à 12 |
 
 **Jeux de cartes** (contre l'ordinateur ou à tour de rôle) : La Bataille (2 j.),
-Le Président (3-4 j.), Le 8 loco (2-4 j.) et **Le Tarot** simplifié à 4 joueurs
-(atouts, Excuse, comptage des bouts — 91 points en jeu). Le Salon héberge le 8
+Le Président (3-4 j.), Le 8 loco (2-4 j.), **Le Tarot** simplifié à 4 joueurs
+(atouts, Excuse, bouts — 91 points), **La Dame de pique / Hearts** (4 j., jeu à 50
+avec la Lune) et **Le Pouilleux / Mistigri** (2-4 j.). Le Salon héberge le 8
 américain en réseau ; les autres jeux de cartes en réseau viendront ensuite.
 
 ## Multi-téléphones 🌐

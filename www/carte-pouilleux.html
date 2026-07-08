@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Pouilleux</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+.pickrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.drawlabel{text-align:center;font-size:15px;margin-bottom:8px;opacity:.85}
+.discpile{text-align:center;font-size:13px;opacity:.6;margin-top:6px}
+</style>
+<script src="cards.js"></script>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+const RV={A:14,R:13,D:12,V:11,'10':10,'9':9,'8':8,'7':7,'6':6,'5':5,'4':4,'3':3,'2':2};
+function dropPairs(hand){ // enlève les paires (même rang), renvoie le nb de paires retirées
+  const by={}; hand.forEach(c=>(by[c.r]=by[c.r]||[]).push(c));
+  let removed=0;
+  Object.values(by).forEach(list=>{ while(list.length>=2){ const a=list.pop(),b=list.pop();
+    hand.splice(hand.indexOf(a),1); hand.splice(hand.indexOf(b),1); removed++; } });
+  return removed;
+}
+CardShell({
+  id:'pouilleux', title:'LE POUILLEUX', minPlayers:2, maxPlayers:4,
+  run: async GC => {
+    const P=GC.players, N=P.length;
+    // 52 cartes moins une dame → une dame restera seule (le Pouilleux)
+    const deck=Cards.shuffle(Cards.deck()).filter(c=>!(c.r==='D'&&c.s==='trefle'));
+    P.forEach(p=>{ p.hand=[]; p.out=false; p.pairs=0; });
+    let i=0; while(deck.length){ P[i%N].hand.push(deck.shift()); i++; }
+    P.forEach(p=>{ p.pairs+=dropPairs(p.hand); p.hand.sort((a,b)=>RV[b.r]-RV[a.r]); });
+    const finished=[];
+    const markOut=p=>{ if(!p.out && p.hand.length===0){ p.out=true; finished.push(p); } };
+    P.forEach(markOut);
+
+    const refresh=turn=>GC.scores(P.map((p,idx)=>({label:p.name,
+      value:p.out?'✓':p.hand.length, active:idx===turn&&!p.out})));
+    const showOpps=(me,turn)=>GC.opponents(P.filter(p=>p!==me).map(p=>({
+      name:p.name, count:p.out?'—':p.hand.length, tag:p.pairs?('🃏'+p.pairs):'', turn:P.indexOf(p)===turn&&!p.out})));
+    const nextActive=from=>{ let k=(from+1)%N,h=0; while((P[k].out)&&h<N){k=(k+1)%N;h++;} return k; };
+    function showOwn(p){ // main du joueur humain, face visible (non cliquable)
+      const hand=document.getElementById('cHand'); hand.innerHTML='';
+      p.hand.forEach(c=> hand.appendChild(Cards.el(c,{disabled:true})));
+    }
+
+    async function pickFrom(drawer, src){
+      // le tireur choisit une carte cachée chez src
+      showOpps(drawer, P.indexOf(drawer));
+      const label=document.createElement('div');
+      const wrap=document.createElement('div');
+      label.className='drawlabel';
+      if(drawer.ai){
+        label.textContent=drawer.name+' pioche chez '+src.name+'…';
+        const row=document.createElement('div'); row.className='pickrow';
+        src.hand.forEach(()=> row.appendChild(Cards.el({r:'A',s:'pique'},{back:true})));
+        wrap.appendChild(label); wrap.appendChild(row); GC.center(wrap);
+        await GC.sleep(800);
+        return Math.floor(Math.random()*src.hand.length);
+      }
+      label.textContent='Piochez une carte chez '+src.name;
+      const row=document.createElement('div'); row.className='pickrow';
+      wrap.appendChild(label); wrap.appendChild(row); GC.center(wrap);
+      return new Promise(res=>{
+        src.hand.forEach((_,idx)=>{
+          const b=Cards.el({r:'A',s:'pique'},{back:true, onClick:()=>{ GC.play(); res(idx); }});
+          row.appendChild(b);
+        });
+      });
+    }
+
+    GC.say('Débarrassez-vous de vos paires. Celui qui garde la dame solitaire a perdu !');
+    refresh(-1); await GC.sleep(900);
+    let turn=0; while(P[turn].out) turn=nextActive(turn);
+
+    while(finished.length < N-1){
+      const p=P[turn];
+      if(p.out){ turn=nextActive(turn); continue; }
+      const src=P[nextActive(turn)];
+      if(!p.ai){ await GC.handOff(p.name); showOwn(p); }
+      refresh(turn);
+      const idx=await pickFrom(p, src);
+      const card=src.hand.splice(idx,1)[0];
+      p.hand.push(card);
+      GC.combo(p.name+' pioche '+(p.ai?'une carte':Cards.label(card))+' chez '+src.name+'.');
+      GC.play();
+      const got=dropPairs(p.hand); p.pairs+=got;
+      p.hand.sort((a,b)=>RV[b.r]-RV[a.r]);
+      if(got) GC.combo(p.name+' se défausse d\u2019une paire !');
+      if(!p.ai) showOwn(p);
+      markOut(p); markOut(src);
+      refresh(turn); showOpps(p,turn);
+      await GC.sleep(900);
+      turn=nextActive(turn);
+    }
+    // le dernier avec des cartes garde le Pouilleux
+    const loser=P.find(p=>!p.out);
+    const winner=finished[0];
+    GC.clearHand();
+    return GC.gameOver('Victoire de '+winner.name+' !',
+      '💩 <b>'+loser.name+'</b> reste avec le Pouilleux (la dame solitaire) !<br><br>'+
+      'Sortis dans l\u2019ordre : '+finished.map(p=>p.name).join(', ')+'.');
+  }
+});
+</script>
+</body>
+</html>

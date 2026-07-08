@@ -168,4 +168,22 @@ L'<b>Excuse</b> se joue quand on veut, ne remporte jamais le pli, et reste dans 
 <p><b>Les points</b> (les fameux « bouts ») : le 21, le Petit (atout 1) et l'Excuse valent
 4,5 chacun ; Roi 4,5 ; Dame 3,5 ; Cavalier 2,5 ; Valet 1,5 ; les autres 0,5. Le dernier pli
 ramasse le <b>chien</b> (6 cartes mises de c\u00f4t\u00e9). 91 points en jeu : le plus haut total gagne.</p>`},
+hearts: { title:'La Dame de pique', html:`
+<p>52 cartes, 4 joueurs. On joue des donnes jusqu'\u00e0 ce qu'un joueur atteigne 50 points :
+le <b>plus petit score gagne</b>. Le but est d'\u00e9viter de ramasser des points.</p>
+<p><b>Points :</b> chaque <b>c\u0153ur</b> vaut 1, la <b>Dame de pique</b> vaut 13.</p>
+<p><b>Jouer.</b> Le d\u00e9tenteur du 2 de tr\u00e8fle entame. On doit fournir la couleur demand\u00e9e ;
+\u00e0 d\u00e9faut, on d\u00e9fausse ce qu'on veut. On ne peut pas entamer c\u0153ur tant qu'un c\u0153ur n'a pas
+\u00e9t\u00e9 d\u00e9fauss\u00e9. La plus forte carte de la couleur d'entame remporte le pli\u2026 et ses points.</p>
+<p><b>La Lune :</b> ramasser \u00e0 soi seul <b>tous</b> les points d'une donne (26) rapporte 0
+au h\u00e9ros et inflige 26 \u00e0 chacun des autres !</p>`},
+
+pouilleux: { title:'Le Pouilleux (Mistigri)', html:`
+<p>2 \u00e0 4 joueurs. On retire une dame du paquet : sa jumelle devient le <b>Pouilleux</b>,
+la carte solitaire que personne ne veut garder. Le premier d\u00e9barrass\u00e9 de ses cartes
+gagne ; celui qui reste avec le Pouilleux \u00e0 la fin a perdu.</p>
+<p><b>D\u00e9roulement.</b> On \u00e9carte d'abord toutes ses <b>paires</b> (deux cartes de m\u00eame
+valeur). Puis, chacun \u00e0 son tour, on <b>pioche une carte cach\u00e9e</b> chez le voisin : si
+elle compl\u00e8te une paire, on la jette. On continue jusqu'\u00e0 ce qu'il ne reste qu'un joueur,
+tenant la dame solitaire.</p>`},
 };

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Dame de pique</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+.trick{display:flex;gap:12px;justify-content:center;align-items:flex-end;flex-wrap:wrap}
+.trick .slot{display:flex;flex-direction:column;align-items:center;gap:4px}
+.trick .nm{font-size:13px;opacity:.75}
+.trick .slot.win .nm{color:var(--accent);font-weight:bold}
+</style>
+<script src="cards.js"></script>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+const RANKV={A:14,R:13,D:12,V:11,'10':10,'9':9,'8':8,'7':7,'6':6,'5':5,'4':4,'3':3,'2':2};
+function hpen(c){ if(c.s==='coeur')return 1; if(c.s==='pique'&&c.r==='D')return 13; return 0; }
+function firstTrickFilter(cards, first){ if(!first) return cards; const s=cards.filter(c=>hpen(c)===0); return s.length?s:cards; }
+function hlegal(hand, trick, broken, first){
+  if(trick.length){ const led=trick[0].card.s; const f=hand.filter(c=>c.s===led);
+    return firstTrickFilter(f.length?f:hand.slice(), first); }
+  if(first){ const two=hand.find(c=>c.s==='trefle'&&c.r==='2'); if(two) return [two]; }
+  let base=hand.slice();
+  if(!broken){ const nh=base.filter(c=>c.s!=='coeur'); if(nh.length) base=nh; }
+  return base;
+}
+function htrickWinner(trick){ const led=trick[0].card.s; let b=trick[0];
+  trick.forEach(t=>{ if(t.card.s===led && RANKV[t.card.r]>RANKV[b.card.r]) b=t; }); return trick.indexOf(b); }
+function haiPlay(hand, trick, broken, first){
+  const opts=hlegal(hand,trick,broken,first);
+  if(!trick.length) return opts.reduce((a,b)=>RANKV[a.r]<RANKV[b.r]?a:b);
+  const led=trick[0].card.s, follow=opts.filter(c=>c.s===led);
+  if(follow.length){
+    const maxLed=Math.max(...trick.filter(t=>t.card.s===led).map(t=>RANKV[t.card.r]));
+    const under=follow.filter(c=>RANKV[c.r]<maxLed);
+    if(under.length) return under.reduce((a,b)=>RANKV[a.r]>RANKV[b.r]?a:b);
+    return follow.reduce((a,b)=>RANKV[a.r]>RANKV[b.r]?a:b);
+  }
+  const dp=opts.find(c=>c.s==='pique'&&c.r==='D'); if(dp) return dp;
+  return opts.reduce((a,b)=>(hpen(b)*100+RANKV[b.r])>(hpen(a)*100+RANKV[a.r])?b:a);
+}
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+const TARGET=50;
+CardShell({
+  id:'hearts', title:'LA DAME DE PIQUE', minPlayers:4, maxPlayers:4,
+  run: async GC => {
+    const P=GC.players, N=4;
+    P.forEach(p=> p.total=0);
+    const totals=turn=>GC.scores(P.map((p,i)=>({label:p.name,value:p.total,active:i===turn})));
+
+    async function playHand(){
+      const deck=Cards.shuffle(Cards.deck());
+      P.forEach((p,i)=>{ p.hand=deck.slice(i*13,i*13+13).sort(sortC); p.taken=0; });
+      let broken=false;
+      let lead=P.findIndex(p=>p.hand.some(c=>c.s==='trefle'&&c.r==='2'));
+      const showOpps=(me,turn)=>GC.opponents(P.filter(p=>p!==me).map(p=>({
+        name:p.name, count:p.hand.length, tag:p.taken?('+'+p.taken):'', turn:P.indexOf(p)===turn})));
+      function drawTrick(trick, win){ const w=document.createElement('div'); w.className='trick';
+        trick.forEach((t,i)=>{ const s=document.createElement('div'); s.className='slot'+(win===i?' win':'');
+          const nm=document.createElement('div'); nm.className='nm'; nm.textContent=P[t.by].name;
+          s.appendChild(Cards.el(t.card,{})); s.appendChild(nm); w.appendChild(s); }); GC.center(w); }
+
+      for(let tr=0; tr<13; tr++){
+        const first=(tr===0), trick=[];
+        for(let s=0;s<N;s++){
+          const pi=(lead+s)%N, p=P[pi];
+          totals(pi); showOpps(p,pi);
+          let c;
+          if(p.ai){ GC.say(p.name+' joue…'); await GC.sleep(650); c=haiPlay(p.hand,trick,broken,first); }
+          else{
+            await GC.handOff(p.name); totals(pi); showOpps(p,pi); drawTrick(trick,-1);
+            GC.say(trick.length?('À vous, '+p.name+' — suivez '+Cards.SUIT_CHAR[trick[0].card.s]):'À vous, '+p.name+' — entamez.');
+            const lg=hlegal(p.hand,trick,broken,first);
+            const hand=document.getElementById('cHand'); hand.innerHTML='';
+            c=await new Promise(res=>{ p.hand.forEach(card=>{ const ok=lg.includes(card);
+              const el=Cards.el(card,{onClick: ok?(cc=>{GC.play();res(cc);}):null, disabled:!ok});
+              if(ok) el.classList.add('play'); hand.appendChild(el); }); });
+          }
+          p.hand.splice(p.hand.indexOf(c),1);
+          if(c.s==='coeur') broken=true;
+          trick.push({card:c,by:pi});
+          drawTrick(trick,-1); GC.combo(p.name+' : '+Cards.label(c));
+          await GC.sleep(p.ai?400:200);
+        }
+        const wRel=htrickWinner(trick), wi=trick[wRel].by;
+        const pts=trick.reduce((s,t)=>s+hpen(t.card),0);
+        P[wi].taken+=pts;
+        drawTrick(trick,wRel);
+        GC.combo(P[wi].name+' ramasse le pli'+(pts?(' (+'+pts+')'):' (0)')+'.');
+        lead=wi; await GC.sleep(950); GC.center('');
+      }
+      // lune : un joueur ramasse les 26
+      const moon=P.find(p=>p.taken===26);
+      if(moon){ GC.say('🌙 '+moon.name+' réussit la LUNE ! Les autres prennent 26.');
+        P.forEach(p=> p.total += (p===moon?0:26)); await GC.sleep(1600); }
+      else P.forEach(p=> p.total+=p.taken);
+      totals(-1);
+      await GC.sleep(800);
+    }
+    function sortC(a,b){ const o=['trefle','carreau','pique','coeur'];
+      return o.indexOf(a.s)-o.indexOf(b.s) || RANKV[a.r]-RANKV[b.r]; }
+
+    GC.say('Évitez les cœurs (+1) et surtout la Dame de pique (+13) !');
+    totals(-1); await GC.sleep(900);
+    while(!P.some(p=>p.total>=TARGET)){
+      await playHand();
+      GC.combo('Scores : '+P.map(p=>p.name+' '+p.total).join(' · '));
+      await GC.sleep(1200);
+    }
+    const ranked=[...P].sort((a,b)=>a.total-b.total);
+    const win=ranked[0];
+    return GC.gameOver('Victoire de '+win.name+' !',
+      'Le plus petit score gagne :<br>'+ranked.map(p=>p.name+' : '+p.total+' pts').join('<br>'));
+  }
+});
+</script>
+</body>
+</html>
