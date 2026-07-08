@@ -43,6 +43,11 @@ ses propres cartes** — la base pour les jeux de cartes à mains cachées. Prem
 inclus : le **8 américain**. La connexion passe par WebRTC (PeerJS) : Internet sert à
 se trouver, puis les échanges sont directs entre téléphones.
 
+Le Salon utilise un **cadre réseau générique** (`www/net-games.js`) : chaque jeu est un
+module `{deal, view, apply, isOver, render}` avec l'hôte pour autorité. L'hôte choisit le
+jeu dans le salon. Jeux en réseau actuels : **le 8 américain** et **le Domino** ; les autres
+se branchent sur le même patron. Reducers validés hors-ligne (12 000 parties simulées).
+
 Le fichier `www/net.js` (couche réseau, hôte = autorité) et `www/cards.js` (paquets de
 52 cartes et tarot de 78, rendu) sont réutilisables pour ajouter d'autres jeux de cartes.
 
