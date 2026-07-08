@@ -35,24 +35,26 @@ button.primary{font-size:16px;padding:11px 22px}
 .suitnow{font-size:30px}
 .suitnow.red{color:#e06a5a}
 #gmsg{min-height:1.5em;font-size:16px;margin:8px 0}
-.hand{display:flex;gap:8px;justify-content:flex-start;overflow-x:auto;padding:12px 6px;
+.hand{display:flex;gap:6px;justify-content:flex-start;overflow-x:auto;padding:18px 6px 8px;
   -webkit-overflow-scrolling:touch}
-.pcard{width:60px;height:86px;min-width:60px;background:#f7f2e6;border:1px solid #b9b09b;border-radius:9px;
+:root{--hc:clamp(120px,27vh,190px)}
+.pcard{--ch:var(--hc);height:var(--ch);width:calc(var(--ch)*.70);min-width:calc(var(--ch)*.70);
+  background:#f7f2e6;border:1px solid #b9b09b;border-radius:calc(var(--ch)*.07);
   color:#141410;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  font-family:inherit;cursor:pointer}
-.pcard .rk{font-size:20px;font-weight:bold}
-.pcard .st{font-size:26px;line-height:1}
+  font-family:inherit;cursor:pointer;overflow:hidden}
+.pcard .rk{font-size:calc(var(--ch)*.22);font-weight:bold;line-height:1}
+.pcard .st{font-size:calc(var(--ch)*.32);line-height:1}
 .pcard.red{color:#c2543f}
 .pcard.back{background:#33523f;border-color:#1d3328;color:var(--cream)}
 .pcard.off{opacity:.45;cursor:default}
 .pcard.play{outline:3px solid var(--accent);outline-offset:-2px}
-.pcard.small{width:34px;height:48px;min-width:34px}
+.pcard.small{--ch:44px}
 .pcard.small .st{font-size:16px}
 .pcard.img{padding:0;background:transparent;border:none;width:auto;min-width:0}
-.pcard.img img{height:86px;display:block;border-radius:7px;
-  filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
-#topCard .pcard{height:110px}
-#topCard .pcard.img img{height:110px}
+.pcard.img img{height:var(--ch);width:auto;display:block;border-radius:calc(var(--ch)*.06);
+  filter:drop-shadow(0 3px 7px rgba(0,0,0,.5))}
+#topCard .pcard{--ch:clamp(120px,22vh,170px)}
+#topCard .pcard.img img{height:var(--ch)}
 .skinrow{display:flex;justify-content:flex-end;margin:2px 0}
 .skinrow select{font-family:inherit;font-size:13px;background:rgba(20,20,16,.8);
   color:var(--cream);border:1px solid rgba(242,232,213,.3);border-radius:8px;padding:5px 8px}
