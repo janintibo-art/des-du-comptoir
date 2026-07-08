@@ -385,6 +385,145 @@ const matador={ id:'matador', label:'Le Matador', minP:2, maxP:4,
   },
 };
 
-window.NetGames={ huit, huitloco, president, pouilleux, domino, matador,
-  list:[huit, huitloco, president, pouilleux, domino, matador] };
+
+/* ================= LE MENTEUR ================= */
+const MR=['A','2','3','4','5','6','7','8','9','10','V','D','R'];
+const MRLAB={A:'As',V:'Valets',D:'Dames',R:'Rois'};
+const mrLabel=r=>MRLAB[r]||(r+'');
+const SCH={pique:'\u2660',coeur:'\u2665',carreau:'\u2666',trefle:'\u2663'};
+const menteur={ id:'menteur', label:'Le Menteur', minP:2, maxP:4,
+  deal(names){ const deck=shuffle(deck52()); const players=names.map(n=>({name:n,hand:[]}));
+    let i=0; while(deck.length){ players[i%names.length].hand.push(deck.shift()); i++; }
+    players.forEach(p=>p.hand.sort((a,b)=>MR.indexOf(a.r)-MR.indexOf(b.r)));
+    return {players, turn:0, rankIdx:0, pile:[], lastPlay:null, pending:null, N:names.length}; },
+  view(s,name){ const i=s.players.findIndex(p=>p.name===name); const p=s.players[i];
+    return {game:'menteur', myTurn:i===s.turn, rank:MR[s.rankIdx], rankLabel:mrLabel(MR[s.rankIdx]),
+      pileCount:s.pile.length, canChallenge: s.lastPlay!=null,
+      lastClaim: s.lastPlay?{count:s.lastPlay.cards.length, rank:mrLabel(s.lastPlay.rank), by:s.players[s.lastPlay.by].name}:null,
+      pending: s.pending!=null?s.players[s.pending].name:null, hand:p.hand,
+      players:s.players.map((q,j)=>({name:q.name,count:q.hand.length,turn:j===s.turn})) }; },
+  apply(s,name,a){
+    const i=s.players.findIndex(p=>p.name===name); if(i!==s.turn) return {ok:false}; const N=s.N;
+    const reveal=()=> s.lastPlay.cards.map(c=>c.r+SCH[c.s]).join(', ');
+    if(s.pending!=null){
+      if(a.type==='accept'){ s.over=true; s.winner=s.players[s.pending].name; return {ok:true,msg:name+' laisse passer.'}; }
+      if(a.type==='challenge'){ const lp=s.lastPlay; const truth=lp.cards.every(c=>c.r===lp.rank); const rv=reveal();
+        if(truth){ s.over=true; s.winner=s.players[s.pending].name; return {ok:true,msg:name+' doute, mais c\u2019\u00e9tait vrai ('+rv+') — '+s.winner+' gagne !'}; }
+        const liar=s.players[s.pending]; liar.hand.push(...s.pile.map(x=>x.card)); liar.hand.sort((a,b)=>MR.indexOf(a.r)-MR.indexOf(b.r));
+        const li=s.pending; s.pile=[]; s.pending=null; s.lastPlay=null; s.rankIdx=0; s.turn=li;
+        return {ok:true,msg:'Menteur ! ('+rv+') '+liar.name+' ramasse le tas.'}; }
+      return {ok:false};
+    }
+    if(a.type==='challenge'){ if(s.lastPlay==null) return {ok:false}; const lp=s.lastPlay; const truth=lp.cards.every(c=>c.r===lp.rank); const rv=reveal();
+      const loser= truth? i : lp.by; s.players[loser].hand.push(...s.pile.map(x=>x.card)); s.players[loser].hand.sort((a,b)=>MR.indexOf(a.r)-MR.indexOf(b.r));
+      s.pile=[]; s.lastPlay=null; s.rankIdx=0; s.turn=loser;
+      return {ok:true,msg:(truth?name+' s\u2019est tromp\u00e9':s.players[lp.by].name+' mentait')+' ('+rv+') — ramasse le tas.'}; }
+    if(a.type==='play'){ const cards=a.cards||[]; if(!cards.length||cards.length>4) return {ok:false};
+      for(const c of cards){ if(!s.players[i].hand.some(x=>x.r===c.r&&x.s===c.s)) return {ok:false}; }
+      cards.forEach(c=>{ const k=s.players[i].hand.findIndex(x=>x.r===c.r&&x.s===c.s); s.players[i].hand.splice(k,1); });
+      s.pile.push(...cards.map(c=>({card:c}))); s.lastPlay={cards, rank:MR[s.rankIdx], by:i};
+      const claim=name+' annonce '+cards.length+' '+mrLabel(MR[s.rankIdx])+'.';
+      s.rankIdx=(s.rankIdx+1)%13;
+      if(s.players[i].hand.length===0) s.pending=i;
+      s.turn=(s.turn+1)%N; return {ok:true,msg:claim}; }
+    return {ok:false};
+  },
+  isOver(s){ return s.over?{over:true,text:'🏆 '+s.winner+' vide sa main sans se faire prendre !'}:null; },
+  render(v,ui){
+    ui.opps(v.players.filter(p=>p.name!==ui.myName).map(p=>({name:p.name,count:p.count,turn:p.turn})));
+    const w=document.createElement('div'); w.style.cssText='text-align:center';
+    w.innerHTML='Annonce impos\u00e9e : <b style="color:var(--accent);font-size:20px">'+v.rankLabel+'</b><br>'+
+      '<span style="opacity:.7">Tas : '+v.pileCount+' carte'+(v.pileCount>1?'s':'')+'</span>'+
+      (v.lastClaim?'<br><span style="color:var(--accent)">'+escHtml(v.lastClaim.by)+' annonce '+v.lastClaim.count+' '+v.lastClaim.rank+'</span>':'');
+    ui.center(w);
+    if(!v.myTurn){ ui.say(''); ui.hand(null); ui.buttons([],()=>{}); return; }
+    if(v.pending){ ui.say(v.pending+' pr\u00e9tend avoir fini. Vous doutez ?'); ui.hand(null);
+      ui.buttons([{id:'challenge',label:'Menteur !',primary:true},{id:'accept',label:'Le laisser gagner'}], id=>ui.send({type:id})); return; }
+    ui.say('Annoncez des '+v.rankLabel+' (vrais\u2026 ou faux !)'+(v.canChallenge?' — ou criez Menteur !':''));
+    let sel=[]; const draw=()=>{ const hand=document.createElement('div'); hand.className='hand';
+      v.hand.forEach(card=>{ const el=cardEl(card,{onClick:()=>{ const k=sel.indexOf(card); k>=0?sel.splice(k,1):(sel.length<4&&sel.push(card)); draw(); }});
+        if(sel.includes(card)) el.classList.add('sel'); el.classList.add('play'); hand.appendChild(el); }); ui.hand(hand);
+      const btns=[{id:'play',label:sel.length?('Annoncer '+sel.length+' '+v.rankLabel):'Choisissez',primary:true}];
+      if(v.canChallenge) btns.push({id:'challenge',label:'Menteur !'});
+      ui.buttons(btns, id=>{ if(id==='challenge') ui.send({type:'challenge'}); else if(sel.length) ui.send({type:'play',cards:sel.slice()}); }); };
+    draw();
+  },
+};
+function escHtml(s){ return String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
+
+/* ================= LA SCOPA ================= */
+const SV={A:1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,V:8,D:9,R:10};
+function scDeck(){ return deck52().filter(c=>!['8','9','10'].includes(c.r)); }
+function scSubsets(vals,t){ const n=vals.length,o=[]; for(let m=1;m<(1<<n);m++){ let s=0,st=[]; for(let i=0;i<n;i++) if(m&(1<<i)){s+=vals[i];st.push(i);} if(s===t)o.push(st);} return o; }
+function scCapOptions(table,v){ const sg=[]; table.forEach((c,i)=>{ if(SV[c.r]===v) sg.push([i]); }); if(sg.length) return sg; return scSubsets(table.map(c=>SV[c.r]),v); }
+const scIsCoin=c=>c.s==='carreau', scIsSette=c=>c.r==='7'&&c.s==='carreau';
+const scopa={ id:'scopa', label:'La Scopa', minP:2, maxP:4, TARGET:11,
+  startDeal(s){ const deck=shuffle(scDeck()); s.table=deck.splice(0,4);
+    s.players.forEach(p=>{ p.hand=[]; p.pile=[]; p.scope=0; });
+    for(let k=0;k<s.N;k++) s.players[(s.dealer+1+k)%s.N].hand=deck.splice(0,3);
+    s.deck=deck; s.turn=(s.dealer+1)%s.N; s.last=s.dealer; },
+  deal(names){ const s={players:names.map(n=>({name:n,total:0})), dealer:0, N:names.length}; scopa.startDeal(s); return s; },
+  moreToPlay(s){ return s.deck.length>0 || s.players.some(p=>p.hand.length>0); },
+  endDealAndScore(s){
+    if(s.table.length){ s.players[s.last].pile.push(...s.table); s.table=[]; }
+    const cardCount=p=>p.pile.length, coin=p=>p.pile.filter(scIsCoin).length;
+    const most=fn=>{ const vals=s.players.map(fn); const mx=Math.max(...vals); const who=s.players.filter((p,i)=>vals[i]===mx); return who.length===1?who[0]:null; };
+    const add=new Map(); s.players.forEach(p=>add.set(p,p.scope));
+    const mc=most(cardCount); if(mc)add.set(mc,add.get(mc)+1);
+    const mo=most(coin); if(mo)add.set(mo,add.get(mo)+1);
+    const sb=s.players.find(p=>p.pile.some(scIsSette)); if(sb)add.set(sb,add.get(sb)+1);
+    s.players.forEach(p=>p.total+=add.get(p));
+    if(s.players.some(p=>p.total>=scopa.TARGET)){ s.over=true; return; }
+    s.dealer=(s.dealer+1)%s.N; scopa.startDeal(s);
+  },
+  view(s,name){ const i=s.players.findIndex(p=>p.name===name); const p=s.players[i];
+    return {game:'scopa', myTurn:i===s.turn, table:s.table, deck:s.deck.length, hand:p.hand,
+      players:s.players.map((q,j)=>({name:q.name,count:q.hand.length,total:q.total,turn:j===s.turn})) }; },
+  apply(s,name,a){ const i=s.players.findIndex(p=>p.name===name); if(i!==s.turn) return {ok:false}; if(a.type!=='play') return {ok:false};
+    const p=s.players[i]; const k=p.hand.findIndex(c=>sameCard(c,a.card)); if(k<0) return {ok:false};
+    const v=SV[a.card.r]; const opts=scCapOptions(s.table,v); const cap=a.capture||[];
+    let msg='';
+    if(opts.length){ const ok=opts.some(o=>o.length===cap.length&&[...o].sort().every((x,ii)=>x===[...cap].sort((a,b)=>a-b)[ii]));
+      if(!ok) return {ok:false};
+      const taken=cap.map(ix=>s.table[ix]); cap.slice().sort((a,b)=>b-a).forEach(ix=>s.table.splice(ix,1));
+      p.hand.splice(k,1); p.pile.push(a.card,...taken); s.last=i;
+      if(s.table.length===0 && scopa.moreToPlay(s)){ p.scope++; msg=name+' fait une SCOPA ! 🧹'; } else msg=name+' ramasse.';
+    } else { if(cap.length) return {ok:false}; p.hand.splice(k,1); s.table.push(a.card); msg=name+' pose '+a.card.r+SCH[a.card.s]; }
+    // redistribuer si toutes les mains vides
+    if(s.players.every(q=>q.hand.length===0)){
+      if(s.deck.length){ for(let x=0;x<s.N;x++) s.players[(s.dealer+1+x)%s.N].hand=s.deck.splice(0,3); }
+      else { scopa.endDealAndScore(s); return {ok:true,msg:msg+' — donne comptée.'}; }
+    }
+    if(!s.over) s.turn=(s.turn+1)%s.N;
+    return {ok:true,msg};
+  },
+  isOver(s){ if(!s.over) return null; const r=s.players.slice().sort((a,b)=>b.total-a.total);
+    return {over:true, text:r.map(p=>p.name+' : '+p.total+' pts').join('<br>')}; },
+  render(v,ui){
+    ui.opps(v.players.filter(p=>p.name!==ui.myName).map(p=>({name:p.name,count:p.count+' 🂠 · '+p.total+' pts',turn:p.turn})));
+    const renderTable=(sel,partOf,onToggle)=>{ const wrap=document.createElement('div'); wrap.style.cssText='text-align:center;width:100%';
+      const lab=document.createElement('div'); lab.style.cssText='font-size:12px;opacity:.6'; lab.textContent='TABLE ('+v.table.length+') · pioche '+v.deck; wrap.appendChild(lab);
+      const row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px';
+      v.table.forEach((c,ix)=>{ const can=partOf&&partOf.has(ix); const el=cardEl(c,{onClick:(onToggle&&can)?()=>onToggle(ix):null,disabled:!(onToggle&&can)});
+        if(partOf){ if(!can)el.style.opacity='.4'; if(sel&&sel.has(ix)){ el.style.outline='4px solid var(--accent)'; el.style.transform='translateY(-8px)'; } }
+        row.appendChild(el); }); wrap.appendChild(row); ui.center(wrap); };
+    renderTable(null,null,null);
+    if(!v.myTurn){ ui.say(''); ui.hand(null); ui.buttons([],()=>{}); return; }
+    ui.say('Touchez une carte de votre main.');
+    const drawHand=(dis)=>{ const hand=document.createElement('div'); hand.className='hand';
+      v.hand.forEach(card=>{ const el=cardEl(card,{disabled:dis, onClick: dis?null:()=>pick(card)}); if(!dis)el.classList.add('play'); hand.appendChild(el); }); ui.hand(hand); };
+    function pick(card){ const opts=scCapOptions(v.table, SV[card.r]);
+      if(opts.length===0){ ui.send({type:'play',card,capture:[]}); return; }
+      if(opts.length===1){ ui.send({type:'play',card,capture:opts[0]}); return; }
+      const partOf=new Set(); opts.forEach(o=>o.forEach(x=>partOf.add(x))); const sel=new Set();
+      const refresh=()=>{ renderTable(sel,partOf,ix=>{ sel.has(ix)?sel.delete(ix):sel.add(ix); refresh(); });
+        const cur=[...sel]; const ok=opts.some(o=>o.length===cur.length&&[...o].sort().every((x,ii)=>x===[...cur].sort((a,b)=>a-b)[ii]));
+        ui.buttons([{id:'take',label:'Ramasser',primary:true},{id:'cancel',label:'Annuler'}], id=>{ if(id==='cancel'){ renderTable(null,null,null); drawHand(false); ui.buttons([],()=>{}); ui.say('Touchez une carte.'); return; } if(ok) ui.send({type:'play',card,capture:cur}); }); };
+      ui.say('Choisissez les cartes \u00e0 ramasser (somme = '+SV[card.r]+').'); refresh(); }
+    drawHand(false); ui.buttons([],()=>{});
+  },
+};
+
+window.NetGames={ huit, huitloco, president, pouilleux, menteur, scopa, domino, matador,
+  list:[huit, huitloco, president, pouilleux, menteur, scopa, domino, matador] };
 })();

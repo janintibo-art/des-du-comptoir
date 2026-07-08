@@ -45,7 +45,7 @@ se trouver, puis les échanges sont directs entre téléphones.
 
 Le Salon utilise un **cadre réseau générique** (`www/net-games.js`) : chaque jeu est un
 module `{deal, view, apply, isOver, render}` avec l'hôte pour autorité. L'hôte choisit le
-jeu dans le salon. Jeux en réseau : **8 américain, 8 loco, Président, Pouilleux, Domino, Matador** ; les autres
+jeu dans le salon. Jeux en réseau : **8 américain, 8 loco, Président, Pouilleux, Menteur, Scopa, Domino, Matador** ; les autres
 se branchent sur le même patron. Reducers validés hors-ligne (12 000 parties simulées).
 
 Le fichier `www/net.js` (couche réseau, hôte = autorité) et `www/cards.js` (paquets de
