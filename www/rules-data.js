@@ -116,9 +116,9 @@ indispensable pour les jeux de cartes o\u00f9 la main reste secr\u00e8te.</p>
 le saisissent pour rejoindre. Une connexion Internet est n\u00e9cessaire pour se trouver,
 puis les t\u00e9l\u00e9phones communiquent en direct (id\u00e9alement sur le m\u00eame Wi-Fi ou en
 partage de connexion).</p>
-<p>L'h\u00f4te <b>choisit le jeu</b> dans le salon puis lance la partie. En r\u00e9seau pour
-l'instant : le <b>8 am\u00e9ricain</b> et le <b>Domino</b> ; d'autres suivront sur le m\u00eame
-principe.</p>
+<p>L'h\u00f4te <b>choisit le jeu</b> dans le salon puis lance la partie. En r\u00e9seau :
+le <b>8 am\u00e9ricain</b>, le <b>8 loco</b>, le <b>Pr\u00e9sident</b>, le <b>Pouilleux</b>, le <b>Domino</b>
+et le <b>Matador</b> ; d'autres suivront sur le m\u00eame principe.</p>
 <p>Pour offrir le jeu \u00e0 un ami : bouton <b>\ud83d\udce4 Partager l'app</b> sur le menu — l'APK
 part par Bluetooth, WhatsApp ou tout autre canal, sans magasin d'applications.</p>
 <p><b>Styles de cartes.</b> En jeu, un s\u00e9lecteur permet de choisir parmi 5 jeux de

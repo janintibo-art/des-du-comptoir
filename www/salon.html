@@ -188,7 +188,7 @@ const ui={
 function renderView(v){ $('endBox').style.display='none'; show('vGame'); $('gpick').innerHTML=''; const m=NetGames[v.game]||mod; m.render(v,ui); }
 
 function setupSkin(){ const sel=$('gskin'); sel.style.display='none'; sel.innerHTML=''; if(!mod) return;
-  if(mod.id==='domino'&&window.Dominos){ sel.style.display=''; Dominos.buildSkinSelect(sel,()=>{}); }
+  if((mod.id==='domino'||mod.id==='matador')&&window.Dominos){ sel.style.display=''; Dominos.buildSkinSelect(sel,()=>{}); }
   else if(window.Cards){ sel.style.display=''; Cards.buildSkinSelect(sel,()=>{}); } }
 
 function showEnd(text,host){ $('gsay').textContent=''; $('gbtns').innerHTML=''; $('gpick').innerHTML=''; $('ghand').innerHTML='';
