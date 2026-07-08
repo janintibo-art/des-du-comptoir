@@ -93,3 +93,16 @@ cd ~/des-du-comptoir
 ```
 
 Les deux bibliothèques sont ignorées par git (téléchargées par la CI au build).
+
+## Partage de l'APK à un ami
+
+Après le premier push de cette version, l'APK est publié en Release publique :
+
+```
+https://github.com/VOTRE_COMPTE/des-du-comptoir/releases/latest/download/app-debug.apk
+```
+
+Ce lien pointe toujours vers la dernière version — c'est lui qu'utilise le bouton
+« Partager l'app » quand le jeu tourne dans un navigateur. Dans l'APK installé, le
+bouton partage directement le fichier APK (Bluetooth, WhatsApp…). Pensez à remplacer
+`janintibo-art` dans `www/index.html` si votre compte GitHub est différent.

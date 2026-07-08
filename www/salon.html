@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salon multi-téléphones — Les Dés du Comptoir</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<script src="lib/peerjs.min.js"></script>
+<script>if(typeof Peer==='undefined')document.write('<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"><\/script>')</script>
+<script src="net.js"></script>
+<script src="cards.js"></script>
+<style>
+.wrap{max-width:560px;margin:0 auto;padding:20px 14px 40px;text-align:center}
+.wrap h1{color:var(--accent);letter-spacing:.13em;margin:14px 0 6px}
+.wrap p{opacity:.8;line-height:1.5;margin-bottom:12px}
+.box{background:rgba(20,20,16,.65);border:1px solid rgba(242,232,213,.2);border-radius:12px;padding:18px;margin:12px 0}
+.box h2{color:var(--accent);margin-bottom:10px}
+input.big{width:100%;font-family:inherit;font-size:17px;border-radius:8px;text-align:center;
+  border:1px solid rgba(242,232,213,.35);background:rgba(20,20,16,.8);color:var(--cream);padding:11px;margin:6px 0}
+input.code{letter-spacing:.4em;text-transform:uppercase;font-size:24px}
+.roomcode{font-size:44px;letter-spacing:.35em;color:var(--accent);font-weight:bold;margin:8px 0}
+.plist{line-height:2;font-size:17px}
+.warn{color:var(--red);min-height:1.3em;font-size:14px}
+.muted{opacity:.6;font-size:13.5px;line-height:1.5}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+button.primary{font-size:16px;padding:11px 22px}
+.back{display:inline-block;margin:12px;color:var(--cream);text-decoration:none;opacity:.8}
+/* ---- table de jeu ---- */
+#vGame{display:none}
+.opps{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.opp{border:1px solid rgba(242,232,213,.25);border-radius:10px;padding:8px 14px;font-size:15px}
+.opp.turn{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.opp b{color:var(--accent)}
+.tablezone{display:flex;gap:18px;justify-content:center;align-items:center;margin:16px 0}
+.suitnow{font-size:30px}
+.suitnow.red{color:#e06a5a}
+#gmsg{min-height:1.5em;font-size:16px;margin:8px 0}
+.hand{display:flex;gap:8px;justify-content:flex-start;overflow-x:auto;padding:12px 6px;
+  -webkit-overflow-scrolling:touch}
+.pcard{width:60px;height:86px;min-width:60px;background:#f7f2e6;border:1px solid #b9b09b;border-radius:9px;
+  color:#141410;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  font-family:inherit;cursor:pointer}
+.pcard .rk{font-size:20px;font-weight:bold}
+.pcard .st{font-size:26px;line-height:1}
+.pcard.red{color:#c2543f}
+.pcard.back{background:#33523f;border-color:#1d3328;color:var(--cream)}
+.pcard.off{opacity:.45;cursor:default}
+.pcard.play{outline:3px solid var(--accent);outline-offset:-2px}
+.pcard.small{width:34px;height:48px;min-width:34px}
+.pcard.small .st{font-size:16px}
+.pcard.img{padding:0;background:transparent;border:none;width:auto;min-width:0}
+.pcard.img img{height:86px;display:block;border-radius:7px;
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
+#topCard .pcard{height:110px}
+#topCard .pcard.img img{height:110px}
+.skinrow{display:flex;justify-content:flex-end;margin:2px 0}
+.skinrow select{font-family:inherit;font-size:13px;background:rgba(20,20,16,.8);
+  color:var(--cream);border:1px solid rgba(242,232,213,.3);border-radius:8px;padding:5px 8px}
+.suitpick{display:none;gap:12px;justify-content:center;margin:10px 0}
+.suitpick button{font-size:30px;padding:8px 16px}
+</style>
+</head>
+<body class="menu">
+<a class="back" href="index.html">← Retour au comptoir</a>
+<div class="wrap">
+  <h1>🌐 LE SALON</h1>
+
+  <div id="vHome">
+    <p>Chaque joueur sur <b>son propre téléphone</b>, chacun voit ses propres cartes.
+    Créez une table, partagez le code, jouez.</p>
+    <div class="box">
+      <h2>Créer une table</h2>
+      <input id="hName" class="big" maxlength="14" placeholder="Votre nom">
+      <button class="primary" id="btnHost">Créer la table</button>
+    </div>
+    <div class="box">
+      <h2>Rejoindre une table</h2>
+      <input id="jName" class="big" maxlength="14" placeholder="Votre nom">
+      <input id="jCode" class="big code" maxlength="4" placeholder="CODE" autocapitalize="characters">
+      <button class="primary" id="btnJoin">Rejoindre</button>
+    </div>
+    <div id="homeWarn" class="warn"></div>
+    <p class="muted">Il faut une connexion Internet pour se trouver (le jeu passe ensuite en direct
+    de téléphone à téléphone). Idéalement, tout le monde sur le même Wi-Fi ou en partage de connexion.</p>
+  </div>
+
+  <div id="vLobby" style="display:none">
+    <div class="box">
+      <h2>Code de la table</h2>
+      <div class="roomcode" id="roomCode"></div>
+      <p class="muted">Donnez ce code aux autres joueurs (2 à 4 joueurs).</p>
+      <div class="plist" id="plist"></div>
+      <div id="lobbyWarn" class="warn"></div>
+      <div class="row" id="hostControls" style="display:none">
+        <button class="primary" id="btnStart" disabled>🃏 Lancer le 8 américain</button>
+      </div>
+      <p class="muted" id="guestWait" style="display:none">En attente du lancement par l'hôte…</p>
+    </div>
+  </div>
+
+  <div id="vGame">
+    <div class="skinrow"><select id="cardSkinSel" aria-label="Style des cartes"></select></div>
+    <div class="opps" id="opps"></div>
+    <div class="tablezone">
+      <div id="topCard"></div>
+      <div class="suitnow" id="suitNow"></div>
+      <button class="pcard back" id="drawPile" title="Piocher"><span class="st">🂠</span></button>
+    </div>
+    <div id="gmsg"></div>
+    <div class="suitpick" id="suitPick"></div>
+    <div class="row" id="gbtns"></div>
+    <div class="hand" id="hand"></div>
+    <div class="box" id="endBox" style="display:none">
+      <h2 id="endTitle"></h2>
+      <div class="row" id="endBtns"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const escp = s => String(s).replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+const show = v => { ['vHome','vLobby','vGame'].forEach(x=> $(x).style.display = x===v?'block':'none'); };
+let net = null; // api Net.host ou Net.join
+
+/* ================= LOBBY ================= */
+function refreshLobby(names){
+  $('plist').innerHTML = names.map((n,i)=> (i===0?'👑 ':'🎲 ') + escp(n)).join('<br>');
+  if(net && net.isHost) $('btnStart').disabled = names.length < 2;
+}
+$('btnHost').addEventListener('click', ()=>{
+  const name = $('hName').value.trim();
+  if(!name){ $('homeWarn').textContent = 'Entrez votre nom.'; return; }
+  $('homeWarn').textContent = 'Création de la table…';
+  net = Net.host(name, {
+    onReady(code){
+      $('roomCode').textContent = code;
+      $('hostControls').style.display = 'flex';
+      refreshLobby([name]);
+      show('vLobby');
+    },
+    onJoin(){ syncLobby(); },
+    onLeave(g){
+      if(H.state){ endGame(null, escp(g.name) + ' a quitté la table.'); }
+      else syncLobby();
+    },
+    onMessage(g, msg){ if(H.state) hostOnAct(g.name, msg); },
+    onError(e){ $('homeWarn').textContent = 'Erreur réseau (' + (e.type||e) + '). Réessayez.'; },
+  });
+});
+function syncLobby(){
+  const names = net.players().map(p=>p.name);
+  refreshLobby(names);
+  net.broadcast({t:'lobby', players:names});
+}
+$('btnJoin').addEventListener('click', ()=>{
+  const name = $('jName').value.trim(), code = $('jCode').value.trim();
+  if(!name || code.length < 4){ $('homeWarn').textContent = 'Nom et code de 4 lettres requis.'; return; }
+  $('homeWarn').textContent = 'Connexion à la table…';
+  net = Net.join(code, name, {
+    onReady(finalName){
+      $('roomCode').textContent = code.toUpperCase();
+      $('guestWait').style.display = 'block';
+      refreshLobby([finalName]);
+      show('vLobby');
+    },
+    onMessage(msg){
+      if(msg.t==='lobby') refreshLobby(msg.players);
+      else if(msg.t==='start') show('vGame');
+      else if(msg.t==='view') renderView(msg);
+      else if(msg.t==='end') showEnd(msg.text, false);
+    },
+    onClose(){ showEnd('L\u2019h\u00f4te a ferm\u00e9 la table.', false); },
+    onError(e){ $('homeWarn').textContent = e.type==='timeout' || e.type==='peer-unavailable'
+      ? 'Table introuvable — vérifiez le code.' : 'Erreur réseau ('+(e.type||e)+').'; },
+  });
+});
+
+/* ================= 8 AMÉRICAIN (hôte = autorité) ================= */
+const H = {state:null};
+function playable(c, top, suit){ return c.r==='8' || c.r===top.r || c.s===suit; }
+
+function deal(){
+  const names = net.players().map(p=>p.name);
+  const deck = Cards.shuffle(Cards.deck());
+  const per = names.length===2 ? 7 : 5;
+  const players = names.map(n=>({name:n, hand:deck.splice(0,per)}));
+  let top = deck.shift();
+  while(top.r==='8'){ deck.push(top); top = deck.shift(); }
+  H.state = {players, deck, pile:[], top, suit:top.s, turn:0, drawn:false};
+}
+function advance(){ const s=H.state; s.turn=(s.turn+1)%s.players.length; s.drawn=false; }
+function drawOne(){
+  const s=H.state;
+  if(!s.deck.length){
+    if(!s.pile.length) return null;
+    s.deck = Cards.shuffle(s.pile); s.pile=[];
+  }
+  return s.deck.shift();
+}
+function viewsOut(msg){
+  const s=H.state;
+  s.players.forEach((p,i)=>{
+    const v={t:'view', top:s.top, suit:s.suit, msg,
+      players:s.players.map((q,j)=>({name:q.name, count:q.hand.length, turn:j===s.turn})),
+      hand:p.hand, myTurn:i===s.turn, drawn:s.drawn};
+    if(i===0) renderView(v); else net.sendTo(p.name, v);
+  });
+}
+function hostOnAct(name, msg){
+  const s=H.state; if(!s || msg.t!=='act') return;
+  const i=s.players.findIndex(p=>p.name===name);
+  if(i!==s.turn) return;
+  applyAct(i, msg);
+}
+function applyAct(i, msg){
+  const s=H.state, p=s.players[i];
+  if(msg.a==='play'){
+    const k=p.hand.findIndex(c=>Cards.same(c,msg.c));
+    if(k<0 || !playable(p.hand[k], s.top, s.suit)) return;
+    const c=p.hand.splice(k,1)[0];
+    s.pile.push(s.top); s.top=c;
+    s.suit = c.r==='8' && msg.suit ? msg.suit : c.s;
+    if(navigator.vibrate) try{navigator.vibrate(30);}catch(e){}
+    if(!p.hand.length) return endGame(p.name);
+    advance();
+    viewsOut(escp(p.name)+' joue '+Cards.label(c)+(c.r==='8'?' et demande '+Cards.SUIT_CHAR[s.suit]:'')+'.');
+  } else if(msg.a==='draw' && !s.drawn){
+    const c=drawOne();
+    if(!c){ advance(); viewsOut('Pioche vide — '+escp(p.name)+' passe.'); return; }
+    p.hand.push(c); s.drawn=true;
+    if(playable(c, s.top, s.suit)) viewsOut(escp(p.name)+' pioche une carte… jouable !');
+    else { advance(); viewsOut(escp(p.name)+' pioche et passe.'); }
+  } else if(msg.a==='pass' && s.drawn){
+    advance(); viewsOut(escp(p.name)+' passe.');
+  }
+}
+function endGame(winner, reason){
+  const text = reason || ('🏆 '+escp(winner)+' vide sa main et gagne !');
+  H.state=null;
+  net.broadcast({t:'end', text});
+  showEnd(text, true);
+}
+$('btnStart').addEventListener('click', ()=>{
+  net.broadcast({t:'start'});
+  show('vGame');
+  deal();
+  viewsOut('À '+escp(H.state.players[H.state.turn].name)+' de jouer !');
+});
+
+/* ================= RENDU (commun hôte / invités) ================= */
+let pendingEight=null, lastView=null;
+Cards.buildSkinSelect($('cardSkinSel'), ()=>{ if(lastView) renderView(lastView); });
+function renderView(v){
+  lastView=v;
+  $('endBox').style.display='none';
+  show('vGame');
+  $('opps').innerHTML='';
+  v.players.forEach(p=>{
+    const d=document.createElement('div');
+    d.className='opp'+(p.turn?' turn':'');
+    d.innerHTML=escp(p.name)+' — <b>'+p.count+'</b> 🂠';
+    $('opps').appendChild(d);
+  });
+  $('topCard').innerHTML='';
+  $('topCard').appendChild(Cards.el(v.top,{}));
+  $('suitNow').textContent=Cards.SUIT_CHAR[v.suit];
+  $('suitNow').className='suitnow'+((v.suit==='coeur'||v.suit==='carreau')?' red':'');
+  $('gmsg').textContent=(v.msg||'')+(v.myTurn?' — À vous !':'');
+  $('suitPick').style.display='none'; pendingEight=null;
+  const hand=$('hand'); hand.innerHTML='';
+  v.hand.forEach(c=>{
+    const ok=v.myTurn && playable(c,v.top,v.suit);
+    const el=Cards.el(c,{onClick: ok?(card=>{
+      if(card.r==='8') askSuit(card); else sendAct({a:'play', c:card});
+    }):null, disabled:!v.myTurn});
+    if(ok) el.classList.add('play');
+    hand.appendChild(el);
+  });
+  $('drawPile').disabled=!(v.myTurn && !v.drawn);
+  $('gbtns').innerHTML='';
+  if(v.myTurn && v.drawn){
+    const b=document.createElement('button');
+    b.textContent='Passer'; b.addEventListener('click',()=>sendAct({a:'pass'}));
+    $('gbtns').appendChild(b);
+  }
+}
+function askSuit(card){
+  pendingEight=card;
+  const sp=$('suitPick'); sp.innerHTML=''; sp.style.display='flex';
+  Cards.SUITS.forEach(s=>{
+    const b=document.createElement('button');
+    b.textContent=Cards.SUIT_CHAR[s];
+    b.style.color=(s==='coeur'||s==='carreau')?'#e06a5a':'';
+    b.addEventListener('click',()=>{ sp.style.display='none'; sendAct({a:'play', c:pendingEight, suit:s}); });
+    sp.appendChild(b);
+  });
+  $('gmsg').textContent='Un 8 ! Choisissez la couleur demandée :';
+}
+$('drawPile').addEventListener('click',()=>sendAct({a:'draw'}));
+function sendAct(a){
+  if(net.isHost) applyAct(0, Object.assign({t:'act'},a));
+  else net.send(Object.assign({t:'act'},a));
+}
+function showEnd(text, host){
+  $('gmsg').textContent=''; $('gbtns').innerHTML=''; $('hand').innerHTML='';
+  $('endTitle').textContent=text.replace(/<[^>]*>/g,'');
+  $('endBox').style.display='block';
+  const eb=$('endBtns'); eb.innerHTML='';
+  if(host){
+    const b=document.createElement('button');
+    b.className='primary'; b.textContent='🔁 Revanche';
+    b.addEventListener('click',()=>{ deal(); net.broadcast({t:'start'}); viewsOut('Revanche ! À '+escp(H.state.players[H.state.turn].name)+' de jouer.'); });
+    eb.appendChild(b);
+  }
+  const q=document.createElement('button');
+  q.textContent='Quitter la table';
+  q.addEventListener('click',()=>{ if(net) net.close(); location.href='index.html'; });
+  eb.appendChild(q);
+}
+</script>
+</body>
+</html>

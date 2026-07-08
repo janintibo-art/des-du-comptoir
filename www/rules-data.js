@@ -109,4 +109,26 @@ martinetti: { title:'Le Martinetti', html:`
 apparaît sur un dé seul, sur la somme de deux dés ou des trois (avec 2·3·6 on peut valider
 le 2, le 3, le 5, le 6, le 8, le 9, le 11…). On valide autant de nombres consécutifs que
 possible avec le même lancer, puis on relance. Un lancer qui ne valide rien rend la main.</p>`},
+salon: { title:'Jouer \u00e0 plusieurs t\u00e9l\u00e9phones', html:`
+<p>Le <b>Salon</b> connecte 2 \u00e0 4 t\u00e9l\u00e9phones : chacun voit son propre \u00e9cran —
+indispensable pour les jeux de cartes o\u00f9 la main reste secr\u00e8te.</p>
+<p><b>L'h\u00f4te</b> cr\u00e9e une table et obtient un <b>code de 4 lettres</b> ; les autres
+le saisissent pour rejoindre. Une connexion Internet est n\u00e9cessaire pour se trouver,
+puis les t\u00e9l\u00e9phones communiquent en direct (id\u00e9alement sur le m\u00eame Wi-Fi ou en
+partage de connexion).</p>
+<p>Pour offrir le jeu \u00e0 un ami : bouton <b>\ud83d\udce4 Partager l'app</b> sur le menu — l'APK
+part par Bluetooth, WhatsApp ou tout autre canal, sans magasin d'applications.</p>
+<p><b>Styles de cartes.</b> En jeu, un s\u00e9lecteur permet de choisir parmi 5 jeux de
+cartes illustr\u00e9s (dont deux tarots complets de 78 cartes) — chacun choisit le sien
+sur son t\u00e9l\u00e9phone.</p>`},
+
+huit: { title:'Le 8 am\u00e9ricain (cartes)', html:`
+<p>52 cartes, 2 \u00e0 4 joueurs, chacun sur son t\u00e9l\u00e9phone. Le premier \u00e0 <b>vider sa
+main</b> gagne.</p>
+<p><b>Le tour.</b> Posez une carte de la <b>m\u00eame couleur</b> ou de la <b>m\u00eame valeur</b>
+que la carte du dessus. Les <b>8 sont ma\u00eetres</b> : jouables sur tout, ils permettent
+de choisir la couleur demand\u00e9e.</p>
+<p>Rien \u00e0 jouer ? <b>Piochez une carte</b> : si elle est jouable vous pouvez la poser,
+sinon (ou si vous pr\u00e9f\u00e9rez) vous passez. Pioche vide : la d\u00e9fausse est rebattue.</p>
+<p>On distribue 7 cartes \u00e0 2 joueurs, 5 \u00e0 3 ou 4.</p>`},
 };

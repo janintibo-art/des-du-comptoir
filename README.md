@@ -19,6 +19,30 @@ bistrot, jouables dans le navigateur et empaquetés en APK Android via GitHub Ac
 | La Boîte | 2 | 1-4 | Shut the Box |
 | Martinetti | 3 | 2-4 | La série de 1 à 12 |
 
+## Multi-téléphones 🌐
+Le **Salon** (`salon.html`) connecte 2 à 4 téléphones : l'hôte crée une table, obtient
+un code de 4 lettres, les autres le saisissent. Chaque joueur a **son propre écran et
+ses propres cartes** — la base pour les jeux de cartes à mains cachées. Premier jeu
+inclus : le **8 américain**. La connexion passe par WebRTC (PeerJS) : Internet sert à
+se trouver, puis les échanges sont directs entre téléphones.
+
+Le fichier `www/net.js` (couche réseau, hôte = autorité) et `www/cards.js` (paquets de
+52 cartes et tarot de 78, rendu) sont réutilisables pour ajouter d'autres jeux de cartes.
+
+### Styles de cartes 🃏
+`www/cards/` contient 5 jeux illustrés découpés depuis vos planches : `jeu1`, `jeu2`,
+`jeu3` (52 cartes chacun) et deux **tarots complets de 78 cartes** (`taverne` et
+`retro` : atouts 1-21, Excuse, et les Cavaliers) — prêts pour un futur jeu de Tarot.
+Les libellés se renomment dans `CARD_SKINS` en tête de `www/cards.js`. Le style est
+choisi en jeu, indépendamment sur chaque téléphone.
+
+## Partager l'app 📤
+- Dans l'app : bouton **Partager l'app** sur le menu → envoie l'APK installé par
+  Bluetooth/WhatsApp/etc. (pont Android natif, fonctionne sans réseau).
+- Par lien : chaque push publie l'APK en **Release GitHub publique** :
+  `https://github.com/<votre-compte>/des-du-comptoir/releases/latest/download/app-debug.apk`
+- Le destinataire doit autoriser l'installation de sources inconnues sur son téléphone.
+
 ## Fonctionnalités
 - **1 à 4 joueurs** sur le même appareil : chaque joueur peut être **humain ou ordinateur**,
   avec trois niveaux d'IA (prudent / normal / audacieux).

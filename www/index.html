@@ -22,9 +22,11 @@
   Activez le bouton 📳 dans un jeu pour <b>lancer les dés en secouant le téléphone</b>,
   et débloquez les 12 styles de dés au fil de vos victoires. Sons, vibrations et journal de partie sont de la partie — coupez-les d’un bouton si le patron dort.</p>
   <div class="topline">
+    <a href="salon.html">🌐 Multi-téléphones</a>
     <a href="regles.html">❓ Tutoriel &amp; règles</a>
     <a href="tournoi.html">🏆 Tournoi</a>
     <a href="stats.html">📊 Statistiques</a>
+    <a href="#" id="shareApp">📤 Partager l'app</a>
   </div>
 </header>
 <div class="cards">
@@ -65,5 +67,15 @@
     <div class="faces"><img src="textures/biomech/face-1.png" alt=""><img src="textures/biomech/face-2.png" alt=""><img src="textures/biomech/face-3.png" alt=""></div>
     <h2>Martinetti</h2><p>La course de 1 à 12, dans l'ordre et sans faiblir. 2-4 joueurs.</p></a>
 </div>
+<script>
+'use strict';
+document.getElementById('shareApp').addEventListener('click', e=>{
+  e.preventDefault();
+  if(window.AndroidApp && AndroidApp.shareApk){ AndroidApp.shareApk(); return; }
+  const url='https://github.com/janintibo-art/des-du-comptoir/releases/latest/download/app-debug.apk';
+  if(navigator.share) navigator.share({title:'Les Dés du Comptoir', text:'Installe le jeu de dés du bistrot :', url}).catch(()=>{});
+  else prompt('Copiez ce lien de téléchargement :', url);
+});
+</script>
 </body>
 </html>
