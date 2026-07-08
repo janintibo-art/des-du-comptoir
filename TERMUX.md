@@ -62,3 +62,22 @@ cd ~/des-du-comptoir
 git add . && git commit -m "Description du changement" && git push
 gh run watch && gh run download -n des-du-comptoir-apk -D ~/storage/downloads
 ```
+
+## Mettre à jour un dépôt déjà publié
+
+Si vous avez déjà poussé une première version et que vous recevez un nouveau zip :
+
+```bash
+cd ~
+unzip -o ~/storage/downloads/des-du-comptoir.zip -d ~/maj
+cp -r ~/maj/des-du-comptoir/* ~/des-du-comptoir/
+rm -rf ~/maj
+cd ~/des-du-comptoir
+git add -A
+git commit -m "12 jeux, multijoueur, secousse, tutoriel"
+git push
+```
+
+La copie préserve votre dossier `.git` : l'historique et le lien GitHub restent intacts.
+GitHub Actions reconstruit l'APK automatiquement après le push (`gh run watch`, puis
+`gh run download -n des-du-comptoir-apk -D ~/storage/downloads`).

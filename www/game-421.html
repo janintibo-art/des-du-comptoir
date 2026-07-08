@@ -1,230 +1,167 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>421 — Charge & Décharge</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>421</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.babylonjs.com/cannon.js"></script>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script src="dice-engine.js"></script>
+<script src="rules-data.js"></script>
+<script src="game-core.js"></script>
 </head>
 <body>
-<canvas id="render"></canvas>
-<div id="hud">
-  <div class="bar">
-    <div class="brand"><a href="index.html">421</a><small><a href="index.html">← MENU</a></small></div>
-    <select id="skin" aria-label="Style des dés"></select>
-    <span class="pill">Phase : <b id="phase">Charge</b></span>
-    <div id="scores">
-      <span class="pill">Pot : <b id="pot">21</b></span>
-      <span class="pill">Vous : <b id="you">0</b></span>
-      <span class="pill">Le Patron : <b id="ai">0</b></span>
-    </div>
-  </div>
-  <div id="bottom">
-    <div id="msg"></div>
-    <div id="combo"></div>
-    <div id="actions">
-      <button id="roll" class="primary">Lancer</button>
-      <button id="stay">Je reste</button>
-    </div>
-    <div id="hint">Après un premier lancer, cliquez sur un dé pour le garder. Moins vous ramassez de fiches, mieux c'est !</div>
-  </div>
-</div>
-<div id="overlay">
-  <h1 id="ovTitle"></h1>
-  <p id="ovText"></p>
-  <button id="replay" class="primary">Rejouer</button>
-</div>
 <script>
 'use strict';
-const T = DiceTable({diceCount:3});
-const dice = T.dice;
-const $ = id => document.getElementById(id);
-T.buildSkinSelect($('skin'));
-
-/* ---- Règles : 421 > 111 > 611 > 666 > 511 > 555 > … > suites > autres > nénette ---- */
+const GOLD = '#e0a34c';
 function evaluate(vals){
-  const s = [...vals].sort((a,b)=>b-a);
-  const code = s.join('');
-  if(code === '421') return {rank:1000, name:'421 !', fiches:8, code};
-  if(code === '111') return {rank:990, name:'Brelan d’as', fiches:7, code};
-  if(code === '221') return {rank:0, name:'Nénette (2·2·1)', fiches:4, code};
-  if(s[1]===1 && s[2]===1) return {rank:600 + s[0], name:'Paire d’as + '+s[0], fiches:s[0], code};
-  if(s[0]===s[1] && s[1]===s[2]) return {rank:600 + s[0] - 0.5, name:'Brelan de '+s[0], fiches:s[0], code};
-  if(s[0]===s[1]+1 && s[1]===s[2]+1) return {rank:500 + s[0], name:'Suite '+s[2]+'-'+s[1]+'-'+s[0], fiches:2, code};
-  return {rank:100 + s[0]*10 + s[1] + s[2]/10, name:s[2]+' · '+s[1]+' · '+s[0], fiches:1, code};
+  const s = [...vals].sort((a,b)=>b-a), code = s.join('');
+  if(code === '421') return {rank:1000, name:'421 !', fiches:8};
+  if(code === '111') return {rank:990, name:'Brelan d\u2019as', fiches:7};
+  if(code === '221') return {rank:0, name:'N\u00e9nette (2\u00b72\u00b71)', fiches:4};
+  if(s[1]===1 && s[2]===1) return {rank:600+s[0], name:'Paire d\u2019as + '+s[0], fiches:s[0]};
+  if(s[0]===s[1] && s[1]===s[2]) return {rank:600+s[0]-0.5, name:'Brelan de '+s[0], fiches:s[0]};
+  if(s[0]===s[1]+1 && s[1]===s[2]+1) return {rank:500+s[0], name:'Suite '+s[2]+'-'+s[1]+'-'+s[0], fiches:2};
+  return {rank:100+s[0]*10+s[1]+s[2]/10, name:s[2]+' \u00b7 '+s[1]+' \u00b7 '+s[0], fiches:1};
 }
 
-const S = { pot:21, you:0, ai:0, phase:'charge', leader:'you', gameOver:false };
-function refreshScores(){
-  $('pot').textContent = S.pot; $('you').textContent = S.you; $('ai').textContent = S.ai;
-  $('phase').textContent = S.phase === 'charge' ? 'Charge' : 'Décharge';
-}
-function say(t){ $('msg').textContent = t; }
-function showCombo(t){ $('combo').textContent = t; }
-const sleep = ms => new Promise(r=>setTimeout(r, ms));
-function resetKept(){ dice.forEach(d=>{ d.kept=false; T.setHalo(d, null); }); }
+GameShell({
+  id:'421', title:'421', diceCount:3, minPlayers:2, maxPlayers:4,
+  hint:'Apr\u00e8s un premier lancer, touchez un d\u00e9 pour le garder. Moins vous ramassez de fiches, mieux c\u2019est !',
+  run: async GC => {
+    const T = GC.T, dice = T.dice, P = GC.players;
+    P.forEach(p=> p.fiches = 0);
+    let pot = 21, phase = 'charge', leader = 0;
 
-T.onPick(d=>{
-  if(!d.selectable) return;
-  d.kept = !d.kept;
-  T.setHalo(d, d.kept ? '#e0a34c' : null);
+    const refresh = act => GC.scores([
+      {label:'Phase', value: phase==='charge' ? 'Charge' : 'D\u00e9charge'},
+      {label:'Pot', value: pot},
+      ...P.map((p,i)=>({label:p.name, value:p.fiches, active:i===act})),
+    ]);
+    const resetKept = ()=> dice.forEach(d=>{ d.kept=false; T.setHalo(d,null); });
+
+    async function humanPlay(p, maxT){
+      resetKept(); await GC.lineUp();
+      T.onPick(d=>{ if(d.selectable){ d.kept=!d.kept; T.setHalo(d, d.kept?GOLD:null); } });
+      let throws = 0, combo = null;
+      while(throws < maxT){
+        GC.setButtons([
+          {id:'roll', label:'Lancer ('+(throws+1)+'/'+maxT+')', primary:true},
+          {id:'stay', label:'Je reste', disabled:throws===0},
+        ]);
+        dice.forEach(d=> d.selectable = throws>0);
+        const a = await GC.waitAction();
+        if(a === 'stay') break;
+        GC.setButtons([]); dice.forEach(d=> d.selectable=false);
+        await T.throwDice(dice.filter(d=>!d.kept));
+        throws++;
+        combo = evaluate(dice.map(d=>d.value));
+        GC.combo(p.name + ' : ' + combo.name);
+        if(combo.rank === 1000) break;
+      }
+      GC.setButtons([]); dice.forEach(d=> d.selectable=false);
+      return {combo, throws};
+    }
+
+    async function aiPlay(p, maxT, toBeat){
+      resetKept(); await GC.lineUp();
+      let throws = 0, combo = null;
+      while(throws < maxT){
+        GC.say(p.name + ' lance les d\u00e9s\u2026');
+        await T.throwDice(dice.filter(d=>!d.kept));
+        throws++;
+        combo = evaluate(dice.map(d=>d.value));
+        GC.combo(p.name + ' : ' + combo.name);
+        await GC.sleep(900);
+        const beating = toBeat != null ? combo.rank > toBeat : combo.rank >= 604.5;
+        if(combo.rank === 1000 || beating || throws >= maxT) break;
+        // garde : vise le 421, sinon les as, sinon une paire
+        resetKept();
+        const counts = {}; dice.forEach(d=> counts[d.value]=(counts[d.value]||0)+1);
+        const used = {}, have = [];
+        dice.forEach(d=>{ if([4,2,1].includes(d.value) && !used[d.value]){ used[d.value]=true; have.push(d); } });
+        if(have.length >= 2) have.forEach(d=>{ d.kept=true; T.setHalo(d,GOLD); });
+        else if(counts[1]) dice.forEach(d=>{ if(d.value===1){ d.kept=true; T.setHalo(d,GOLD); } });
+        else { const pv=[6,5,4,3].find(v=>counts[v]>=2); if(pv){ let n=0; dice.forEach(d=>{ if(d.value===pv&&n<2){ d.kept=true; T.setHalo(d,GOLD); n++; } }); } }
+        const n = dice.filter(d=>d.kept).length;
+        GC.say(n ? p.name+' garde '+n+' d\u00e9'+(n>1?'s':'')+' et relance.' : p.name+' relance tout.');
+        await GC.sleep(800);
+      }
+      resetKept();
+      return {combo, throws};
+    }
+
+    async function play(p, maxT, toBeat){
+      refresh(P.indexOf(p));
+      if(p.ai) return aiPlay(p, maxT, toBeat);
+      GC.say('\u00c0 vous, ' + p.name + ' \u2014 ' + maxT + ' lancer' + (maxT>1?'s':'') + ' maximum.');
+      return humanPlay(p, maxT);
+    }
+
+    while(true){
+      GC.combo('');
+      const order = P.map((_,i)=> P[(leader+i) % P.length]);
+      const results = [];
+      // le meneur joue et fixe le nombre de lancers
+      const lead = await play(order[0], 3, null);
+      results.push({p:order[0], c:lead.combo});
+      GC.say(order[0].name + ' reste sur ' + lead.combo.name + ' \u2014 ' + lead.throws + ' lancer' + (lead.throws>1?'s':'') + ' pour les autres.');
+      await GC.sleep(1100);
+      let bestRank = lead.combo.rank;
+      for(let i=1; i<order.length; i++){
+        const r = await play(order[i], lead.throws, bestRank);
+        results.push({p:order[i], c:r.combo});
+        bestRank = Math.max(bestRank, r.combo.rank);
+        await GC.sleep(700);
+      }
+      // d\u00e9partage des pires (rampeau)
+      let losers = results.filter(r=> r.c.rank === Math.min(...results.map(x=>x.c.rank)));
+      while(losers.length > 1){
+        GC.say('Rampeau entre ' + losers.map(l=>l.p.name).join(' et ') + ' \u2014 un lancer chacun !');
+        GC.combo('\u2696 Rampeau'); await GC.sleep(1400);
+        for(const l of losers){
+          refresh(P.indexOf(l.p));
+          if(!l.p.ai){ await GC.ask([{id:'roll', label:'Lancer ('+l.p.name+')', primary:true}]); }
+          else { GC.say(l.p.name + ' lance\u2026'); await GC.sleep(500); }
+          resetKept(); await GC.lineUp();
+          await T.throwDice(dice);
+          l.c = evaluate(dice.map(d=>d.value));
+          GC.combo(l.p.name + ' : ' + l.c.name);
+          await GC.sleep(900);
+        }
+        losers = losers.filter(l=> l.c.rank === Math.min(...losers.map(x=>x.c.rank)));
+      }
+      const loser = losers[0].p;
+      const best = results.reduce((a,b)=> a.c.rank >= b.c.rank ? a : b);
+      let n;
+      if(phase === 'charge'){
+        n = Math.min(best.c.fiches, pot);
+        pot -= n; loser.fiches += n;
+        GC.say(loser.name + ' ramasse ' + n + ' fiche' + (n>1?'s':'') + ' (' + best.c.name + ' de ' + best.p.name + ').');
+      } else {
+        n = Math.min(best.c.fiches, best.p.fiches);
+        best.p.fiches -= n; loser.fiches += n;
+        GC.say(best.p.name + ' refile ' + n + ' fiche' + (n>1?'s':'') + ' \u00e0 ' + loser.name + ' (' + best.c.name + ').');
+      }
+      leader = P.indexOf(loser);
+      refresh(-1);
+      GC.combo('');
+      await GC.sleep(1900);
+      if(phase === 'charge' && pot === 0){
+        phase = 'decharge'; refresh(-1);
+        const free = P.find(p=> p.fiches === 0);
+        if(free) return GC.gameOver('Victoire de ' + free.name + ' !',
+          free.name + ' sort de la charge sans une fiche. Les autres paient leur tourn\u00e9e.');
+        GC.say('\u26a1 La charge est termin\u00e9e : place \u00e0 la d\u00e9charge !');
+        await GC.sleep(2200);
+      } else if(phase === 'decharge'){
+        const winner = P.find(p=> p.fiches === 0);
+        if(winner) return GC.gameOver(winner.ai ? winner.name + ' gagne\u2026' : 'Victoire de ' + winner.name + ' !',
+          winner.name + ' s\u2019est d\u00e9barrass\u00e9 de toutes ses fiches.');
+      }
+    }
+  }
 });
-
-let resolveAction = null;
-$('roll').addEventListener('click', ()=> resolveAction && resolveAction('roll'));
-$('stay').addEventListener('click', ()=> resolveAction && resolveAction('stay'));
-function setButtons(canRoll, canStay, rollLabel){
-  $('roll').disabled = !canRoll; $('stay').disabled = !canStay;
-  if(rollLabel) $('roll').textContent = rollLabel;
-}
-
-async function playerTurn(maxThrows){
-  resetKept();
-  let throws = 0, combo = null;
-  while(throws < maxThrows){
-    setButtons(true, throws > 0, 'Lancer ('+(throws+1)+'/'+maxThrows+')');
-    dice.forEach(d=> d.selectable = throws > 0);
-    const action = await new Promise(r=> resolveAction = r);
-    resolveAction = null;
-    if(action === 'stay') break;
-    setButtons(false, false);
-    dice.forEach(d=> d.selectable = false);
-    await T.throwDice(dice.filter(d=>!d.kept));
-    throws++;
-    combo = evaluate(dice.map(d=>d.value));
-    showCombo(combo.name);
-    if(combo.code === '421') break;
-  }
-  setButtons(false, false);
-  dice.forEach(d=> d.selectable = false);
-  return {combo, throws};
-}
-
-/* ---- IA ---- */
-function aiChooseKeeps(){
-  resetKept();
-  const counts = {}; dice.forEach(d=> counts[d.value]=(counts[d.value]||0)+1);
-  const used = {}, have = [];
-  dice.forEach(d=>{
-    if([4,2,1].includes(d.value) && !used[d.value]){ used[d.value]=true; have.push(d); }
-  });
-  if(have.length >= 2){ have.forEach(d=>{ d.kept = true; T.setHalo(d,'#e0a34c'); }); return; }
-  if(counts[1]){ dice.forEach(d=>{ if(d.value===1){ d.kept = true; T.setHalo(d,'#e0a34c'); } }); return; }
-  const pairVal = [6,5,4,3].find(v=> counts[v] >= 2);
-  if(pairVal){ let n=0; dice.forEach(d=>{ if(d.value===pairVal && n<2){ d.kept=true; T.setHalo(d,'#e0a34c'); n++; } }); }
-}
-async function aiTurn(maxThrows, toBeat){
-  resetKept();
-  let throws = 0, combo = null;
-  while(throws < maxThrows){
-    say('Le Patron lance les dés…');
-    await T.throwDice(dice.filter(d=>!d.kept));
-    throws++;
-    combo = evaluate(dice.map(d=>d.value));
-    showCombo('Le Patron : ' + combo.name);
-    await sleep(900);
-    const goodEnough = combo.rank >= 604.5;
-    const beating = toBeat ? combo.rank > toBeat.rank : false;
-    if(combo.code === '421' || (toBeat ? beating : goodEnough) || throws >= maxThrows) break;
-    aiChooseKeeps();
-    const n = dice.filter(d=>d.kept).length;
-    say(n ? 'Le Patron garde '+n+' dé'+(n>1?'s':'')+' et relance.' : 'Le Patron relance tout.');
-    await sleep(900);
-  }
-  resetKept();
-  return {combo, throws};
-}
-
-/* ---- Boucle ---- */
-function transfer(loser, amount){
-  if(S.phase === 'charge'){
-    const n = Math.min(amount, S.pot);
-    S.pot -= n; S[loser] += n; return n;
-  }
-  const winner = loser === 'you' ? 'ai' : 'you';
-  const n = Math.min(amount, S[winner]);
-  S[winner] -= n; S[loser] += n; return n;
-}
-function checkEnd(){
-  if(S.phase === 'charge' && S.pot === 0){
-    S.phase = 'decharge'; refreshScores();
-    if(S.you === 0) return endGame(true);
-    if(S.ai === 0) return endGame(false);
-    say('⚡ La charge est terminée : place à la décharge ! Débarrassez-vous de vos fiches.');
-    return 'pause';
-  }
-  if(S.phase === 'decharge'){
-    if(S.you === 0) return endGame(true);
-    if(S.ai === 0) return endGame(false);
-  }
-  return false;
-}
-function endGame(youWin){
-  S.gameOver = true;
-  $('ovTitle').textContent = youWin ? 'Victoire !' : 'Perdu…';
-  $('ovText').textContent = youWin
-    ? 'Vous vous êtes débarrassé de toutes vos fiches. Le Patron paie sa tournée.'
-    : 'Le Patron a vidé ses fiches avant vous. C’est votre tournée !';
-  $('overlay').style.display = 'flex';
-  return 'over';
-}
-
-async function playRound(){
-  refreshScores(); showCombo('');
-  const leaderIsYou = S.leader === 'you';
-  let a, b;
-  if(leaderIsYou){
-    say('À vous de jouer — vous menez, jusqu’à 3 lancers.');
-    a = await playerTurn(3);
-    say('Vous restez sur : ' + a.combo.name + '. Le Patron a droit à ' + a.throws + ' lancer' + (a.throws>1?'s':'') + '.');
-    await sleep(1100);
-    b = await aiTurn(a.throws, a.combo);
-  } else {
-    say('Le Patron mène ce tour.');
-    await sleep(700);
-    a = await aiTurn(3, null);
-    say('Le Patron reste sur : ' + a.combo.name + '. À vous, ' + a.throws + ' lancer' + (a.throws>1?'s':'') + ' maximum.');
-    b = await playerTurn(a.throws);
-  }
-  const youCombo = leaderIsYou ? a.combo : b.combo;
-  const aiCombo  = leaderIsYou ? b.combo : a.combo;
-
-  if(youCombo.rank === aiCombo.rank){
-    say('Rampeau ! Égalité (' + youCombo.name + ') — on rejoue le tour.');
-    showCombo('⚖ Rampeau');
-    await sleep(1800);
-    return;
-  }
-  const youLose = youCombo.rank < aiCombo.rank;
-  const winCombo = youLose ? aiCombo : youCombo;
-  const loser = youLose ? 'you' : 'ai';
-  const n = transfer(loser, winCombo.fiches);
-  refreshScores();
-  if(S.phase === 'charge'){
-    say((youLose ? 'Vous ramassez ' : 'Le Patron ramasse ') + n + ' fiche' + (n>1?'s':'') +
-        ' (' + winCombo.name + ' contre ' + (youLose ? youCombo.name : aiCombo.name) + ').');
-  } else {
-    say((youLose ? 'Le Patron vous refile ' : 'Vous refilez au Patron ') + n + ' fiche' + (n>1?'s':'') +
-        ' (' + winCombo.name + ').');
-  }
-  showCombo(youLose ? '✗ Tour perdu' : '✓ Tour gagné');
-  S.leader = loser;
-  const st = checkEnd();
-  await sleep(st === 'pause' ? 2600 : 2000);
-}
-
-async function game(){ while(!S.gameOver){ await playRound(); } }
-$('replay').addEventListener('click', ()=>{
-  Object.assign(S, {pot:21, you:0, ai:0, phase:'charge', leader:'you', gameOver:false});
-  $('overlay').style.display = 'none';
-  refreshScores(); game();
-});
-refreshScores();
-setButtons(false, false);
-game();
 </script>
 </body>
 </html>

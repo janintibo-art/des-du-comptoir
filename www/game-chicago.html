@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chicago</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.babylonjs.com/cannon.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="dice-engine.js"></script>
+<script src="rules-data.js"></script>
+<script src="game-core.js"></script>
+</head>
+<body>
+<script>
+'use strict';
+GameShell({
+  id:'chicago', title:'CHICAGO', diceCount:2, minPlayers:2, maxPlayers:4,
+  hint:'Manches de 2 à 12 : faites la somme du numéro de la manche pour la marquer.',
+  run: async GC => {
+    const T=GC.T, P=GC.players;
+    P.forEach(p=> p.score=0);
+    const refresh=(act,m)=>GC.scores([
+      {label:'Cible',value:m},
+      ...P.map((p,i)=>({label:p.name,value:p.score,active:i===act}))]);
+    for(let m=2;m<=12;m++){
+      GC.say('Manche du '+m+' !');
+      await GC.sleep(900);
+      for(let i=0;i<P.length;i++){
+        const p=P[i];
+        await GC.lineUp(); refresh(i,m); GC.combo('');
+        if(p.ai){ GC.say(p.name+' vise le '+m+'…'); await GC.sleep(800); }
+        else { GC.say('À vous, '+p.name+' — il faut faire '+m+' !');
+               await GC.ask([{id:'roll',label:'Lancer',primary:true}]); }
+        GC.setButtons([]);
+        await T.throwDice(T.dice);
+        const sum=T.dice.reduce((a,d)=>a+d.value,0);
+        if(sum===m){ p.score+=m; GC.combo(sum+' → ✓ +'+m+' pts'); }
+        else GC.combo(sum+' → raté');
+        refresh(-1,m);
+        await GC.sleep(1300);
+      }
+    }
+    const ranked=[...P].sort((a,b)=>b.score-a.score);
+    const tie=ranked.filter(p=>p.score===ranked[0].score);
+    return GC.gameOver(
+      tie.length>1?'Égalité !':(ranked[0].ai?ranked[0].name+' gagne…':'Victoire de '+ranked[0].name+' !'),
+      ranked.map(p=>p.name+' : '+p.score+' pts').join('<br>'));
+  }
+});
+</script>
+</body>
+</html>

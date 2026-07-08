@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zanzibar</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.babylonjs.com/cannon.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="dice-engine.js"></script>
+<script src="rules-data.js"></script>
+<script src="game-core.js"></script>
+</head>
+<body>
+<script>
+'use strict';
+const GOLD='#e0a34c';
+function zEval(vals){
+  const s=[...vals].sort((a,b)=>a-b).join('');
+  if(s==='456') return {rank:1000,name:'ZANZIBAR ! (4·5·6)',jetons:4};
+  if(vals[0]===vals[1]&&vals[1]===vals[2]){
+    const v=vals[0];
+    return {rank:v===1?950:800+v, name:'Brelan de '+(v===1?'as':v), jetons:3};
+  }
+  if(s==='123') return {rank:700,name:'1·2·3',jetons:2};
+  const pts=vals.reduce((a,v)=> a+(v===1?100:v===6?60:v),0);
+  return {rank:pts,name:pts+' points',jetons:1};
+}
+GameShell({
+  id:'zanzibar', title:'ZANZIBAR', diceCount:3, minPlayers:2, maxPlayers:4,
+  hint:'4·5·6 bat tout, l\u2019as vaut 100, le 6 vaut 60. Le perdant du tour ramasse des jetons — le moins chargé gagne !',
+  run: async GC => {
+    const T=GC.T, dice=T.dice, P=GC.players;
+    P.forEach(p=> p.jetons=0);
+    let pot=21, leader=0;
+    const refresh=act=>GC.scores([
+      {label:'Pot',value:pot},
+      ...P.map((p,i)=>({label:p.name,value:p.jetons,active:i===act}))]);
+    const resetKept=()=>dice.forEach(d=>{ d.kept=false; T.setHalo(d,null); });
+
+    async function play(p, maxT, toBeat){
+      resetKept(); await GC.lineUp(); refresh(P.indexOf(p));
+      let throws=0, combo=null;
+      T.onPick(d=>{ if(d.selectable){ d.kept=!d.kept; T.setHalo(d,d.kept?GOLD:null); } });
+      while(throws<maxT){
+        if(p.ai){ GC.say(p.name+' lance…'); await GC.sleep(600); }
+        else {
+          GC.say('À vous, '+p.name+' — '+maxT+' lancer'+(maxT>1?'s':'')+' max.');
+          dice.forEach(d=>d.selectable=throws>0);
+          const a=await GC.ask([
+            {id:'roll',label:'Lancer ('+(throws+1)+'/'+maxT+')',primary:true},
+            {id:'stay',label:'Je reste',disabled:throws===0}]);
+          if(a==='stay') break;
+        }
+        GC.setButtons([]); dice.forEach(d=>d.selectable=false);
+        await T.throwDice(dice.filter(d=>!d.kept));
+        throws++;
+        combo=zEval(dice.map(d=>d.value));
+        GC.combo(p.name+' : '+combo.name);
+        if(p.ai){
+          await GC.sleep(800);
+          const good = toBeat!=null ? combo.rank>toBeat : combo.rank>=700;
+          if(good || combo.rank===1000 || throws>=maxT) break;
+          resetKept();
+          const c={}; dice.forEach(d=>c[d.value]=(c[d.value]||0)+1);
+          dice.forEach(d=>{ if([4,5,6].includes(d.value)&&c[d.value]===1||d.value===1){ d.kept=true; T.setHalo(d,GOLD); } });
+        }
+        if(combo.rank===1000) break;
+      }
+      GC.setButtons([]); dice.forEach(d=>d.selectable=false); resetKept();
+      return {combo, throws};
+    }
+
+    while(true){
+      GC.combo('');
+      const order=P.map((_,i)=>P[(leader+i)%P.length]);
+      const results=[];
+      const lead=await play(order[0],3,null);
+      results.push({p:order[0], c:lead.combo});
+      GC.say(order[0].name+' reste sur '+lead.combo.name+' — '+lead.throws+' lancer'+(lead.throws>1?'s':'')+' pour les autres.');
+      await GC.sleep(1100);
+      for(let i=1;i<order.length;i++){
+        const best=Math.max(...results.map(x=>x.c.rank));
+        const r=await play(order[i], lead.throws, best);
+        results.push({p:order[i], c:r.combo});
+        await GC.sleep(500);
+      }
+      let losers=results.filter(r=> r.c.rank===Math.min(...results.map(x=>x.c.rank)));
+      while(losers.length>1){
+        GC.say('Départage entre '+losers.map(l=>l.p.name).join(' et ')+' — un lancer !');
+        await GC.sleep(1300);
+        for(const l of losers){
+          refresh(P.indexOf(l.p));
+          if(!l.p.ai) await GC.ask([{id:'r',label:'Lancer ('+l.p.name+')',primary:true}]);
+          else { GC.say(l.p.name+' lance…'); await GC.sleep(500); }
+          GC.setButtons([]); await GC.lineUp();
+          await T.throwDice(dice);
+          l.c=zEval(dice.map(d=>d.value));
+          GC.combo(l.p.name+' : '+l.c.name);
+          await GC.sleep(900);
+        }
+        losers=losers.filter(l=> l.c.rank===Math.min(...losers.map(x=>x.c.rank)));
+      }
+      const loser=losers[0].p;
+      const best=results.reduce((a,b)=> a.c.rank>=b.c.rank?a:b);
+      const n=Math.min(best.c.jetons, pot);
+      pot-=n; loser.jetons+=n;
+      GC.say(loser.name+' ramasse '+n+' jeton'+(n>1?'s':'')+' ('+best.c.name+' de '+best.p.name+').');
+      leader=P.indexOf(loser);
+      refresh(-1); GC.combo('');
+      await GC.sleep(1900);
+      if(pot===0){
+        const ranked=[...P].sort((a,b)=>a.jetons-b.jetons);
+        return GC.gameOver(ranked[0].ai?ranked[0].name+' gagne…':'Victoire de '+ranked[0].name+' !',
+          'Pot vidé ! Classement (le moins de jetons gagne) :<br>'+
+          ranked.map(p=>p.name+' : '+p.jetons+' jetons').join('<br>'));
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

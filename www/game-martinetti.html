@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Martinetti</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.babylonjs.com/cannon.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="dice-engine.js"></script>
+<script src="rules-data.js"></script>
+<script src="game-core.js"></script>
+</head>
+<body>
+<script>
+'use strict';
+function reachable(a,b,c){
+  return new Set([a,b,c,a+b,a+c,b+c,a+b+c]);
+}
+GameShell({
+  id:'martinetti', title:'MARTINETTI', diceCount:3, minPlayers:2, maxPlayers:4,
+  hint:'Validez 1, 2, 3… jusqu\u2019à 12 dans l\u2019ordre : un dé seul, la somme de deux, ou des trois.',
+  run: async GC => {
+    const T=GC.T, dice=T.dice, P=GC.players;
+    P.forEach(p=> p.prog=0);
+    const refresh=act=>GC.scores(P.map((p,i)=>({label:p.name,value:p.prog+'/12',active:i===act})));
+
+    async function turn(p, idx){
+      await GC.lineUp(); refresh(idx); GC.combo('');
+      while(true){
+        if(p.ai){ GC.say(p.name+' vise le '+(p.prog+1)+'…'); await GC.sleep(700); }
+        else { GC.say('À vous, '+p.name+' — prochain nombre : '+(p.prog+1)+'.');
+               await GC.ask([{id:'r',label:'Lancer (cible : '+(p.prog+1)+')',primary:true}]); }
+        GC.setButtons([]);
+        await T.throwDice(dice);
+        const set=reachable(dice[0].value, dice[1].value, dice[2].value);
+        const done=[];
+        while(p.prog<12 && set.has(p.prog+1)){ p.prog++; done.push(p.prog); }
+        if(done.length){
+          GC.combo('✓ '+done.join(', ')+' validé'+(done.length>1?'s':'')+' !');
+          refresh(idx);
+          if(p.prog>=12) return true;
+          await GC.sleep(1100);
+        } else {
+          GC.combo('✗ Pas de '+(p.prog+1)+' — la main passe.');
+          await GC.sleep(1500);
+          return false;
+        }
+      }
+    }
+
+    while(true){
+      for(let i=0;i<P.length;i++){
+        const won=await turn(P[i],i);
+        refresh(-1);
+        if(won)
+          return GC.gameOver(P[i].ai?P[i].name+' gagne…':'Victoire de '+P[i].name+' !',
+            P[i].name+' boucle la série de 1 à 12 ! ('+
+            P.map(x=>x.name+' : '+x.prog+'/12').join(' · ')+')');
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

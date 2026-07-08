@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cochon</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.babylonjs.com/cannon.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="dice-engine.js"></script>
+<script src="rules-data.js"></script>
+<script src="game-core.js"></script>
+</head>
+<body>
+<script>
+'use strict';
+GameShell({
+  id:'cochon', title:'COCHON', diceCount:1, minPlayers:2, maxPlayers:4,
+  hint:'Relancez tant que vous osez : un 1 efface la cagnotte du tour. Premier à 100 !',
+  run: async GC => {
+    const T=GC.T, die=T.dice[0], P=GC.players;
+    P.forEach(p=> p.score=0);
+    const refresh=(act,turn)=>GC.scores([
+      ...P.map((p,i)=>({label:p.name,value:p.score,active:i===act})),
+      {label:'Tour',value:turn||0}]);
+    async function turn(p, idx){
+      await GC.lineUp();
+      let pts=0;
+      GC.combo(''); refresh(idx,0);
+      while(true){
+        if(p.ai){
+          GC.say(p.name+' lance…'); await GC.sleep(600);
+        } else {
+          GC.say('À vous, '+p.name+' !');
+          const a=await GC.ask([
+            {id:'roll',label:'Lancer',primary:true},
+            {id:'bank',label:'Banquer',disabled:pts===0}]);
+          if(a==='bank') break;
+        }
+        GC.setButtons([]);
+        await T.throwDice([die]);
+        if(die.value===1){
+          GC.combo('✗ Un 1 !');
+          GC.say(p.name+' perd les '+pts+' points du tour.');
+          pts=0; await GC.sleep(1600); return;
+        }
+        pts+=die.value;
+        GC.combo('+'+die.value+' → '+pts+' pts en jeu');
+        refresh(idx,pts);
+        if(p.ai){
+          await GC.sleep(700);
+          if(pts>=20 || p.score+pts>=100) break;
+        }
+      }
+      p.score+=pts;
+      GC.say(p.name+' banque '+pts+' points.');
+      GC.combo('✓ +'+pts); refresh(-1,0);
+      await GC.sleep(1300);
+    }
+    while(true){
+      for(let i=0;i<P.length;i++){
+        await turn(P[i],i);
+        if(P[i].score>=100)
+          return GC.gameOver(P[i].ai?P[i].name+' gagne…':'Victoire de '+P[i].name+' !',
+            P.map(p=>p.name+' : '+p.score).join(' · '));
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

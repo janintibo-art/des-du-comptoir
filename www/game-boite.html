@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Bo&icirc;te</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.babylonjs.com/cannon.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="dice-engine.js"></script>
+<script src="rules-data.js"></script>
+<script src="game-core.js"></script>
+</head>
+<body>
+<script>
+'use strict';
+const GREY='#8a8577';
+function subsets(open, total){
+  const arr=[...open], out=[];
+  const n=arr.length;
+  for(let m=1;m<(1<<n);m++){
+    let s=0, set=[];
+    for(let i=0;i<n;i++) if(m&(1<<i)){ s+=arr[i]; set.push(arr[i]); }
+    if(s===total) out.push(set);
+  }
+  return out;
+}
+GameShell({
+  id:'boite', title:'LA BO\u00ceTE', diceCount:2, minPlayers:1, maxPlayers:4,
+  hint:'Abaissez des tuiles dont la somme \u00e9gale les d\u00e9s. Le plus bas score gagne — bo\u00eete ferm\u00e9e, victoire !',
+  run: async GC => {
+    const T=GC.T, dice=T.dice, P=GC.players;
+    P.forEach(p=>{ p.score=null; });
+    const refresh=act=>GC.scores(P.map((p,i)=>({
+      label:p.name, value:p.score==null?'\u2014':p.score, active:i===act})));
+
+    function tilesUI(open, selected, onToggle){
+      const div=document.createElement('div'); div.className='tiles';
+      for(let n=1;n<=9;n++){
+        const b=document.createElement('button'); b.className='tile'; b.textContent=n;
+        if(!open.has(n)){ b.classList.add('closed'); b.disabled=true; }
+        else {
+          if(selected && selected.has(n)) b.classList.add('sel');
+          if(onToggle) b.addEventListener('click', ()=>onToggle(n));
+          else b.disabled=true;
+        }
+        div.appendChild(b);
+      }
+      GC.custom(div);
+    }
+
+    async function throwFor(p, open){
+      // choix 1 ou 2 d\u00e9s quand les tuiles ouvertes sont toutes \u2264 6
+      let nDice=2;
+      if(Math.max(...open)<=6){
+        if(p.ai) nDice = 1; // plus de contr\u00f4le en fin de bo\u00eete
+        else {
+          const a=await GC.ask([
+            {id:'two',label:'Lancer 2 d\u00e9s',primary:true},
+            {id:'one',label:'Lancer 1 d\u00e9'}]);
+          nDice = a==='one'?1:2;
+        }
+      } else if(!p.ai){
+        await GC.ask([{id:'r',label:'Lancer',primary:true}]);
+      } else {
+        await GC.sleep(600);
+      }
+      GC.setButtons([]);
+      if(nDice===1){
+        dice[1].aside=true; T.setHalo(dice[1],GREY);
+        await T.moveTo(dice[1], -(T.AREA/2-1.9), -(T.AREA/2-1.9));
+        await T.throwDice([dice[0]]);
+        return dice[0].value;
+      }
+      if(dice[1].aside){ dice[1].aside=false; T.setHalo(dice[1],null); }
+      await T.throwDice(dice);
+      return dice[0].value+dice[1].value;
+    }
+
+    async function turn(p, idx){
+      await GC.lineUp(); refresh(idx); GC.combo('');
+      const open=new Set([1,2,3,4,5,6,7,8,9]);
+      tilesUI(open, null, null);
+      GC.say(p.ai ? p.name+' joue\u2026' : '\u00c0 vous, '+p.name+' !');
+      while(true){
+        const total=await throwFor(p, open);
+        GC.combo('Total : '+total);
+        const options=subsets(open, total);
+        if(!options.length){
+          const rest=[...open].reduce((a,b)=>a+b,0);
+          GC.say('Aucune combinaison possible pour '+total+'. Score de '+p.name+' : '+rest+'.');
+          await GC.sleep(2000);
+          return rest;
+        }
+        if(p.ai){
+          await GC.sleep(900);
+          const pick=options.reduce((a,b)=> b.length<a.length?b:a);
+          pick.forEach(n=>open.delete(n));
+          GC.say(p.name+' abaisse '+pick.join(' + ')+'.');
+          tilesUI(open, null, null);
+          await GC.sleep(1100);
+        } else {
+          const selected=new Set();
+          const paint=()=>{
+            tilesUI(open, selected, n=>{
+              if(selected.has(n)) selected.delete(n); else selected.add(n);
+              paint();
+            });
+            const sum=[...selected].reduce((a,b)=>a+b,0);
+            GC.setButtons([{id:'ok',label:'Abaisser ('+sum+'/'+total+')',primary:true,disabled:sum!==total}]);
+            GC.say('Choisissez des tuiles dont la somme fait '+total+'.');
+          };
+          paint();
+          await GC.waitAction();
+          GC.setButtons([]);
+          selected.forEach(n=>open.delete(n));
+          tilesUI(open, null, null);
+        }
+        if(open.size===0){
+          GC.say('\ud83c\udf89 '+p.name+' ferme la bo\u00eete !');
+          await GC.sleep(1500);
+          return 0;
+        }
+      }
+    }
+
+    refresh(-1);
+    for(let i=0;i<P.length;i++){
+      P[i].score=await turn(P[i], i);
+      refresh(-1);
+      if(P[i].score===0 && P.length>1)
+        return GC.gameOver(P[i].ai?P[i].name+' gagne\u2026':'Victoire de '+P[i].name+' !',
+          P[i].name+' a ferm\u00e9 la bo\u00eete \u2014 victoire imm\u00e9diate !');
+    }
+    GC.custom(null);
+    if(P.length===1){
+      const s=P[0].score;
+      return GC.gameOver(s===0?'Bo\u00eete ferm\u00e9e !':'Score : '+s,
+        s===0?'Un sans-faute, patron !':
+        s<=10?'Joli score \u2014 la bo\u00eete a failli y passer.':'Retentez votre chance !');
+    }
+    const ranked=[...P].sort((a,b)=>a.score-b.score);
+    const tie=ranked.filter(p=>p.score===ranked[0].score);
+    return GC.gameOver(
+      tie.length>1?'\u00c9galit\u00e9 !':(ranked[0].ai?ranked[0].name+' gagne\u2026':'Victoire de '+ranked[0].name+' !'),
+      ranked.map(p=>p.name+' : '+p.score).join('<br>'));
+  }
+});
+</script>
+</body>
+</html>

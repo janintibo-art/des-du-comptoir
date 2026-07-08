@@ -1,301 +1,182 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>10 000 — Jeu de dés</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10 000</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.babylonjs.com/cannon.js"></script>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script src="dice-engine.js"></script>
+<script src="rules-data.js"></script>
+<script src="game-core.js"></script>
 </head>
 <body>
-<canvas id="render"></canvas>
-<div id="hud">
-  <div class="bar">
-    <div class="brand"><a href="index.html">10 000</a><small><a href="index.html">← MENU</a></small></div>
-    <select id="skin" aria-label="Style des dés"></select>
-    <div id="scores">
-      <span class="pill">Vous : <b id="you">0</b></span>
-      <span class="pill">Le Patron : <b id="ai">0</b></span>
-      <span class="pill">Tour : <b id="turn">0</b></span>
-      <span class="pill">Sélection : <b id="sel">0</b></span>
-    </div>
-  </div>
-  <div id="bottom">
-    <div id="msg"></div>
-    <div id="combo"></div>
-    <div id="actions">
-      <button id="roll" class="primary">Lancer les 5 dés</button>
-      <button id="bank">Banquer</button>
-    </div>
-    <div id="hint">1 = 100 · 5 = 50 · brelan de n = n×100 (as = 1000, doublé au 4ᵉ dé) · suite = 1500.
-      Il faut 500 points pour ouvrir. Aucun dé qui marque = tour perdu !</div>
-  </div>
-</div>
-<div id="overlay">
-  <h1 id="ovTitle"></h1>
-  <p id="ovText"></p>
-  <button id="replay" class="primary">Rejouer</button>
-</div>
 <script>
 'use strict';
-const T = DiceTable({diceCount:5});
-const dice = T.dice;
-const $ = id => document.getElementById(id);
-T.buildSkinSelect($('skin'));
-
-const OPEN_AT = 500, TARGET = 10000;
-const GOLD = '#e0a34c', GREY = '#8a8577';
-const sleep = ms => new Promise(r=>setTimeout(r, ms));
-function say(t){ $('msg').textContent = t; }
-function showCombo(t){ $('combo').textContent = t; }
-
-/* ---- Score ---- */
-function scoreSelection(vals){
-  if(vals.length === 5){
-    const s = [...vals].sort().join('');
-    if(s === '12345' || s === '23456') return {points:1500, valid:true, name:'Suite !'};
-  }
-  const c = [0,0,0,0,0,0,0];
-  vals.forEach(v=> c[v]++);
-  let pts = 0;
-  for(let v=1; v<=6; v++){
-    let n = c[v];
-    if(n >= 3){ pts += (v===1 ? 1000 : v*100) * Math.pow(2, n-3); n = 0; }
-    if(v === 1) pts += n*100;
-    else if(v === 5) pts += n*50;
-    else if(n > 0) return {points:0, valid:false};
+const GOLD='#e0a34c', GREY='#8a8577', OPEN_AT=500, TARGET=10000;
+function scoreSel(vals){
+  if(vals.length===5){ const s=[...vals].sort().join(''); if(s==='12345'||s==='23456') return {points:1500, valid:true}; }
+  const c=[0,0,0,0,0,0,0]; vals.forEach(v=>c[v]++);
+  let pts=0;
+  for(let v=1;v<=6;v++){
+    let n=c[v];
+    if(n>=3){ pts += (v===1?1000:v*100)*Math.pow(2,n-3); n=0; }
+    if(v===1) pts+=n*100; else if(v===5) pts+=n*50; else if(n>0) return {points:0, valid:false};
   }
   return {points:pts, valid:pts>0};
 }
 function hasScoring(vals){
-  const c = {}; vals.forEach(v=> c[v]=(c[v]||0)+1);
-  if(c[1] || c[5]) return true;
-  for(const v in c) if(c[v] >= 3) return true;
-  if(vals.length === 5){
-    const s = [...vals].sort().join('');
-    if(s === '12345' || s === '23456') return true;
-  }
+  const c={}; vals.forEach(v=>c[v]=(c[v]||0)+1);
+  if(c[1]||c[5]) return true;
+  for(const v in c) if(c[v]>=3) return true;
+  if(vals.length===5){ const s=[...vals].sort().join(''); if(s==='12345'||s==='23456') return true; }
   return false;
 }
 
-/* ---- État ---- */
-const S = { you:0, ai:0, youOpen:false, aiOpen:false, gameOver:false };
-function refreshScores(turnPts, selPts){
-  $('you').textContent = S.you; $('ai').textContent = S.ai;
-  $('turn').textContent = turnPts || 0; $('sel').textContent = selPts || 0;
-}
+GameShell({
+  id:'10000', title:'10 000', diceCount:5, minPlayers:2, maxPlayers:4,
+  hint:'1 = 100 \u00b7 5 = 50 \u00b7 brelan de n = n\u00d7100 (as = 1000) \u00b7 suite = 1500. Ouverture \u00e0 500. Rien qui marque = tour perdu !',
+  run: async GC => {
+    const T=GC.T, dice=T.dice, P=GC.players;
+    P.forEach(p=>{ p.score=0; p.open=false; });
+    const refresh = (act, turn, sel) => GC.scores([
+      ...P.map((p,i)=>({label:p.name, value:p.score, active:i===act})),
+      {label:'Tour', value:turn||0}, {label:'S\u00e9l.', value:sel||0},
+    ]);
+    const slot = i => ({x:-(T.AREA/2-1.9)+i*2.1, z:-(T.AREA/2-1.9)});
 
-const asideSlot = i => ({ x: -(T.AREA/2 - 1.9) + i*2.1, z: -(T.AREA/2 - 1.9) });
-async function resetTable(){
-  await Promise.all(dice.map((d,i)=>{
-    d.aside = false; d.kept = false; d.selectable = false; d.selected = false;
-    T.setHalo(d, null);
-    return T.moveTo(d, (i-2)*2.4, 1.2);
-  }));
-}
-
-let selection = [];
-function selectionPts(){ return scoreSelection(selection.map(d=>d.value)); }
-T.onPick(d=>{
-  if(!d.selectable || d.aside) return;
-  d.selected = !d.selected;
-  T.setHalo(d, d.selected ? GOLD : null);
-  selection = dice.filter(x=>x.selected);
-  playerRefresh();
-});
-
-/* ---- Tour du joueur ---- */
-let resolveAction = null;
-$('roll').addEventListener('click', ()=> resolveAction && resolveAction('roll'));
-$('bank').addEventListener('click', ()=> resolveAction && resolveAction('bank'));
-function setButtons(canRoll, canBank, rollLabel){
-  $('roll').disabled = !canRoll; $('bank').disabled = !canBank;
-  if(rollLabel) $('roll').textContent = rollLabel;
-}
-
-let P = null; // état du tour joueur en cours
-function playerRefresh(){
-  if(!P) return;
-  const sel = selectionPts();
-  const remaining = P.pool.filter(d=>!d.selected).length;
-  refreshScores(P.turnPts + (sel.valid ? sel.points : 0), sel.valid ? sel.points : 0);
-  const total = S.you + P.turnPts + (sel.valid ? sel.points : 0);
-  const canBank = sel.valid && (S.youOpen || P.turnPts + sel.points >= OPEN_AT);
-  const label = !P.thrown ? 'Lancer les 5 dés'
-    : remaining === 0 ? 'Main pleine — relancer les 5'
-    : 'Relancer ' + remaining + ' dé' + (remaining>1?'s':'');
-  setButtons(!P.thrown || sel.valid, P.thrown && canBank, label);
-  if(P.thrown){
-    if(!sel.valid && selection.length) showCombo('Sélection invalide');
-    else if(sel.valid) showCombo('+' + sel.points + ' pts');
-    else showCombo('');
-    if(P.thrown && !canBank && sel.valid && !S.youOpen)
-      say('Il vous faut ' + OPEN_AT + ' points d’un coup pour ouvrir (' + (P.turnPts + sel.points) + '/' + OPEN_AT + ').');
-  }
-}
-
-async function playerTurn(){
-  await resetTable();
-  P = { turnPts:0, pool:[...dice], thrown:false };
-  selection = []; dice.forEach(d=> d.selected = false);
-  say('À vous ! Lancez les dés.'); showCombo('');
-  refreshScores(0,0);
-  while(true){
-    playerRefresh();
-    const action = await new Promise(r=> resolveAction = r);
-    resolveAction = null;
-    const sel = selectionPts();
-    if(action === 'bank' && P.thrown && sel.valid){
-      P.turnPts += sel.points;
-      if(!S.youOpen && P.turnPts >= OPEN_AT){ S.youOpen = true; say('Vous ouvrez avec ' + P.turnPts + ' points !'); }
-      S.you += P.turnPts;
-      showCombo('✓ +' + P.turnPts + ' pts');
-      refreshScores(0,0);
-      break;
-    }
-    if(action !== 'roll') continue;
-    setButtons(false, false);
-    if(P.thrown){ // valider la sélection avant de relancer
-      P.turnPts += sel.points;
-      const chosen = [...selection];
-      const rest = P.pool.filter(d=>!d.selected);
-      if(rest.length === 0){ // main pleine
-        say('Main pleine ! Vous repartez avec les 5 dés (' + P.turnPts + ' pts en jeu).');
-        await resetTable();
-        P.pool = [...dice];
-      } else {
-        const taken = dice.filter(d=>d.aside).length;
-        await Promise.all(chosen.map((d,i)=>{
-          d.aside = true; d.selected = false; d.selectable = false; T.setHalo(d, GREY);
-          const s = asideSlot(taken + i); return T.moveTo(d, s.x, s.z);
-        }));
-        P.pool = rest;
+    async function humanTurn(p, idx){
+      await GC.lineUp();
+      let turnPts=0, pool=[...dice], thrown=false, selection=[];
+      T.onPick(d=>{
+        if(!d.selectable || d.aside) return;
+        d.selected=!d.selected; T.setHalo(d, d.selected?GOLD:null);
+        selection = dice.filter(x=>x.selected);
+        paint();
+      });
+      function paint(){
+        const sel = scoreSel(selection.map(d=>d.value));
+        const remaining = pool.filter(d=>!d.selected).length;
+        refresh(idx, turnPts + (sel.valid?sel.points:0), sel.valid?sel.points:0);
+        const canBank = sel.valid && (p.open || turnPts + sel.points >= OPEN_AT);
+        GC.setButtons([
+          {id:'roll', primary:true, disabled: thrown && !sel.valid,
+           label: !thrown ? 'Lancer les 5 d\u00e9s' : remaining===0 ? 'Main pleine \u2014 relancer les 5' : 'Relancer '+remaining+' d\u00e9'+(remaining>1?'s':'')},
+          {id:'bank', label:'Banquer', disabled: !thrown || !canBank},
+        ]);
+        if(thrown){
+          if(selection.length && !sel.valid) GC.combo('S\u00e9lection invalide');
+          else if(sel.valid) GC.combo('+'+sel.points+' pts');
+          else GC.combo('');
+          if(sel.valid && !canBank) GC.say('Il faut '+OPEN_AT+' points d\u2019un coup pour ouvrir ('+(turnPts+sel.points)+'/'+OPEN_AT+').');
+        }
       }
-      selection = []; dice.forEach(d=> d.selected = false);
+      GC.say('\u00c0 vous, '+p.name+' !'); GC.combo(''); paint();
+      while(true){
+        const a = await GC.waitAction();
+        const sel = scoreSel(selection.map(d=>d.value));
+        if(a==='bank' && thrown && sel.valid){
+          turnPts += sel.points;
+          if(!p.open && turnPts >= OPEN_AT){ p.open=true; GC.say(p.name+' ouvre avec '+turnPts+' points !'); }
+          p.score += turnPts;
+          GC.combo('\u2713 +'+turnPts+' pts'); refresh(-1,0,0);
+          break;
+        }
+        if(a!=='roll') continue;
+        GC.setButtons([]);
+        if(thrown){
+          turnPts += sel.points;
+          const chosen=[...selection], rest=pool.filter(d=>!d.selected);
+          if(rest.length===0){
+            GC.say('Main pleine ! On repart avec les 5 d\u00e9s ('+turnPts+' pts en jeu).');
+            await GC.lineUp(); pool=[...dice];
+          } else {
+            const taken = dice.filter(d=>d.aside).length;
+            await Promise.all(chosen.map((d,i)=>{
+              d.aside=true; d.selected=false; d.selectable=false; T.setHalo(d,GREY);
+              const s=slot(taken+i); return T.moveTo(d,s.x,s.z);
+            }));
+            pool = rest;
+          }
+          selection=[]; dice.forEach(d=>d.selected=false);
+        }
+        GC.say('Les d\u00e9s roulent\u2026');
+        await T.throwDice(pool);
+        thrown=true;
+        if(!hasScoring(pool.map(d=>d.value))){
+          GC.combo('\u2717 Rien ne marque !');
+          GC.say(p.name+' perd les '+turnPts+' points du tour.');
+          refresh(-1,0,0); await GC.sleep(2000);
+          break;
+        }
+        pool.forEach(d=>d.selectable=true);
+        GC.say('S\u00e9lectionnez les d\u00e9s qui marquent, puis relancez ou banquez.');
+        paint();
+      }
+      dice.forEach(d=>{ d.selectable=false; });
+      GC.setButtons([]);
     }
-    say('Les dés roulent…');
-    await T.throwDice(P.pool);
-    P.thrown = true;
-    const vals = P.pool.map(d=>d.value);
-    if(!hasScoring(vals)){
-      showCombo('✗ Rien ne marque !');
-      say('Aucun dé ne rapporte : vous perdez les ' + P.turnPts + ' points du tour.');
-      refreshScores(0,0);
-      await sleep(2000);
-      break;
-    }
-    P.pool.forEach(d=> d.selectable = true);
-    say('Sélectionnez les dés qui marquent, puis relancez ou banquez.');
-  }
-  dice.forEach(d=>{ d.selectable = false; });
-  setButtons(false, false);
-  P = null;
-}
 
-/* ---- IA ---- */
-function aiPicks(pool, takeAll){
-  const vals = pool.map(d=>d.value);
-  if(vals.length === 5){
-    const s = [...vals].sort().join('');
-    if(s === '12345' || s === '23456') return [...pool]; // suite : tout prendre
-  }
-  const c = {}; vals.forEach(v=> c[v]=(c[v]||0)+1);
-  const picks = [];
-  pool.forEach(d=>{
-    if(c[d.value] >= 3 || d.value === 1) picks.push(d);
-    else if(d.value === 5 && takeAll) picks.push(d);
-  });
-  if(!picks.length){ const five = pool.find(d=>d.value === 5); if(five) picks.push(five); }
-  return picks;
-}
-async function aiTurn(){
-  await resetTable();
-  let turnPts = 0, pool = [...dice];
-  say('Le Patron joue…'); showCombo('');
-  while(true){
-    await sleep(600);
-    await T.throwDice(pool);
-    const vals = pool.map(d=>d.value);
-    if(!hasScoring(vals)){
-      showCombo('✗ Le Patron ne marque rien !');
-      say('Le Patron perd les ' + turnPts + ' points de son tour.');
-      await sleep(2000);
-      return;
+    function aiPicks(pool, takeAll){
+      const vals=pool.map(d=>d.value);
+      if(vals.length===5){ const s=[...vals].sort().join(''); if(s==='12345'||s==='23456') return [...pool]; }
+      const c={}; vals.forEach(v=>c[v]=(c[v]||0)+1);
+      const picks=pool.filter(d=> c[d.value]>=3 || d.value===1 || (d.value===5 && takeAll));
+      if(!picks.length){ const f=pool.find(d=>d.value===5); if(f) picks.push(f); }
+      return picks;
     }
-    const all = aiPicks(pool, true);
-    const allPts = scoreSelection(all.map(d=>d.value)).points;
-    const potential = turnPts + allPts;
-    const remainingAfterAll = pool.length - all.length;
-    const canBank = S.aiOpen || potential >= OPEN_AT;
-    const shouldBank = canBank && (S.ai + potential >= TARGET || potential >= 700 ||
-                                   (potential >= 350 && remainingAfterAll <= 2));
-    if(shouldBank){
-      all.forEach(d=> T.setHalo(d, GOLD));
-      turnPts = potential;
-      if(!S.aiOpen){ S.aiOpen = true; }
-      S.ai += turnPts;
-      showCombo('Le Patron banque +' + turnPts + ' pts');
-      refreshScores(0,0);
-      await sleep(1800);
-      return;
+    async function aiTurn(p, idx){
+      await GC.lineUp();
+      let turnPts=0, pool=[...dice];
+      GC.say(p.name+' joue\u2026'); GC.combo(''); refresh(idx,0,0);
+      while(true){
+        await GC.sleep(600);
+        await T.throwDice(pool);
+        if(!hasScoring(pool.map(d=>d.value))){
+          GC.combo('\u2717 '+p.name+' ne marque rien !');
+          GC.say(p.name+' perd les '+turnPts+' points de son tour.');
+          await GC.sleep(1800); return;
+        }
+        const all=aiPicks(pool,true);
+        const allPts=scoreSel(all.map(d=>d.value)).points;
+        const potential=turnPts+allPts, restN=pool.length-all.length;
+        const canBank = p.open || potential>=OPEN_AT;
+        if(canBank && (p.score+potential>=TARGET || potential>=700 || (potential>=350 && restN<=2))){
+          all.forEach(d=>T.setHalo(d,GOLD));
+          p.open=true; p.score+=potential;
+          GC.combo(p.name+' banque +'+potential+' pts'); refresh(-1,0,0);
+          await GC.sleep(1700); return;
+        }
+        const picks=aiPicks(pool,false);
+        const pts=scoreSel(picks.map(d=>d.value)).points;
+        turnPts+=pts;
+        picks.forEach(d=>T.setHalo(d,GOLD));
+        GC.combo(p.name+' garde +'+pts+' pts ('+turnPts+' en jeu)');
+        refresh(idx,turnPts,0);
+        await GC.sleep(1100);
+        const rest=pool.filter(d=>!picks.includes(d));
+        if(rest.length===0){ GC.say('Main pleine pour '+p.name+' !'); await GC.lineUp(); pool=[...dice]; }
+        else {
+          const taken=dice.filter(d=>d.aside).length;
+          await Promise.all(picks.map((d,i)=>{ d.aside=true; T.setHalo(d,GREY); const s=slot(taken+i); return T.moveTo(d,s.x,s.z); }));
+          pool=rest;
+          GC.say(p.name+' relance '+pool.length+' d\u00e9'+(pool.length>1?'s':'')+'\u2026');
+        }
+      }
     }
-    // relance : prise prudente (brelans + as, un 5 en dernier recours)
-    const picks = aiPicks(pool, false);
-    const pts = scoreSelection(picks.map(d=>d.value)).points;
-    turnPts += pts;
-    picks.forEach(d=> T.setHalo(d, GOLD));
-    showCombo('Le Patron garde +' + pts + ' pts (' + turnPts + ' en jeu)');
-    await sleep(1200);
-    const rest = pool.filter(d=> !picks.includes(d));
-    if(rest.length === 0){
-      say('Main pleine pour le Patron ! Il repart avec les 5 dés.');
-      await resetTable();
-      pool = [...dice];
-    } else {
-      const taken = dice.filter(d=>d.aside).length;
-      await Promise.all(picks.map((d,i)=>{
-        d.aside = true; T.setHalo(d, GREY);
-        const s = asideSlot(taken + i); return T.moveTo(d, s.x, s.z);
-      }));
-      pool = rest;
-      say('Le Patron relance ' + pool.length + ' dé' + (pool.length>1?'s':'') + '…');
-    }
-  }
-}
 
-/* ---- Partie ---- */
-function checkWin(){
-  if(S.you >= TARGET) return endGame(true);
-  if(S.ai >= TARGET) return endGame(false);
-  return false;
-}
-function endGame(youWin){
-  S.gameOver = true;
-  $('ovTitle').textContent = youWin ? 'Victoire !' : 'Perdu…';
-  $('ovText').textContent = youWin
-    ? 'Vous atteignez les 10 000 points ! Score final : ' + S.you + ' contre ' + S.ai + '.'
-    : 'Le Patron atteint les 10 000 points (' + S.ai + ' contre ' + S.you + '). La prochaine sera la bonne.';
-  $('overlay').style.display = 'flex';
-  return true;
-}
-async function game(){
-  while(!S.gameOver){
-    await playerTurn();
-    if(checkWin()) return;
-    await aiTurn();
-    if(checkWin()) return;
+    refresh(-1,0,0);
+    while(true){
+      for(let i=0;i<P.length;i++){
+        const p=P[i];
+        if(p.ai) await aiTurn(p,i); else await humanTurn(p,i);
+        if(p.score>=TARGET)
+          return GC.gameOver(p.ai ? p.name+' gagne\u2026' : 'Victoire de '+p.name+' !',
+            p.name+' atteint les 10 000 points ('+P.map(x=>x.name+' : '+x.score).join(' \u00b7 ')+').');
+      }
+    }
   }
-}
-$('replay').addEventListener('click', ()=>{
-  Object.assign(S, {you:0, ai:0, youOpen:false, aiOpen:false, gameOver:false});
-  $('overlay').style.display = 'none';
-  refreshScores(0,0); game();
 });
-refreshScores(0,0);
-setButtons(false, false);
-game();
 </script>
 </body>
 </html>

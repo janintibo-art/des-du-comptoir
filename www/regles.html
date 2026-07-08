@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Règles — Les Dés du Comptoir</title>
+<link rel="stylesheet" href="style.css">
+<script src="rules-data.js"></script>
+<style>
+.book{max-width:760px;margin:0 auto;padding:24px 16px 60px;text-align:left}
+.book h1{color:var(--accent);letter-spacing:.14em;text-align:center;margin:18px 0 6px}
+.book .sub{text-align:center;opacity:.75;margin-bottom:22px}
+.book nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:26px}
+.book nav a{color:var(--cream);border:1px solid rgba(242,232,213,.3);border-radius:999px;
+  padding:6px 14px;text-decoration:none;font-size:14px}
+.book nav a:hover{border-color:var(--accent);color:var(--accent)}
+.book section{background:rgba(20,20,16,.6);border:1px solid rgba(242,232,213,.18);
+  border-radius:12px;padding:18px 20px;margin-bottom:18px}
+.book h2{color:var(--accent);margin-bottom:10px;letter-spacing:.08em}
+.book p{line-height:1.6;margin-bottom:10px;font-size:15.5px}
+.book b{color:var(--accent)}
+.back{display:inline-block;margin:14px;color:var(--cream);text-decoration:none;opacity:.8}
+</style>
+</head>
+<body class="menu">
+<a class="back" href="index.html">← Retour au comptoir</a>
+<div class="book">
+  <h1>LE LIVRET DES RÈGLES</h1>
+  <p class="sub">Tout ce qu'il faut savoir avant de faire rouler les dés.</p>
+  <nav id="nav"></nav>
+  <div id="content"></div>
+</div>
+<script>
+'use strict';
+const ORDER=['general','421','10000','yams','poker','zanzibar','mexico','chicago','cochon','passedix','boston','boite','martinetti'];
+const nav=document.getElementById('nav'), content=document.getElementById('content');
+ORDER.forEach(id=>{
+  const r=window.RULES[id]; if(!r) return;
+  const a=document.createElement('a');
+  a.href='#r-'+id; a.textContent=r.title;
+  nav.appendChild(a);
+  const s=document.createElement('section');
+  s.id='r-'+id;
+  s.innerHTML='<h2>'+r.title+'</h2>'+r.html;
+  content.appendChild(s);
+});
+</script>
+</body>
+</html>

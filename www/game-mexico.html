@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mexico</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.babylonjs.com/cannon.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="dice-engine.js"></script>
+<script src="rules-data.js"></script>
+<script src="game-core.js"></script>
+</head>
+<body>
+<script>
+'use strict';
+function mex(v1,v2){
+  const hi=Math.max(v1,v2), lo=Math.min(v1,v2);
+  if(hi===2&&lo===1) return {rank:10000,name:'MEXICO ! (21)',mult:2};
+  if(v1===v2) return {rank:1000+v1,name:'Double '+v1,mult:1};
+  return {rank:hi*10+lo,name:''+(hi*10+lo),mult:1};
+}
+GameShell({
+  id:'mexico', title:'MEXICO', diceCount:2, minPlayers:2, maxPlayers:4,
+  hint:'Plus bas score = une vie en moins (deux si le meilleur fait Mexico). Dernier survivant gagne.',
+  run: async GC => {
+    const T=GC.T, dice=T.dice, P=GC.players;
+    P.forEach(p=> p.vies=3);
+    let leader=0;
+    const alive=()=>P.filter(p=>p.vies>0);
+    const refresh=act=>GC.scores(P.map((p,i)=>({
+      label:p.name, value:p.vies>0?'♥'.repeat(p.vies):'✝', active:i===act})));
+
+    async function play(p, maxT, toBeatMin){
+      await GC.lineUp(); refresh(P.indexOf(p));
+      let throws=0, res=null;
+      while(throws<maxT){
+        if(p.ai){
+          GC.say(p.name+' lance…'); await GC.sleep(700);
+        } else {
+          GC.say('À vous, '+p.name+' — '+maxT+' lancer'+(maxT>1?'s':'')+' max, le dernier compte !');
+          const a=await GC.ask([
+            {id:'roll',label:'Lancer ('+(throws+1)+'/'+maxT+')',primary:true},
+            {id:'stay',label:'Je reste',disabled:throws===0}]);
+          if(a==='stay') break;
+        }
+        GC.setButtons([]);
+        await T.throwDice(dice);
+        throws++;
+        res=mex(dice[0].value, dice[1].value);
+        GC.combo(p.name+' : '+res.name);
+        await GC.sleep(900);
+        if(p.ai){
+          const safe = toBeatMin!=null ? res.rank>toBeatMin : res.rank>=54;
+          if(safe || res.rank>=1000) break;
+        }
+      }
+      return {res, throws};
+    }
+
+    while(true){
+      const players=alive();
+      const start=Math.max(0, players.findIndex(p=>P.indexOf(p)===leader));
+      const order=players.map((_,i)=> players[(start+i)%players.length]);
+      let results=[];
+      const lead=await play(order[0],3,null);
+      results.push({p:order[0], r:lead.res});
+      GC.say(order[0].name+' reste sur '+lead.res.name+' — '+lead.throws+' lancer'+(lead.throws>1?'s':'')+' pour les autres.');
+      await GC.sleep(1200);
+      for(let i=1;i<order.length;i++){
+        const minSoFar=Math.min(...results.map(x=>x.r.rank));
+        const r=await play(order[i], lead.throws, minSoFar);
+        results.push({p:order[i], r:r.res});
+        await GC.sleep(500);
+      }
+      const minRank=Math.min(...results.map(x=>x.r.rank));
+      const losers=results.filter(x=>x.r.rank===minRank);
+      if(losers.length>1){
+        GC.say('Égalité pour le plus bas ('+losers.map(l=>l.p.name).join(', ')+') : la manche est rejouée !');
+        GC.combo('⚖'); await GC.sleep(2000);
+        continue;
+      }
+      const best=results.reduce((a,b)=> a.r.rank>=b.r.rank?a:b);
+      const loser=losers[0].p;
+      const lost=best.r.mult;
+      loser.vies=Math.max(0, loser.vies-lost);
+      GC.say(loser.name+' perd '+lost+' vie'+(lost>1?'s (Mexico !)':'')+'.');
+      leader=P.indexOf(loser.vies>0?loser:alive()[0]);
+      refresh(-1); GC.combo('');
+      await GC.sleep(1800);
+      if(loser.vies===0) GC.say(loser.name+' est éliminé !'), await GC.sleep(1400);
+      if(alive().length===1){
+        const w=alive()[0];
+        return GC.gameOver(w.ai?w.name+' gagne…':'Victoire de '+w.name+' !',
+          w.name+' est le dernier survivant.');
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

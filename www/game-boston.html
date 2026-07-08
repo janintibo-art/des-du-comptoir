@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boston</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.babylonjs.com/cannon.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="dice-engine.js"></script>
+<script src="rules-data.js"></script>
+<script src="game-core.js"></script>
+</head>
+<body>
+<script>
+'use strict';
+const GREY='#8a8577';
+GameShell({
+  id:'boston', title:'BOSTON', diceCount:3, minPlayers:2, maxPlayers:4,
+  hint:'À chaque jet, le dé le plus fort est mis de côté. 5 manches, le plus haut total gagne.',
+  run: async GC => {
+    const T=GC.T, dice=T.dice, P=GC.players;
+    P.forEach(p=> p.score=0);
+    const refresh=(act,m)=>GC.scores([
+      {label:'Manche',value:m+'/5'},
+      ...P.map((p,i)=>({label:p.name,value:p.score,active:i===act}))]);
+    const slot=i=>({x:-(T.AREA/2-1.9)+i*2.1, z:-(T.AREA/2-1.9)});
+    for(let m=1;m<=5;m++){
+      for(let i=0;i<P.length;i++){
+        const p=P[i];
+        await GC.lineUp(); refresh(i,m); GC.combo('');
+        let pool=[...dice];
+        for(let stage=0; stage<3; stage++){
+          if(p.ai){ GC.say(p.name+' lance '+pool.length+' dé'+(pool.length>1?'s':'')+'…'); await GC.sleep(700); }
+          else await GC.ask([{id:'roll',label:'Lancer '+pool.length+' dé'+(pool.length>1?'s':''),primary:true}]);
+          GC.setButtons([]);
+          await T.throwDice(pool);
+          const best=pool.reduce((a,d)=> d.value>a.value?d:a);
+          best.aside=true; T.setHalo(best,GREY);
+          const taken=dice.filter(d=>d.aside).length-1;
+          await T.moveTo(best, slot(taken).x, slot(taken).z);
+          pool=pool.filter(d=>d!==best);
+          GC.combo('Gardé : '+dice.filter(d=>d.aside).map(d=>d.value).join(' + '));
+        }
+        const pts=dice.reduce((a,d)=>a+d.value,0);
+        p.score+=pts;
+        GC.combo('Manche : '+pts+' pts');
+        GC.say(p.name+' marque '+pts+' points.');
+        refresh(-1,m);
+        await GC.sleep(1400);
+      }
+    }
+    const ranked=[...P].sort((a,b)=>b.score-a.score);
+    return GC.gameOver(ranked[0].ai?ranked[0].name+' gagne…':'Victoire de '+ranked[0].name+' !',
+      ranked.map(p=>p.name+' : '+p.score+' pts').join('<br>'));
+  }
+});
+</script>
+</body>
+</html>

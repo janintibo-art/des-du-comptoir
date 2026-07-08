@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yams</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.babylonjs.com/cannon.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="dice-engine.js"></script>
+<script src="rules-data.js"></script>
+<script src="game-core.js"></script>
+</head>
+<body>
+<script>
+'use strict';
+const GOLD='#e0a34c';
+const CATS=[
+  {id:'u1',label:'As (1)'},{id:'u2',label:'Deux (2)'},{id:'u3',label:'Trois (3)'},
+  {id:'u4',label:'Quatre (4)'},{id:'u5',label:'Cinq (5)'},{id:'u6',label:'Six (6)'},
+  {id:'brelan',label:'Brelan'},{id:'carre',label:'Carr\u00e9'},{id:'full',label:'Full (25)'},
+  {id:'ps',label:'Petite suite (30)'},{id:'gs',label:'Grande suite (40)'},
+  {id:'yams',label:'Yams (50)'},{id:'chance',label:'Chance'}];
+const SACRIFICE=['u1','u2','yams','u3','carre','gs','full','ps','u4','brelan','u5','u6','chance'];
+
+function preview(cat, vals){
+  const c=[0,0,0,0,0,0,0]; vals.forEach(v=>c[v]++);
+  const sum=vals.reduce((a,b)=>a+b,0), maxN=Math.max(...c);
+  if(cat[0]==='u'){ const n=+cat[1]; return c[n]*n; }
+  if(cat==='brelan') return maxN>=3?sum:0;
+  if(cat==='carre') return maxN>=4?sum:0;
+  if(cat==='full') return (c.includes(3)&&c.includes(2))||maxN===5 ? 25:0;
+  const uniq=new Set(vals);
+  const has=s=>[...s].every(ch=>uniq.has(+ch));
+  if(cat==='ps') return (has('1234')||has('2345')||has('3456'))?30:0;
+  if(cat==='gs') return (has('12345')||has('23456'))?40:0;
+  if(cat==='yams') return maxN===5?50:0;
+  return sum; // chance
+}
+function totals(p){
+  let up=0, low=0;
+  CATS.forEach(c=>{
+    const v=p.sheet[c.id]; if(v==null) return;
+    if(c.id[0]==='u') up+=v; else low+=v;
+  });
+  const bonus=up>=63?35:0;
+  return {up, bonus, total:up+bonus+low};
+}
+
+GameShell({
+  id:'yams', title:'YAMS', diceCount:5, minPlayers:1, maxPlayers:4,
+  hint:'3 lancers maximum, touchez les d\u00e9s \u00e0 garder, puis notez une case de la feuille.',
+  run: async GC => {
+    const T=GC.T, dice=T.dice, P=GC.players;
+    P.forEach(p=>{ p.sheet={}; });
+
+    function renderSheet(active, choosing, vals){
+      let h='<table class="sheet"><tr><th></th>'+
+        P.map((p,i)=>'<th class="'+(i===active?'act':'')+'">'+esc(p.name.slice(0,8))+'</th>').join('')+'</tr>';
+      CATS.forEach(cat=>{
+        h+='<tr><td>'+cat.label+'</td>';
+        P.forEach((p,i)=>{
+          const v=p.sheet[cat.id];
+          if(v!=null) h+='<td>'+v+'</td>';
+          else if(choosing && i===active) h+='<td class="pick" data-cat="'+cat.id+'">'+preview(cat.id,vals)+'</td>';
+          else h+='<td class="empty">\u00b7</td>';
+        });
+        h+='</tr>';
+      });
+      h+='<tr><td>Bonus (63+)</td>'+P.map(p=>{ const t=totals(p); return '<td>'+t.up+' / '+(t.bonus||'\u2013')+'</td>'; }).join('')+'</tr>';
+      h+='<tr class="total"><td>Total</td>'+P.map(p=>'<td>'+totals(p).total+'</td>').join('')+'</tr></table>';
+      const panel=GC.panel(h);
+      panel.querySelectorAll('.pick').forEach(td=>
+        td.addEventListener('click', ()=> GC.emit('cat:'+td.dataset.cat)));
+    }
+    const refresh = act => GC.scores(P.map((p,i)=>({label:p.name, value:totals(p).total, active:i===act})));
+
+    async function humanTurn(p, idx){
+      await GC.lineUp();
+      T.onPick(d=>{ if(d.selectable){ d.kept=!d.kept; T.setHalo(d, d.kept?GOLD:null); } });
+      let throws=0, chosen=null;
+      GC.say('\u00c0 vous, '+p.name+' !'); GC.combo('');
+      while(!chosen){
+        renderSheet(idx, throws>0, dice.map(d=>d.value));
+        GC.setButtons([{id:'roll', primary:true, disabled:throws>=3,
+          label: throws===0 ? 'Lancer' : 'Relancer ('+(throws+1)+'/3)'}]);
+        if(throws>0) GC.say(throws>=3 ? 'Notez une case dans la feuille.' :
+          'Gardez des d\u00e9s (touchez-les), relancez, ou notez une case.');
+        const a=await GC.waitAction();
+        if(a==='roll' && throws<3){
+          dice.forEach(d=>d.selectable=false);
+          await T.throwDice(dice.filter(d=>!d.kept));
+          throws++;
+          dice.forEach(d=>d.selectable=true);
+        } else if(a.startsWith('cat:') && throws>0){
+          chosen=a.slice(4);
+        }
+      }
+      const pts=preview(chosen, dice.map(d=>d.value));
+      p.sheet[chosen]=pts;
+      GC.combo(CATS.find(c=>c.id===chosen).label+' : '+pts+' pts');
+      dice.forEach(d=>{ d.selectable=false; d.kept=false; T.setHalo(d,null); });
+      GC.setButtons([]);
+      await GC.sleep(1000);
+    }
+
+    async function aiTurn(p, idx){
+      await GC.lineUp();
+      GC.say(p.name+' joue\u2026'); GC.combo('');
+      for(let t=0;t<3;t++){
+        await T.throwDice(dice.filter(d=>!d.kept));
+        renderSheet(idx, false, dice.map(d=>d.value));
+        if(t<2){
+          const c={}; dice.forEach(d=> c[d.value]=(c[d.value]||0)+1);
+          const bestV=+Object.keys(c).sort((a,b)=> c[b]-c[a] || b-a)[0];
+          dice.forEach(d=>{ d.kept = d.value===+bestV && c[bestV]>=2; T.setHalo(d, d.kept?GOLD:null); });
+          if(!dice.some(d=>d.kept)) dice.forEach(d=>{ d.kept=d.value>=5; T.setHalo(d,d.kept?GOLD:null); });
+          await GC.sleep(700);
+        }
+      }
+      const vals=dice.map(d=>d.value);
+      const empty=CATS.filter(c=> p.sheet[c.id]==null);
+      let best=empty.reduce((a,c)=> preview(c.id,vals)>preview(a.id,vals)?c:a);
+      if(preview(best.id,vals)===0)
+        best=CATS.find(c=> SACRIFICE.includes(c.id) && p.sheet[c.id]==null &&
+          SACRIFICE.indexOf(c.id)===Math.min(...empty.map(e=>SACRIFICE.indexOf(e.id))));
+      const pts=preview(best.id, vals);
+      p.sheet[best.id]=pts;
+      GC.combo(p.name+' note '+best.label+' : '+pts+' pts');
+      dice.forEach(d=>{ d.kept=false; T.setHalo(d,null); });
+      await GC.sleep(1400);
+    }
+
+    refresh(-1); renderSheet(-1,false,[1,1,1,1,1]);
+    for(let round=0; round<13; round++){
+      for(let i=0;i<P.length;i++){
+        refresh(i);
+        if(P[i].ai) await aiTurn(P[i], i); else await humanTurn(P[i], i);
+        refresh(-1);
+      }
+    }
+    renderSheet(-1,false,[]);
+    const ranked=[...P].sort((a,b)=> totals(b).total - totals(a).total);
+    const w=ranked[0];
+    return GC.gameOver(
+      P.length===1 ? 'Partie termin\u00e9e !' : (w.ai ? w.name+' gagne\u2026' : 'Victoire de '+w.name+' !'),
+      ranked.map(p=> p.name+' : '+totals(p).total+' pts').join('<br>'));
+  }
+});
+</script>
+</body>
+</html>

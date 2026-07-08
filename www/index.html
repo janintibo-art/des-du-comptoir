@@ -1,40 +1,64 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Jeux de dés — 421 & 10 000</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Les Dés du Comptoir</title>
 <link rel="stylesheet" href="style.css">
+<style>
+.cards{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;max-width:1100px;margin:0 auto;padding:0 12px 40px}
+.card{width:230px}
+.topline{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:6px 0 26px}
+.topline a{color:var(--ink);background:var(--accent);border-radius:999px;padding:10px 18px;
+  text-decoration:none;font-weight:bold;letter-spacing:.06em}
+.feat{opacity:.75;font-size:14px;max-width:640px;margin:0 auto 20px;line-height:1.5}
+</style>
 </head>
 <body class="menu">
-<div class="menu-wrap">
-  <div>
-    <h1>LES DÉS</h1>
-    <div class="sub">DU COMPTOIR</div>
-  </div>
-  <div class="cards">
-    <a class="card" href="game-421.html">
-      <h2>421</h2>
-      <p>Le classique des bistrots. Chargez le pot de 21 fiches, puis débarrassez-vous
-         des vôtres. 3 dés, du bluff et un Patron qui ne vous fera pas de cadeau.</p>
-      <div class="faces">
-        <img src="textures/gothic/face-4.png" alt="" width="64" height="64">
-        <img src="textures/gothic/face-2.png" alt="" width="64" height="64">
-        <img src="textures/gothic/face-1.png" alt="" width="64" height="64">
-      </div>
-    </a>
-    <a class="card" href="game-10000.html">
-      <h2>10 000</h2>
-      <p>Poussez votre chance : mettez de côté les dés qui marquent, relancez le reste…
-         mais un lancer blanc et tout le tour s'envole. Premier à 10 000 points.</p>
-      <div class="faces">
-        <img src="textures/steampunk/face-1.png" alt="" width="64" height="64">
-        <img src="textures/steampunk/face-5.png" alt="" width="64" height="64">
-        <img src="textures/steampunk/face-5.png" alt="" width="64" height="64">
-      </div>
-    </a>
-  </div>
-  <div class="menu-skin pill">12 styles de dés à choisir en jeu — votre choix est mémorisé.</div>
+<header>
+  <h1>LES DÉS DU COMPTOIR</h1>
+  <p class="tag">Douze jeux de dés, un tapis de feutre, et l'ambiance du bistrot.</p>
+  <p class="feat">Jusqu'à 4 joueurs — humains ou tenus par l'ordinateur — sur le même téléphone.
+  Activez le bouton 📳 dans un jeu pour <b>lancer les dés en secouant le téléphone</b>,
+  et changez le style des dés parmi 12 finitions.</p>
+  <div class="topline"><a href="regles.html">❓ Tutoriel &amp; règles des jeux</a></div>
+</header>
+<div class="cards">
+  <a class="card" href="game-421.html">
+    <div class="faces"><img src="textures/gothic/face-4.png" alt=""><img src="textures/gothic/face-2.png" alt=""><img src="textures/gothic/face-1.png" alt=""></div>
+    <h2>421</h2><p>Le duel du zinc : charge, décharge, et gare à la nénette. 2-4 joueurs.</p></a>
+  <a class="card" href="game-10000.html">
+    <div class="faces"><img src="textures/steampunk/face-1.png" alt=""><img src="textures/steampunk/face-5.png" alt=""><img src="textures/steampunk/face-1.png" alt=""></div>
+    <h2>10 000</h2><p>Banquez ou craquez : premier à dix mille points. 2-4 joueurs.</p></a>
+  <a class="card" href="game-yams.html">
+    <div class="faces"><img src="textures/fantasy/face-5.png" alt=""><img src="textures/fantasy/face-5.png" alt=""><img src="textures/fantasy/face-5.png" alt=""></div>
+    <h2>Yams</h2><p>La feuille mythique : 13 cases, 3 lancers, un bonus à 63. 1-4 joueurs.</p></a>
+  <a class="card" href="game-poker.html">
+    <div class="faces"><img src="textures/crystal/face-6.png" alt=""><img src="textures/crystal/face-6.png" alt=""><img src="textures/crystal/face-1.png" alt=""></div>
+    <h2>Poker d'as</h2><p>Full, carré, quinte : la meilleure main prend la manche. 2-4 joueurs.</p></a>
+  <a class="card" href="game-zanzibar.html">
+    <div class="faces"><img src="textures/tribal/face-4.png" alt=""><img src="textures/tribal/face-5.png" alt=""><img src="textures/tribal/face-6.png" alt=""></div>
+    <h2>Zanzibar</h2><p>4·5·6 bat tout — et le perdant ramasse les jetons. 2-4 joueurs.</p></a>
+  <a class="card" href="game-mexico.html">
+    <div class="faces"><img src="textures/candy/face-2.png" alt=""><img src="textures/candy/face-1.png" alt=""></div>
+    <h2>Mexico</h2><p>Trois vies, un 21 imbattable, dernier survivant. 2-4 joueurs.</p></a>
+  <a class="card" href="game-chicago.html">
+    <div class="faces"><img src="textures/neon/face-6.png" alt=""><img src="textures/neon/face-6.png" alt=""></div>
+    <h2>Chicago</h2><p>Onze manches, de 2 à 12 : visez juste. 2-4 joueurs.</p></a>
+  <a class="card" href="game-cochon.html">
+    <div class="faces"><img src="textures/origami/face-3.png" alt=""></div>
+    <h2>Cochon</h2><p>Relancez tant que vous osez… mais gare au 1 ! 2-4 joueurs.</p></a>
+  <a class="card" href="game-passedix.html">
+    <div class="faces"><img src="textures/ice/face-4.png" alt=""><img src="textures/ice/face-4.png" alt=""><img src="textures/ice/face-3.png" alt=""></div>
+    <h2>Passe-dix</h2><p>Passe ou manque ? Annoncez, puis lancez. 2-4 joueurs.</p></a>
+  <a class="card" href="game-boston.html">
+    <div class="faces"><img src="textures/ocean/face-6.png" alt=""><img src="textures/ocean/face-5.png" alt=""><img src="textures/ocean/face-4.png" alt=""></div>
+    <h2>Boston</h2><p>Trois jets, on garde le plus fort à chaque fois. 2-4 joueurs.</p></a>
+  <a class="card" href="game-boite.html">
+    <div class="faces"><img src="textures/streetart/face-1.png" alt=""><img src="textures/streetart/face-2.png" alt=""><img src="textures/streetart/face-3.png" alt=""></div>
+    <h2>La Boîte</h2><p>Shut the Box : abaissez les neuf tuiles. 1-4 joueurs.</p></a>
+  <a class="card" href="game-martinetti.html">
+    <div class="faces"><img src="textures/biomech/face-1.png" alt=""><img src="textures/biomech/face-2.png" alt=""><img src="textures/biomech/face-3.png" alt=""></div>
+    <h2>Martinetti</h2><p>La course de 1 à 12, dans l'ordre et sans faiblir. 2-4 joueurs.</p></a>
 </div>
 </body>
 </html>

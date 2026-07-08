@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Passe-dix</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.babylonjs.com/cannon.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="dice-engine.js"></script>
+<script src="rules-data.js"></script>
+<script src="game-core.js"></script>
+</head>
+<body>
+<script>
+'use strict';
+GameShell({
+  id:'passedix', title:'PASSE-DIX', diceCount:3, minPlayers:2, maxPlayers:4,
+  hint:'Passe = 11 ou plus, Manque = 10 ou moins. Bonne annonce : +1 point. Premier à 5.',
+  run: async GC => {
+    const T=GC.T, P=GC.players;
+    P.forEach(p=> p.score=0);
+    const refresh=act=>GC.scores(P.map((p,i)=>({label:p.name,value:p.score,active:i===act})));
+    while(true){
+      for(let i=0;i<P.length;i++){
+        const p=P[i];
+        await GC.lineUp(); refresh(i); GC.combo('');
+        let guess;
+        if(p.ai){
+          guess=Math.random()<0.5?'passe':'manque';
+          GC.say(p.name+' annonce « '+(guess==='passe'?'Passe':'Manque')+' » et lance…');
+          await GC.sleep(1100);
+        } else {
+          GC.say('À vous, '+p.name+' — annoncez puis lancez !');
+          guess=await GC.ask([
+            {id:'passe',label:'Passe (11-18)',primary:true},
+            {id:'manque',label:'Manque (3-10)'}]);
+          GC.setButtons([]);
+        }
+        await T.throwDice(T.dice);
+        const sum=T.dice.reduce((a,d)=>a+d.value,0);
+        const ok=(sum>=11)===(guess==='passe');
+        if(ok) p.score++;
+        GC.combo(sum+' → '+(ok?'✓ +1 point':'✗ raté'));
+        refresh(-1);
+        await GC.sleep(1500);
+        if(p.score>=5)
+          return GC.gameOver(p.ai?p.name+' gagne…':'Victoire de '+p.name+' !',
+            P.map(x=>x.name+' : '+x.score).join(' · '));
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

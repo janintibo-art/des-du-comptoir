@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poker d'as</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.babylonjs.com/cannon.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="dice-engine.js"></script>
+<script src="rules-data.js"></script>
+<script src="game-core.js"></script>
+</head>
+<body>
+<script>
+'use strict';
+const GOLD='#e0a34c';
+function hand(vals){
+  const c={}; vals.forEach(v=>c[v]=(c[v]||0)+1);
+  const g=Object.entries(c).map(([v,n])=>({v:+v,n})).sort((a,b)=> b.n-a.n || b.v-a.v);
+  const uniq=[...new Set(vals)].sort().join('');
+  if(g[0].n===5) return {r:8,name:'Cinq '+g[0].v+' !',tb:[g[0].v]};
+  if(g[0].n===4) return {r:7,name:'Carré de '+g[0].v,tb:[g[0].v]};
+  if(g[0].n===3&&g[1].n===2) return {r:6,name:'Full aux '+g[0].v,tb:[g[0].v,g[1].v]};
+  if(uniq==='12345'||uniq==='23456') return {r:5,name:'Quinte',tb:[uniq==='23456'?6:5]};
+  if(g[0].n===3) return {r:4,name:'Brelan de '+g[0].v,tb:[g[0].v]};
+  if(g[0].n===2&&g[1].n===2) return {r:3,name:'Deux paires ('+g[0].v+' et '+g[1].v+')',tb:[g[0].v,g[1].v]};
+  if(g[0].n===2) return {r:2,name:'Paire de '+g[0].v,tb:[g[0].v]};
+  return {r:1,name:'Hauteur '+Math.max(...vals),tb:[...vals].sort((a,b)=>b-a)};
+}
+function cmp(a,b){
+  if(a.r!==b.r) return a.r-b.r;
+  for(let i=0;i<Math.max(a.tb.length,b.tb.length);i++){
+    const d=(a.tb[i]||0)-(b.tb[i]||0); if(d) return d;
+  }
+  return 0;
+}
+GameShell({
+  id:'poker', title:'POKER D\u2019AS', diceCount:5, minPlayers:2, maxPlayers:4,
+  hint:'Un lancer, une garde, une relance : la meilleure main remporte la manche. Premier à 3 manches.',
+  run: async GC => {
+    const T=GC.T, dice=T.dice, P=GC.players;
+    P.forEach(p=> p.score=0);
+    const refresh=act=>GC.scores(P.map((p,i)=>({label:p.name,value:p.score,active:i===act})));
+    const resetKept=()=>dice.forEach(d=>{ d.kept=false; T.setHalo(d,null); });
+
+    async function play(p){
+      resetKept(); await GC.lineUp(); refresh(P.indexOf(p));
+      T.onPick(d=>{ if(d.selectable){ d.kept=!d.kept; T.setHalo(d,d.kept?GOLD:null); } });
+      if(p.ai){ GC.say(p.name+' lance…'); await GC.sleep(600); }
+      else { GC.say('À vous, '+p.name+' !');
+             await GC.ask([{id:'r',label:'Lancer',primary:true}]); }
+      GC.setButtons([]);
+      await T.throwDice(dice);
+      let h=hand(dice.map(d=>d.value));
+      GC.combo(p.name+' : '+h.name);
+      if(p.ai){
+        await GC.sleep(900);
+        if(h.r<7){
+          const c={}; dice.forEach(d=>c[d.value]=(c[d.value]||0)+1);
+          const bestV=+Object.keys(c).sort((a,b)=>c[b]-c[a]||b-a)[0];
+          dice.forEach(d=>{ d.kept = d.value===bestV && c[bestV]>=2; T.setHalo(d,d.kept?GOLD:null); });
+          const n=dice.filter(d=>d.kept).length;
+          GC.say(n?p.name+' garde '+n+' dé'+(n>1?'s':'')+' et relance.':p.name+' relance tout.');
+          await GC.sleep(800);
+          await T.throwDice(dice.filter(d=>!d.kept));
+          h=hand(dice.map(d=>d.value));
+          GC.combo(p.name+' : '+h.name);
+          await GC.sleep(800);
+        }
+      } else {
+        dice.forEach(d=>d.selectable=true);
+        GC.say('Gardez des dés (touchez-les) puis relancez — ou restez.');
+        const a=await GC.ask([
+          {id:'roll',label:'Relancer',primary:true},
+          {id:'stay',label:'Je reste'}]);
+        GC.setButtons([]); dice.forEach(d=>d.selectable=false);
+        if(a==='roll'){
+          await T.throwDice(dice.filter(d=>!d.kept));
+          h=hand(dice.map(d=>d.value));
+          GC.combo(p.name+' : '+h.name);
+        }
+      }
+      resetKept();
+      return h;
+    }
+
+    while(true){
+      GC.combo('');
+      const hands=[];
+      for(const p of P){ hands.push({p, h:await play(p)}); await GC.sleep(600); }
+      const best=hands.reduce((a,b)=> cmp(a.h,b.h)>=0?a:b);
+      const winners=hands.filter(x=> cmp(x.h,best.h)===0);
+      if(winners.length===1){
+        best.p.score++;
+        GC.say(best.p.name+' remporte la manche avec '+best.h.name+' !');
+      } else {
+        GC.say('Égalité parfaite ('+best.h.name+') — personne ne marque.');
+      }
+      refresh(-1);
+      await GC.sleep(2000);
+      if(best.p.score>=3 && winners.length===1)
+        return GC.gameOver(best.p.ai?best.p.name+' gagne…':'Victoire de '+best.p.name+' !',
+          P.map(x=>x.name+' : '+x.score+' manche'+(x.score>1?'s':'')).join(' · '));
+    }
+  }
+});
+</script>
+</body>
+</html>
