@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Menteur</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+.pilewrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.pilestack{position:relative;height:calc(var(--tcard-h) + 10px);width:calc(var(--tcard-h)*.7 + 40px)}
+.pilestack .pcard{position:absolute;top:0}
+.claim{font-size:17px;color:var(--accent);font-weight:bold;text-align:center}
+.pilecount{font-size:13px;opacity:.6}
+.rankbadge{font-size:15px;text-align:center;margin-bottom:6px}
+.rankbadge b{color:var(--accent);font-size:20px}
+</style>
+<script src="cards.js"></script>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+const MRANKS=['A','2','3','4','5','6','7','8','9','10','V','D','R'];
+const RLABEL={A:'As',V:'Valets',D:'Dames',R:'Rois'};
+const rankName=r=> RLABEL[r]||(r+'');
+function aiChallenges(p, last, risk){
+  const have=p.hand.filter(c=>c.r===last.rank).length;
+  const k=last.cards.length, maxPossible=4-have;
+  if(k>maxPossible) return true;                 // impossible : c'est un menteur !
+  let chance=(0.03 + 0.10*(k-1))*risk;
+  if(have>=2) chance+=0.15;
+  return Math.random()<chance;
+}
+function aiPlay(p, rankIdx, risk){
+  const rank=MRANKS[rankIdx];
+  const truthful=p.hand.filter(c=>c.r===rank);
+  if(truthful.length){ const n=Math.min(truthful.length, risk>1.1?4:3); return truthful.slice(0,n); }
+  // bluff : lâcher 1 carte (2 si audacieux et main chargée)
+  const sorted=[...p.hand].sort((a,b)=>MRANKS.indexOf(a.r)-MRANKS.indexOf(b.r));
+  const n=(risk>1.2 && p.hand.length>8)?2:1;
+  return sorted.slice(0,n);
+}
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+CardShell({
+  id:'menteur', title:'LE MENTEUR', minPlayers:2, maxPlayers:4,
+  run: async GC => {
+    const P=GC.players, N=P.length;
+    const deck=Cards.shuffle(Cards.deck());
+    P.forEach(p=> p.hand=[]);
+    let i=0; while(deck.length){ P[i%N].hand.push(deck.shift()); i++; }
+    P.forEach(p=> p.hand.sort((a,b)=>MRANKS.indexOf(a.r)-MRANKS.indexOf(b.r)));
+    let pile=[], rankIdx=0, turn=0;
+
+    const refresh=()=>GC.scores(P.map((p,idx)=>({label:p.name,value:p.hand.length,active:idx===turn})));
+    const showOpps=me=>GC.opponents(P.filter(p=>p!==me).map(p=>({name:p.name,count:p.hand.length,turn:P.indexOf(p)===turn})));
+    function showPile(lastClaim){
+      const w=document.createElement('div'); w.className='pilewrap';
+      const rb=document.createElement('div'); rb.className='rankbadge';
+      rb.innerHTML='Annonce imposée : <b>'+rankName(MRANKS[rankIdx])+'</b>';
+      const stack=document.createElement('div'); stack.className='pilestack';
+      const show=Math.min(pile.length,5);
+      for(let k=0;k<show;k++){ const el=Cards.el({r:'A',s:'pique'},{back:true}); el.style.left=(k*8)+'px'; stack.appendChild(el); }
+      const cnt=document.createElement('div'); cnt.className='pilecount'; cnt.textContent='Tas : '+pile.length+' carte'+(pile.length>1?'s':'');
+      const cl=document.createElement('div'); cl.className='claim'; cl.textContent=lastClaim||'';
+      w.appendChild(rb); w.appendChild(stack); w.appendChild(cnt); w.appendChild(cl); GC.center(w);
+    }
+
+    async function humanPlay(p){
+      await GC.handOff(p.name);
+      showOpps(p); refresh(); showPile('');
+      const rank=MRANKS[rankIdx];
+      GC.say('À vous, '+p.name+' — annoncez des '+rankName(rank)+' (vraies… ou fausses !).');
+      let sel=[];
+      const render=()=>{ const hand=document.getElementById('cHand'); hand.innerHTML='';
+        p.hand.forEach(card=>{ const el=Cards.el(card,{onClick:()=>{ const i=sel.indexOf(card); i>=0?sel.splice(i,1):sel.push(card); render(); btns(); }});
+          if(sel.includes(card)) el.classList.add('sel'); el.classList.add('play'); hand.appendChild(el); }); };
+      const btns=()=>GC.setButtons([{id:'go',label: sel.length?('Annoncer '+sel.length+' '+rankName(rank)):'Choisissez des cartes',primary:true,disabled:!sel.length}]);
+      render(); btns();
+      await GC.waitAction(); GC.setButtons([]);
+      sel.forEach(c=> p.hand.splice(p.hand.indexOf(c),1));
+      return sel.slice();
+    }
+    async function doPlay(p){
+      let cards;
+      if(p.ai){
+        showOpps(p); refresh(); showPile('');
+        GC.say(p.name+' réfléchit…'); await GC.sleep(800);
+        cards=aiPlay(p, rankIdx, GC.aiRisk);
+        cards.forEach(c=> p.hand.splice(p.hand.indexOf(c),1));
+      } else cards=await humanPlay(p);
+      const last={cards, rank:MRANKS[rankIdx], by:P.indexOf(p)};
+      pile.push(...cards.map(c=>({card:c})));
+      const claim=p.name+' annonce '+cards.length+' '+rankName(last.rank)+'.';
+      showPile(claim); GC.combo(claim); GC.play();
+      refresh(); showOpps(p);
+      await GC.sleep(700);
+      return last;
+    }
+
+    async function challengeWindow(playerIdx, last){
+      // ordre des challengers : à partir du joueur suivant
+      const order=[]; for(let s=1;s<N;s++) order.push((playerIdx+s)%N);
+      // priorité à l'humain s'il peut douter, sinon IA
+      for(const idx of order){
+        const c=P[idx];
+        if(!c.ai){
+          showPile(P[playerIdx].name+' annonce '+last.cards.length+' '+rankName(last.rank)+'.');
+          const a=await GC.ask([{id:'d',label:'Menteur !',primary:true},{id:'pass',label:'Laisser passer'}]);
+          GC.setButtons([]);
+          if(a==='d') return idx;
+        } else {
+          if(aiChallenges(c, last, GC.aiRisk)) return idx;
+        }
+      }
+      return null;
+    }
+
+    GC.say('Annoncez la valeur imposée en posant des cartes cachées. Bluffez, ou criez « Menteur ! ».');
+    refresh(); await GC.sleep(1100);
+
+    let plays=0;
+    while(true){
+      if(++plays>500){
+        const w=[...P].sort((a,b)=>a.hand.length-b.hand.length)[0];
+        return GC.gameOver('Victoire de '+w.name+' !', 'Partie très serrée — '+w.name+' a le moins de cartes.');
+      }
+      const p=P[turn];
+      const last=await doPlay(p);
+      const emptied=(p.hand.length===0);
+      const challenger=await challengeWindow(turn, last);
+      if(challenger!=null){
+        const truthful=last.cards.every(c=>c.r===last.rank);
+        const revealed=last.cards.map(c=>Cards.label(c)).join(', ');
+        GC.combo(P[challenger].name+' crie « Menteur ! » → '+revealed);
+        showPile('Cartes révélées : '+revealed);
+        GC.Snd.good && GC.Snd.good();
+        await GC.sleep(1600);
+        const loser = truthful ? P[challenger] : p;   // si vrai, le douteur ramasse ; sinon le menteur
+        loser.hand.push(...pile.map(x=>x.card));
+        loser.hand.sort((a,b)=>MRANKS.indexOf(a.r)-MRANKS.indexOf(b.r));
+        GC.say((truthful? P[challenger].name+' s\u2019est tromp\u00e9' : p.name+' mentait')+
+               ' et ramasse le tas ('+pile.length+' cartes).');
+        pile=[]; rankIdx=0;
+        refresh();
+        await GC.sleep(1900);
+        if(emptied && truthful) return GC.gameOver('Victoire de '+p.name+' !', p.name+' a vid\u00e9 sa main sans se faire prendre !');
+        turn = P.indexOf(loser);           // le ramasseur recommence
+        continue;
+      }
+      // pas de défi
+      if(emptied) return GC.gameOver('Victoire de '+p.name+' !', p.name+' a pos\u00e9 sa derni\u00e8re carte sans \u00eatre d\u00e9masqu\u00e9 !');
+      rankIdx=(rankIdx+1)%13;
+      turn=(turn+1)%N;
+    }
+  }
+});
+</script>
+</body>
+</html>

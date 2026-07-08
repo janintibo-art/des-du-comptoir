@@ -197,4 +197,13 @@ carte identique est prioritaire sur une somme. Sinon, la carte reste sur la tabl
 <p><b>La scopa (\ud83e\uddf9) :</b> ramasser <b>toute la table</b> d'un coup rapporte 1 point
 bonus. En fin de donne, on compte : le plus de <b>cartes</b> (+1), le plus de <b>deniers</b>
 (carreau, +1), le <b>7 de carreau</b> « settebello » (+1), plus les scope.</p>`},
+menteur: { title:'Le Menteur', html:`
+<p>52 cartes, 2 \u00e0 4 joueurs, chacun sa main cach\u00e9e. Premier \u00e0 <b>vider sa main</b>
+sans se faire prendre gagne.</p>
+<p><b>Jouer.</b> \u00c0 chaque tour, la valeur \u00e0 annoncer est <b>impos\u00e9e</b> et monte \u00e0
+chaque fois (As, puis 2, puis 3\u2026). Posez 1 \u00e0 4 cartes <b>face cach\u00e9e</b> en annon\u00e7ant
+cette valeur \u2014 en disant la v\u00e9rit\u00e9\u2026 ou en <b>bluffant</b> avec d'autres cartes !</p>
+<p><b>Menteur !</b> Apr\u00e8s chaque annonce, les autres peuvent crier « Menteur ! ». On
+retourne les cartes pos\u00e9es : si le joueur mentait, <b>il ramasse tout le tas</b> ; s'il
+disait vrai, c'est le <b>douteur</b> qui ramasse. Le ramasseur relance \u00e0 l'As.</p>`},
 };
