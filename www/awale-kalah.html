@@ -19,6 +19,10 @@
 .awale-store .stlbl{font-size:11px;opacity:.8;color:var(--cream);text-shadow:0 1px 2px #000}
 .awale-store .stcnt{font-weight:bold;font-size:clamp(20px,5vw,30px);color:#fff;text-shadow:0 1px 3px #000,0 0 6px #000}
 .awale-store.turn .stcnt{color:var(--accent)}
+#cMsg,#cCombo{display:none!important}
+.aw-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%) translateY(12px);max-width:92vw;background:rgba(20,20,16,.93);color:var(--cream);border:1px solid rgba(224,163,76,.5);border-radius:999px;padding:9px 18px;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60;text-align:center}
+.aw-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.aw-toast.strong{color:var(--accent);font-weight:bold;border-color:var(--accent)}
 </style>
 <script src="awale.js"></script>
 <script src="rules-data.js"></script>
@@ -57,6 +61,15 @@ function pickAI(s,d){ const {moves}=legalMoves(s); let b=moves[0],bv=-1e9;
 CardShell({
   id:'kalah', title:'LE KALAH', minPlayers:2, maxPlayers:2, skinModule:Awale,
   run: async GC => {
+    (function(){ let el=document.getElementById('awToast');
+      if(!el){ el=document.createElement('div'); el.id='awToast'; el.className='aw-toast'; document.body.appendChild(el); }
+      let tmr=null; const show=(t,strong)=>{ if(!t){el.classList.remove('show');return;}
+        el.textContent=t; el.classList.toggle('strong',!!strong); el.classList.add('show');
+        clearTimeout(tmr); tmr=setTimeout(()=>el.classList.remove('show'), strong?2400:2900); };
+      const oSay=GC.say, oCombo=GC.combo;
+      GC.say=t=>{ oSay&&oSay(t); show(t,false); };
+      GC.combo=t=>{ oCombo&&oCombo(t); show(t,true); };
+    })();
     const P=GC.players, names=[P[0].name,P[1].name];
     const humans=P.filter(p=>!p.ai).length;
     const depth=GC.aiRisk<0.8?4:(GC.aiRisk>1.1?8:6);
