@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jeu de l'oie délirant</title>
+<link rel="icon" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14140f">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+#cMsg,#cCombo{display:none!important}
+.aw-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%) translateY(12px);max-width:92vw;background:rgba(20,20,16,.93);color:var(--cream);border:1px solid rgba(224,163,76,.5);border-radius:999px;padding:9px 18px;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60;text-align:center}
+.aw-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.aw-toast.strong{color:var(--accent);font-weight:bold;border-color:var(--accent)}
+.pc-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
+.pc-board{position:relative;width:100%;max-width:520px;aspect-ratio:1/1;background-size:contain;background-repeat:no-repeat;background-position:center;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.pc-pawn{position:absolute;width:8%;transform:translate(-50%,-78%);transition:left .28s ease,top .28s ease;z-index:3;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+.pc-pawn img{width:100%;display:block}
+.pc-pawn.dot{width:6%;aspect-ratio:1;border-radius:50%;border:2px solid #fff;transform:translate(-50%,-50%)}
+.pc-die{width:58px;height:58px;border-radius:12px;background:#f7f2e6;position:relative;box-shadow:0 3px 8px rgba(0,0,0,.4)}
+.pc-die .pip{position:absolute;width:12px;height:12px;border-radius:50%;background:#14140f;transform:translate(-50%,-50%)}
+.pc-players{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:13px}
+.pc-players .pp{display:flex;align-items:center;gap:5px;background:rgba(20,20,16,.5);border:1px solid rgba(242,232,213,.15);border-radius:999px;padding:4px 10px}
+.pc-players .pp.turn{border-color:var(--accent);color:var(--accent)}
+.pc-players .pp img{height:22px}.pc-players .pp .mini{width:14px;height:14px;border-radius:50%;border:1px solid #fff;display:inline-block}
+/* grande carte de case */
+.casecard-bg{position:fixed;inset:0;background:rgba(10,10,8,.72);z-index:70;display:flex;align-items:center;justify-content:center;padding:22px;opacity:0;pointer-events:none;transition:opacity .2s}
+.casecard-bg.show{opacity:1;pointer-events:auto}
+.casecard{background:linear-gradient(160deg,#2a2620,#14140f);border:2px solid var(--accent);border-radius:22px;max-width:400px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6);transform:scale(.9);transition:transform .25s}
+.casecard-bg.show .casecard{transform:scale(1)}
+.casecard .num{display:inline-block;background:var(--accent);color:#14140f;font-weight:bold;border-radius:999px;padding:4px 16px;font-size:16px;letter-spacing:.08em}
+.casecard .emoji{font-size:64px;margin:14px 0 6px;line-height:1}
+.casecard .txt{font-size:20px;line-height:1.35;margin:6px 0 4px}
+.casecard .fx{font-size:16px;color:var(--accent);font-weight:bold;margin-top:10px}
+.casecard button{margin-top:20px;font-family:inherit;font-size:18px;background:var(--accent);color:#14140f;border:none;border-radius:999px;padding:12px 34px;font-weight:bold;cursor:pointer}
+</style>
+<script src="rules-data.js"></script>
+<script src="parcours.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+const NoSkin={ buildSkinSelect(sel){ sel.style.display='none'; }, el(){ return document.createElement('span'); } };
+const PIPS={1:[[50,50]],2:[[30,30],[70,70]],3:[[30,30],[50,50],[70,70]],4:[[30,30],[70,30],[30,70],[70,70]],5:[[30,30],[70,30],[50,50],[30,70],[70,70]],6:[[30,28],[70,28],[30,50],[70,50],[30,72],[70,72]]};
+const NB=72;
+/* --- Effets des 72 cases (texte + effet) --- */
+const F=(emoji,txt,fx)=>({emoji,txt,fx});
+const EFFECTS={
+ 1:F('💃','Tu fais un pas de danse ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 2:F('🍌','Hé, une peau de banane ! Recule d\u2019une case.',{t:'back',n:1}),
+ 3:F('🪙','Tu trouves une pièce en or ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 4:F('🔌','Courte coupure de courant ! Passe ton tour.',{t:'skip'}),
+ 5:F('😘','Tu envoies un bisou. Avance d\u2019une case.',{t:'fwd',n:1}),
+ 6:F('🦀','Un crabe qui danse ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 7:F('🧼','Glissade sur une savonnette ! Recule de 2 cases.',{t:'back',n:2}),
+ 8:F('⚡','Un éclair magique ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 9:F('🕳️','Le trou mystère ! Recule jusqu\u2019à la case 4.',{t:'goto',c:4}),
+ 10:F('🪄','Tu trouves une baguette magique ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 11:F('🐦','Le pigeon farceur te vole ton goûter ! Passe ton tour.',{t:'skip'}),
+ 12:F('🌈','Un arc-en-ciel ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 13:F('🤡','Tu fais le clown ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 14:F('🦶','Attention, sol collant ! Recule d\u2019une case.',{t:'back',n:1}),
+ 15:F('👻','Un fantôme gentil te salue ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 16:F('🎩','Tu trouves un chapeau rigolo ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 17:F('🥤','Une limonade pétillante ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 18:F('🦢','Tu déguises ton oie ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 19:F('🐲','Un dragon amical te salue ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 20:F('🚀','Super fusée ! Avance de 3 cases.',{t:'fwd',n:3}),
+ 21:F('🐍','Le serpent rigolo ! Recule de 2 cases.',{t:'back',n:2}),
+ 22:F('😋','Tu as super faim ! Recule d\u2019une case.',{t:'back',n:1}),
+ 23:F('🪶','Tu trouves une plume d\u2019or ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 24:F('🐧','Course de pingouins ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 25:F('🌀','Un portail bizarre ! Avance jusqu\u2019à la case 30.',{t:'goto',c:30}),
+ 26:F('🍞','Le toast volant ! Recule d\u2019une case.',{t:'back',n:1}),
+ 27:F('🍋','Une limonade enchantée ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 28:F('🍌','Tu glisses sur une épluchure ! Recule d\u2019une case.',{t:'back',n:1}),
+ 29:F('🌵','Un cactus te chatouille ! Recule d\u2019une case.',{t:'back',n:1}),
+ 30:F('🛗','Tu prends l\u2019ascenseur express ! Avance jusqu\u2019à la case 36.',{t:'goto',c:36}),
+ 31:F('🌧️','Danse de la pluie ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 32:F('🕳️','Tu découvres une grotte secrète ! Recule jusqu\u2019à la case 27.',{t:'goto',c:27}),
+ 33:F('❄️','Le yéti te fait coucou ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 34:F('🤧','Poudre éternuante ! Passe ton tour.',{t:'skip'}),
+ 35:F('🧪','Une potion pétillante ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 36:F('💥','Propulsé par un canon ! Avance jusqu\u2019à la case 42.',{t:'goto',c:42}),
+ 37:F('🐉','Tu rencontres un dragon amical ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 38:F('🎩','Chapeau qui parle ! Recule d\u2019une case.',{t:'back',n:1}),
+ 39:F('🐔','Tu mimes une poule ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 40:F('🍀','Un trèfle porte-bonheur ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 41:F('🪞','Miroir magique ! Recule jusqu\u2019à la case 34.',{t:'goto',c:34}),
+ 42:F('🏄','Tu surfes sur une vague ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 43:F('👽','Un alien te prend en photo ! Passe ton tour.',{t:'skip'}),
+ 44:F('⚗️','Tu découvres une potion bizarre ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 45:F('🛋️','Bataille de coussins ! Recule d\u2019une case.',{t:'back',n:1}),
+ 46:F('🍩','Un donut magique ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 47:F('🌪️','Tourbillon farceur ! Recule jusqu\u2019à la case 41.',{t:'goto',c:41}),
+ 48:F('🎉','Tu lances un confetti ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 49:F('🧜','Une sirène chante pour toi ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 50:F('🥿','Tu trébuches sur un chausson ! Recule d\u2019une case.',{t:'back',n:1}),
+ 51:F('🎵','Musique entraînante ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 52:F('🍌','Tu manges une banane ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 53:F('🐨','Un koala fait la sieste sur toi ! Passe ton tour.',{t:'skip'}),
+ 54:F('📖','Un livre qui s\u2019anime ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 55:F('👢','Saut dans la flaque ! Recule d\u2019une case.',{t:'back',n:1}),
+ 56:F('🐤','Tu aides un oiseau tombé ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 57:F('🍬','Pluie de bonbons ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 58:F('🌉','Pont de corde ! Recule jusqu\u2019à la case 41.',{t:'goto',c:41}),
+ 59:F('🎩','Le magicien te félicite ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 60:F('🚀','Dernier turbo ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 61:F('🤖','Musique déjantée ! Recule d\u2019une case.',{t:'back',n:1}),
+ 62:F('🍌','Tu manges une banane géante ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 63:F('🔍','Une loupe géante ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 64:F('🎩','Le magicien te félicite ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 65:F('🏝️','Tu découvres une île au trésor ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 66:F('🎈','Un ballon te soulève ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 67:F('🎈','Tu lâches des ballons ! Avance de 2 cases.',{t:'fwd',n:2}),
+ 68:F('🍦','Glace trop froide ! Recule d\u2019une case.',{t:'back',n:1}),
+ 69:F('🎆','Feu d\u2019artifice ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 70:F('🥕','Une carotte magique ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 71:F('🫧','Bulle de savon géante ! Avance d\u2019une case.',{t:'fwd',n:1}),
+ 72:F('👑','ARRIVÉE — Bravo, oie légendaire !',{t:'win'}),
+};
+/* --- Chemin en spirale rectangulaire (72 cases), calibrable --- */
+function ringPts(l,t,r,b,count){ // périmètre horaire depuis bas-gauche : droite, haut, gauche, bas
+  const pts=[]; const W=r-l, H=b-t;
+  const per=2*(W+H);
+  for(let i=0;i<count;i++){ let s=(i/count)*per; let x,y;
+    if(s< W){ x=l+s; y=b; }                    // bas : gauche->droite
+    else if(s< W+H){ x=r; y=b-(s-W); }         // droite : bas->haut
+    else if(s< 2*W+H){ x=r-(s-(W+H)); y=t; }   // haut : droite->gauche
+    else { x=l; y=b-(H-(s-(2*W+H))); }          // gauche : haut->bas
+    pts.push({x,y}); }
+  return pts; }
+const RINGS=[ [0.085,0.135,0.915,0.905,30], [0.205,0.255,0.795,0.785,22],
+              [0.320,0.375,0.680,0.665,14], [0.420,0.470,0.580,0.560,5] ];
+const PATH=[]; RINGS.forEach(([l,t,r,b,c])=>ringPts(l,t,r,b,c).forEach(p=>PATH.push(p)));
+PATH.push({x:0.50,y:0.515}); // case 72 = centre
+const CFG={ image:'parcours/delirant72.webp', path:PATH, start:{x:0.10,y:0.90} };
+</script>
+</head>
+<body class="menu">
+<div class="casecard-bg" id="cardBg"><div class="casecard">
+  <span class="num" id="cardNum"></span>
+  <div class="emoji" id="cardEmoji"></div>
+  <div class="txt" id="cardTxt"></div>
+  <div class="fx" id="cardFx"></div>
+  <button id="cardOk">OK 👍</button>
+</div></div>
+<script>
+'use strict';
+CardShell({
+  id:'oiedelirant', title:'L\u2019OIE DÉLIRANTE', minPlayers:1, maxPlayers:5, skinModule:NoSkin,
+  run: async GC => {
+    const P=GC.players, N=P.length;
+    (function(){ let el=document.getElementById('bwToast');
+      if(!el){ el=document.createElement('div'); el.id='bwToast'; el.className='aw-toast'; document.body.appendChild(el); }
+      let tmr=null; const show=(t,strong)=>{ if(!t){el.classList.remove('show');return;}
+        el.textContent=t; el.classList.toggle('strong',!!strong); el.classList.add('show');
+        clearTimeout(tmr); tmr=setTimeout(()=>el.classList.remove('show'), strong?2200:2400); };
+      const oSay=GC.say,oCombo=GC.combo; GC.say=t=>{oSay&&oSay(t);show(t,false);}; GC.combo=t=>{oCombo&&oCombo(t);show(t,true);};
+    })();
+    const defaults=['roi','fusee','monstre','clown','mage'];
+    const pawns=P.map((p,i)=>({pos:0, pawnId:defaults[i%defaults.length], name:p.name, skip:false}));
+    let turn=0, winner=-1;
+
+    function playersBar(){ const bar=document.createElement('div'); bar.className='pc-players';
+      pawns.forEach((pw,i)=>{ const d=document.createElement('div'); d.className='pp'+(i===turn?' turn':'');
+        const pj=Parcours.byId(pw.pawnId);
+        if(pj&&pj.img){ const im=new Image(); im.src=pj.img; d.appendChild(im); } else { const s=document.createElement('span'); s.className='mini'; s.style.background=(pj&&pj.color)||'#888'; d.appendChild(s); }
+        const t=document.createElement('span'); t.textContent=pw.name+' — '+(pw.pos>0?('case '+pw.pos):'départ'); d.appendChild(t); bar.appendChild(d); });
+      return bar; }
+    function dieEl(v){ const d=document.createElement('div'); d.className='pc-die'; (PIPS[v]||[]).forEach(([x,y])=>{ const p=document.createElement('div'); p.className='pip'; p.style.left=x+'%'; p.style.top=y+'%'; d.appendChild(p); }); return d; }
+    function draw(dieVal){ const c=GC.center(''); const wrap=document.createElement('div'); wrap.className='pc-wrap';
+      wrap.appendChild(playersBar());
+      const bc=document.createElement('div'); Parcours.drawBoard(bc, CFG, {pawns}, {highlight:pawns[turn].pos}); wrap.appendChild(bc.firstChild);
+      if(dieVal){ const dr=document.createElement('div'); dr.appendChild(dieEl(dieVal)); wrap.appendChild(dr); }
+      c.appendChild(wrap); }
+
+    function showCard(cell){ return new Promise(res=>{
+      const e=EFFECTS[cell]||F('⭐','Une case mystère !',null);
+      document.getElementById('cardNum').textContent='Case '+cell;
+      document.getElementById('cardEmoji').textContent=e.emoji;
+      document.getElementById('cardTxt').textContent=e.txt;
+      const fxEl=document.getElementById('cardFx');
+      const fxlabel={fwd:'➡️ Tu avances',back:'⬅️ Tu recules',skip:'⏭️ Tu passes ton tour',goto:'🌀 Tu changes de case',win:'🏆 Victoire !'};
+      fxEl.textContent = e.fx? (fxlabel[e.fx.t]||'') : '';
+      const bg=document.getElementById('cardBg'); bg.classList.add('show');
+      const ok=document.getElementById('cardOk');
+      const done=()=>{ bg.classList.remove('show'); ok.removeEventListener('click',done); res(); };
+      ok.addEventListener('click',done);
+    }); }
+
+    async function animateTo(pi, target){ const pw=pawns[pi]; const dir=target>pw.pos?1:-1;
+      while(pw.pos!==target){ pw.pos+=dir; draw(); GC.play&&GC.play(); await GC.sleep(160); } }
+    async function rollAnim(){ for(let k=0;k<6;k++){ draw(1+Math.floor(Math.random()*6)); await GC.sleep(70); } }
+
+    async function takeTurn(pi){ const pw=pawns[pi];
+      if(pw.skip){ pw.skip=false; GC.combo(pw.name+' passe son tour.'); draw(); await GC.sleep(700); return; }
+      GC.say('À vous, '+pw.name+' — lancez le dé.');
+      await GC.ask([{id:'roll',label:'🎲 Lancer le dé',primary:true}]); GC.setButtons([]);
+      await rollAnim(); const d=1+Math.floor(Math.random()*6); draw(d); await GC.sleep(300);
+      GC.combo(pw.name+' fait '+d+' !');
+      let target=pw.pos+d;
+      if(target>=NB){ await animateTo(pi, NB); await showCard(NB); winner=pi; return; }
+      await animateTo(pi, target);
+      // grande carte + application de l'effet
+      await showCard(target);
+      const e=EFFECTS[target]; if(e&&e.fx){ const fx=e.fx;
+        if(fx.t==='fwd'){ let to=Math.min(NB, pw.pos+fx.n); await animateTo(pi,to); if(pw.pos>=NB){winner=pi;return;} }
+        else if(fx.t==='back'){ await animateTo(pi, Math.max(1, pw.pos-fx.n)); }
+        else if(fx.t==='goto'){ await animateTo(pi, Math.max(1,Math.min(NB,fx.c))); if(pw.pos>=NB){winner=pi;return;} }
+        else if(fx.t==='skip'){ pw.skip=true; }
+      }
+    }
+
+    draw(); GC.say('Lancez le dé, lisez votre case… et laissez le délire décider ! Premier à la case 72 gagne.');
+    await GC.sleep(800);
+    while(winner<0){ await takeTurn(turn); if(winner>=0) break; turn=(turn+1)%N; await GC.sleep(120); }
+    draw();
+    return GC.gameOver('Victoire de '+pawns[winner].name+' !', pawns[winner].name+' atteint l\u2019arrivée — oie légendaire ! 🎉', pawns[winner].name);
+  }
+});
+</script>
+</body>
+</html>

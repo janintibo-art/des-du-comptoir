@@ -347,4 +347,11 @@ echelles: { title:'Jeu des \u00e9chelles', html:`
 directement \u00e0 son sommet \u2014 un raccourci vers la victoire !</p>
 <p>Le premier \u00e0 atteindre la <b>case 100</b> gagne. Si votre d\u00e9 vous ferait d\u00e9passer 100,
 vous <b>rebondissez</b> en arri\u00e8re du nombre de cases en trop.</p>`},
+oiedelirant: { title:'L\u2019oie délirante', html:`
+<p>1 \u00e0 5 joueurs, 72 cases compl\u00e8tement loufoques. Chacun choisit un pion, lance le
+<b>d\u00e9</b> et avance.</p>
+<p><b>Chaque case a un effet !</b> Quand vous vous arr\u00eatez dessus, une <b>grande carte</b>
+s\u2019affiche : lisez-la, cliquez OK, et l\u2019effet s\u2019applique \u2014 avancer, reculer,
+sauter jusqu\u2019\u00e0 une case, ou passer son tour. Attention aux surprises !</p>
+<p>Le premier \u00e0 atteindre la <b>case 72</b> (l\u2019arriv\u00e9e) devient l\u2019oie l\u00e9gendaire. \ud83c\udfc6</p>`},
 };
