@@ -101,11 +101,10 @@ grille calée au pixel sur l'image. Moteur validé par simulation (conservation 
 le hasard, gagne/bloque parfaitement), chute animée des jetons. En **réseau** aussi (`net-games6.js`).
 Plateau et jetons détourés (`www/p4/`), grille calée au pixel. Salon : **23 jeux**.
 
-## Monopoly 🎩🏠 (en construction)
+## Monopoly 🎩🏠 (étapes 1-2)
 **Le Grand Marchand** (`monopoly.html`) : deux plateaux au choix (à l'ancienne / futuriste), pions et
 maisons/hôtels découpés (`monopoly/`), **dés qui roulent**, déplacement des pions et **grande carte**
-sur chaque case. Construit **par étapes** : le plateau vivant d'abord, puis l'économie (achats, loyers,
-maisons/hôtels, cartes), puis le réseau.
+sur chaque case. **Économie** en place : argent (1500 au départ), **achat de propriétés**, **loyers** (gares/services/couleurs), Départ +200, **Chance/Caisse** (vos textes), **prison**, **faillite**. À venir : maisons/hôtels et réseau.
 
 ## Reversi / Othello ⚫⚪
 **Reversi/Othello** (`reversi.html`) : 8×8, **IA forte** (alpha-bêta, poids positionnels, coins, mobilité),
