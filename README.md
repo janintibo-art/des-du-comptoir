@@ -42,6 +42,12 @@ avec une barre de navigation qui saute à chaque section.
 occupé oblige à tout ramasser. Plateau et bâtonnet détourés de vos images (`www/cochon/`). Nombre
 de cochons réglable (rapide/normale/officielle). Logique validée (terminaison, 2-6 joueurs).
 
+## Les Dames ⚪
+**Les Dames** (`dames-classique.html`) sur votre damier fleur de lys 8×8 : prise obligatoire
+**et majoritaire**, rafles en chaîne (jouées pas à pas), **dame volante** couronnée 👑, règle
+de nul (25 coups de dames). IA minimax alpha-bêta. Plateau et pions détourés (`www/dames/`),
+grille calée au pixel sur l'image. Moteur validé par simulation (conservation des pièces).
+
 ## Awalé 🌰
 L'**Awalé / Oware** (`awale-oware.html`), jeu de semailles à 2 joueurs (famille mancala),
 contre une **IA négamax** (alpha-bêta) ou à tour de rôle. Plateaux et graines détourés de vos

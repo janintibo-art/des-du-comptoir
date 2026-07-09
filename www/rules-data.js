@@ -297,4 +297,16 @@ d\u00e9finitivement du jeu.</p>
 <p><b>Stop ou encore :</b> au 1er tour on lance une fois, au 2e deux fois ; \u00e0 partir du 3e
 tour on relance tant qu'on veut \u2014 mais un trou occup\u00e9 met fin au tour. \u00c0 vous de savoir
 vous arr\u00eater !</p>`},
+dames: { title:'Les Dames', html:`
+<p>Sur les cases fonc\u00e9es d'un damier 8\u00d78, 12 pions chacun. Les <b>Blancs</b> (en bas)
+commencent. Gagne celui qui <b>prend ou bloque</b> toutes les pi\u00e8ces adverses.</p>
+<p><b>D\u00e9placement.</b> Un pion avance d'une case en <b>diagonale</b>, vers l'avant.</p>
+<p><b>La prise est obligatoire.</b> On saute par-dessus une pi\u00e8ce adverse voisine pour
+retomber juste derri\u00e8re (le pion prend aussi en <b>arri\u00e8re</b>). Les prises s'encha\u00eenent
+en <b>rafle</b>, et l'on doit jouer le coup qui prend le <b>plus de pi\u00e8ces</b> (prise
+majoritaire).</p>
+<p><b>La dame.</b> Un pion qui <b>termine</b> son coup sur la derni\u00e8re rang\u00e9e est couronn\u00e9
+\ud83d\udc51. La dame est <b>volante</b> : elle glisse d'autant de cases qu'elle veut en
+diagonale, et capture \u00e0 distance en s'arr\u00eatant o\u00f9 elle veut derri\u00e8re sa victime.</p>
+<p><b>Nul :</b> 25 coups de dames sans prise ni avanc\u00e9e de pion.</p>`},
 };

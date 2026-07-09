@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Les Dames</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+.dames-board{position:relative;width:100%;max-width:440px;margin:0 auto;aspect-ratio:1;background-size:contain;background-repeat:no-repeat;filter:drop-shadow(0 6px 16px rgba(0,0,0,.5))}
+.dcell{position:absolute;transform:translate(-50%,-50%);width:9.8%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:14%}
+.dcell.sel{box-shadow:0 0 0 3px var(--accent),0 0 14px 2px rgba(224,163,76,.55)}
+.dcell.dest{cursor:pointer;background:radial-gradient(circle,rgba(224,163,76,.55) 26%,rgba(224,163,76,.12) 60%,transparent 70%)}
+.dcell.dest:hover{background:radial-gradient(circle,rgba(224,163,76,.8) 30%,rgba(224,163,76,.2) 62%,transparent 72%)}
+.dcell.pick{cursor:pointer}
+.dcell img.pn{width:96%;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55));pointer-events:none}
+.dcell.ghosted img.pn{opacity:.25}
+.dcell .crown{position:absolute;top:8%;font-size:clamp(13px,3.4vw,19px);text-shadow:0 1px 3px #000;pointer-events:none}
+.dcount{display:flex;gap:18px;justify-content:center;font-size:14px;opacity:.8;margin-top:6px}
+.dcount img{height:22px;vertical-align:middle;margin-right:4px}
+</style>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+const NoSkin={ buildSkinSelect(sel){ sel.style.display='none'; }, el(){ return document.createElement('span'); } };
+/* ---- moteur dames 8x8 (prise majoritaire, dame volante) ---- */
+const SIZE=8, GRID={left:0.1073, top:0.1029, cw:0.0979, ch:0.0989};
+const inB=(r,c)=> r>=0&&r<SIZE&&c>=0&&c<SIZE;
+const DIAGS=[[-1,-1],[-1,1],[1,-1],[1,1]];
+const side=v=> v>0?1:(v<0?-1:0);
+const isKing=v=> Math.abs(v)===2;
+function initBoard(){ const b=new Array(64).fill(0);
+  for(let r=0;r<3;r++)for(let c=0;c<8;c++) if((r+c)%2===0) b[r*8+c]=-1;
+  for(let r=5;r<8;r++)for(let c=0;c<8;c++) if((r+c)%2===0) b[r*8+c]=1;
+  return b; }
+function capturePaths(b,r,c){ const v=b[r*8+c]; const me=side(v); const out=[];
+  function rec(b2,r2,c2,caps,path){ let ext=false;
+    if(!isKing(v)){
+      for(const [dr,dc] of DIAGS){ const mr=r2+dr,mc=c2+dc,lr=r2+2*dr,lc=c2+2*dc;
+        if(!inB(lr,lc)) continue; const mid=mr*8+mc;
+        if(side(b2[mid])===-me && !caps.includes(mid) && b2[lr*8+lc]===0){
+          ext=true; const nb=b2.slice(); nb[lr*8+lc]=nb[r2*8+c2]; nb[r2*8+c2]=0;
+          rec(nb,lr,lc,caps.concat([mid]),path.concat([[lr,lc]])); } }
+    } else {
+      for(const [dr,dc] of DIAGS){ let rr=r2+dr,cc=c2+dc;
+        while(inB(rr,cc)&&b2[rr*8+cc]===0){ rr+=dr;cc+=dc; }
+        if(!inB(rr,cc)) continue; const mid=rr*8+cc;
+        if(side(b2[mid])!==-me || caps.includes(mid)) continue;
+        let lr=rr+dr,lc=cc+dc;
+        while(inB(lr,lc)&&b2[lr*8+lc]===0){ ext=true;
+          const nb=b2.slice(); nb[lr*8+lc]=nb[r2*8+c2]; nb[r2*8+c2]=0;
+          rec(nb,lr,lc,caps.concat([mid]),path.concat([[lr,lc]])); lr+=dr;lc+=dc; } }
+    }
+    if(!ext && caps.length) out.push({path,caps});
+  }
+  rec(b,r,c,[],[[r,c]]);
+  return out; }
+function allMoves(b,me){ let best=0; const capM=[];
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){ if(side(b[r*8+c])!==me) continue;
+    for(const cp of capturePaths(b,r,c)){ if(cp.caps.length>best)best=cp.caps.length; capM.push(cp); } }
+  if(best>0) return {moves:capM.filter(m=>m.caps.length===best), mustCapture:true};
+  const quiet=[];
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){ const v=b[r*8+c]; if(side(v)!==me) continue;
+    if(!isKing(v)){ const dr=(me===1)?-1:1;
+      for(const dc of [-1,1]){ const nr=r+dr,nc=c+dc; if(inB(nr,nc)&&b[nr*8+nc]===0) quiet.push({path:[[r,c],[nr,nc]],caps:[]}); } }
+    else { for(const [dr,dc] of DIAGS){ let rr=r+dr,cc=c+dc;
+      while(inB(rr,cc)&&b[rr*8+cc]===0){ quiet.push({path:[[r,c],[rr,cc]],caps:[]}); rr+=dr;cc+=dc; } } } }
+  return {moves:quiet, mustCapture:false}; }
+function applyMove(b,mv,me){ const nb=b.slice();
+  const [r0,c0]=mv.path[0]; const [r1,c1]=mv.path[mv.path.length-1];
+  let v=nb[r0*8+c0]; nb[r0*8+c0]=0; mv.caps.forEach(i=> nb[i]=0);
+  if(Math.abs(v)===1){ if(me===1&&r1===0)v=2; if(me===-1&&r1===7)v=-2; }
+  nb[r1*8+c1]=v; return nb; }
+function countPieces(b,me){ let n=0; for(const v of b) if(side(v)===me)n++; return n; }
+/* ---- IA minimax ---- */
+function evalB(b,me){ let s=0;
+  for(let i=0;i<64;i++){ const v=b[i]; if(!v)continue; const r=(i/8)|0;
+    let val=isKing(v)?35:10; if(!isKing(v)) val += (v>0?(7-r):r)*0.5;
+    s += (side(v)===me? val : -val); } return s; }
+function mm(b,me,turn,d,al,be){ const {moves}=allMoves(b,turn);
+  if(!moves.length) return turn===me? -1000-d : 1000+d;
+  if(d===0) return evalB(b,me);
+  if(turn===me){ let best=-1e9; for(const mv of moves){ const v=mm(applyMove(b,mv,turn),me,-turn,d-1,al,be);
+    if(v>best)best=v; if(best>al)al=best; if(al>=be)break; } return best; }
+  let best=1e9; for(const mv of moves){ const v=mm(applyMove(b,mv,turn),me,-turn,d-1,al,be);
+    if(v<best)best=v; if(best<be)be=best; if(al>=be)break; } return best; }
+function pickAI(b,me,d){ const {moves}=allMoves(b,me); let best=moves[0],bv=-1e9;
+  for(const mv of moves){ const v=mm(applyMove(b,mv,me),me,-me,d-1,-1e9,1e9); if(v>bv){bv=v;best=mv;} } return best; }
+const cellPos=(r,c)=>[(GRID.left+(c+0.5)*GRID.cw)*100, (GRID.top+(r+0.5)*GRID.ch)*100];
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+CardShell({
+  id:'dames', title:'LES DAMES', minPlayers:2, maxPlayers:2, skinModule:NoSkin,
+  run: async GC => {
+    const P=GC.players, names=[P[0].name,P[1].name];   // P[0]=blancs (bas), P[1]=noirs (haut)
+    const humans=P.filter(p=>!p.ai).length;
+    const depth=GC.aiRisk<0.8?3:(GC.aiRisk>1.1?6:5);
+    let b=initBoard(), turn=1, noProgress=0;
+    const meOf=idx=> idx===0?1:-1;
+
+    const scores=t=>GC.scores([
+      {label:names[0]+' ⚪',value:countPieces(b,1),active:t===1},
+      {label:names[1]+' ⚫',value:countPieces(b,-1),active:t===-1}]);
+    function draw(opts){ opts=opts||{};
+      const c=GC.center('');
+      const board=document.createElement('div'); board.className='dames-board';
+      board.style.backgroundImage='url(dames/plateau.webp)';
+      const shown=opts.board||b;
+      for(let r=0;r<8;r++)for(let cc=0;cc<8;cc++){
+        if((r+cc)%2!==0) continue;
+        const v=shown[r*8+cc]; const [x,y]=cellPos(r,cc);
+        const cell=document.createElement('div'); cell.className='dcell';
+        cell.style.left=x+'%'; cell.style.top=y+'%';
+        if(opts.sel && opts.sel[0]===r && opts.sel[1]===cc) cell.classList.add('sel');
+        if(opts.ghost && opts.ghost.has(r*8+cc)) cell.classList.add('ghosted');
+        if(v){ const img=new Image(); img.className='pn'; img.src='dames/pion-'+(v>0?'blanc':'noir')+'.webp'; img.draggable=false; cell.appendChild(img);
+          if(isKing(v)){ const cr=document.createElement('div'); cr.className='crown'; cr.textContent='👑'; cell.appendChild(cr); } }
+        const key=r*8+cc;
+        if(opts.picks && opts.picks.has(key)){ cell.classList.add('pick'); cell.addEventListener('click',()=>opts.onPick(r,cc)); }
+        if(opts.dests && opts.dests.has(key)){ cell.classList.add('dest'); cell.addEventListener('click',()=>opts.onDest(r,cc)); }
+        board.appendChild(cell);
+      }
+      c.appendChild(board);
+      const cnt=document.createElement('div'); cnt.className='dcount';
+      cnt.innerHTML='<span><img src="dames/pion-blanc.webp">'+countPieces(shown,1)+'</span><span><img src="dames/pion-noir.webp">'+countPieces(shown,-1)+'</span>';
+      c.appendChild(cnt);
+    }
+
+    async function humanTurn(pIdx){
+      const me=meOf(pIdx);
+      if(humans>1) await GC.handOff(P[pIdx].name);
+      const {moves,mustCapture}=allMoves(b,me);
+      while(true){
+        // 1) choisir la pièce
+        const starts=new Set(moves.map(m=>m.path[0][0]*8+m.path[0][1]));
+        GC.say('À vous, '+P[pIdx].name+(mustCapture?' — prise obligatoire !':' — touchez une pièce.'));
+        scores(me);
+        const [sr,sc]=await new Promise(res=> draw({picks:starts, onPick:(r,c)=>res([r,c])}));
+        // 2) suivre le chemin (rafles pas à pas)
+        let prefix=[[sr,sc]];
+        let pool=moves.filter(m=>m.path[0][0]===sr&&m.path[0][1]===sc);
+        let restart=false;
+        while(true){
+          const L=prefix.length;
+          if(pool[0].path.length===L){ // chemin complet
+            const mv=pool[0];
+            b=applyMove(b,mv,me); GC.play();
+            noProgress = (mv.caps.length||Math.abs(b[mv.path[L-1][0]*8+mv.path[L-1][1]])===1) ? 0 : noProgress+1;
+            if(mv.caps.length) GC.combo(P[pIdx].name+' prend '+mv.caps.length+' pièce'+(mv.caps.length>1?'s':'')+' !');
+            return;
+          }
+          const nexts=new Map(); pool.forEach(m=>{ const [nr,nc]=m.path[L]; nexts.set(nr*8+nc,[nr,nc]); });
+          // plateau fantôme : pièce déplacée, prises du préfixe grisées
+          const gb=b.slice(); const ghost=new Set();
+          const done=pool[0].caps.slice(0, L-1); done.forEach(i=>ghost.add(i));
+          gb[sr*8+sc]=0; const cur=prefix[prefix.length-1]; gb[cur[0]*8+cur[1]]=b[sr*8+sc];
+          GC.say(L===1?'Touchez la case d\u2019arriv\u00e9e.':'Continuez la rafle !');
+          const choice=await new Promise(res=> draw({board:gb, sel:cur, ghost, dests:new Set(nexts.keys()),
+            onDest:(r,c)=>res([r,c]), picks:(L===1?new Set([sr*8+sc]):null), onPick:()=>res(null)}));
+          if(!choice){ restart=true; break; }   // re-taper la pièce = annuler
+          prefix.push(choice);
+          pool=pool.filter(m=>m.path[L] && m.path[L][0]===choice[0] && m.path[L][1]===choice[1]);
+          GC.play();
+        }
+        if(restart) continue;
+      }
+    }
+    async function aiTurn(pIdx){
+      const me=meOf(pIdx);
+      scores(me); draw({});
+      GC.say(P[pIdx].name+' réfléchit…'); await GC.sleep(500);
+      const mv=pickAI(b,me,depth);
+      // animer étape par étape
+      for(let k=1;k<mv.path.length;k++){
+        const gb=b.slice(); const ghost=new Set(mv.caps.slice(0,k-1)); mv.caps.slice(0,k-1).forEach(i=>gb[i]=gb[i]);
+        gb[mv.path[0][0]*8+mv.path[0][1]]=0; gb[mv.path[k][0]*8+mv.path[k][1]]=b[mv.path[0][0]*8+mv.path[0][1]];
+        draw({board:gb, sel:mv.path[k], ghost}); GC.play();
+        await GC.sleep(430);
+      }
+      b=applyMove(b,mv,me);
+      noProgress = (mv.caps.length||Math.abs(b[mv.path[mv.path.length-1][0]*8+mv.path[mv.path.length-1][1]])===1)?0:noProgress+1;
+      if(mv.caps.length) GC.combo(P[pIdx].name+' prend '+mv.caps.length+' pièce'+(mv.caps.length>1?'s':'')+' !');
+      draw({}); await GC.sleep(350);
+    }
+
+    GC.say('Blancs en bas, prise obligatoire (et majoritaire). Atteignez la dernière rangée pour faire dame !');
+    scores(1); draw({}); await GC.sleep(1300);
+    let guard=0;
+    while(true){
+      if(++guard>600) return GC.gameOver('Match nul !','Partie interminable — égalité.');
+      const pIdx = turn===1?0:1;
+      const {moves}=allMoves(b, turn);
+      if(!moves.length){ const w=turn===1?1:0; scores(0); draw({});
+        return GC.gameOver('Victoire de '+names[w]+' !', names[pIdx]+' ne peut plus jouer.'); }
+      if(noProgress>=50){ scores(0); draw({});
+        return GC.gameOver('Match nul !','25 coups de dames sans prise ni avancée de pion : égalité.'); }
+      if(P[pIdx].ai) await aiTurn(pIdx); else await humanTurn(pIdx);
+      scores(-turn);
+      if(countPieces(b,-turn)===0){ draw({});
+        return GC.gameOver('Victoire de '+names[pIdx]+' !', 'Toutes les pièces adverses sont prises !'); }
+      turn=-turn;
+      await GC.sleep(250);
+    }
+  }
+});
+</script>
+</body>
+</html>
