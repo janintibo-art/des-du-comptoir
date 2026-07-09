@@ -1,6 +1,6 @@
 # Les Dés du Comptoir 🎲
 
-**34 jeux de comptoir** — dés en 3D, cartes, dominos, Awalé, dames, échecs, UNO et Puissance 4 —
+**38 jeux de comptoir** — dés en 3D, cartes, dominos, Awalé, dames, échecs, UNO et Puissance 4 —
 jouables **dans le navigateur**, **installables** (appli hors-ligne) et jouables **à plusieurs téléphones**.
 Ambiance bistrot, code ouvert.
 
@@ -100,6 +100,12 @@ grille calée au pixel sur l'image. Moteur validé par simulation (conservation 
 **Puissance 4** (`p4.html`) : 7×6, jetons rouge/jaune, **IA minimax alpha-bêta** (imbattable par
 le hasard, gagne/bloque parfaitement), chute animée des jetons. En **réseau** aussi (`net-games6.js`).
 Plateau et jetons détourés (`www/p4/`), grille calée au pixel. Salon : **23 jeux**.
+
+## Jeux de parcours 🦢🎲
+Nouvelle famille **Parcours** : **Jeu des échelles**, **Jeu de l'oie** classique (63 cases, oies/pont/puits/
+labyrinthe/prison/mort), et deux **Oies délirantes** (72 et 108 cases) où **chaque case a un effet** montré
+en **grande carte** (avancer, reculer, sauter, passer son tour). 1 à 5 joueurs, **pions au choix** (Roi,
+Fusée, Monstre, Clown, Magicien, ou pastilles) — `parcours.js` + `pions/`.
 
 ## Mode « Table + Joueurs » 📺
 Dans le Salon, à la création on peut cocher **« Cet appareil est la Table »** : ce device devient

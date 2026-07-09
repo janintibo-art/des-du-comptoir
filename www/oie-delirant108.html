@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L'oie délirante géante</title>
+<link rel="icon" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14140f">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+#cMsg,#cCombo{display:none!important}
+.aw-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%) translateY(12px);max-width:92vw;background:rgba(20,20,16,.93);color:var(--cream);border:1px solid rgba(224,163,76,.5);border-radius:999px;padding:9px 18px;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60;text-align:center}
+.aw-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.aw-toast.strong{color:var(--accent);font-weight:bold;border-color:var(--accent)}
+.pc-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
+.pc-board{position:relative;width:100%;max-width:520px;aspect-ratio:1/1;background-size:contain;background-repeat:no-repeat;background-position:center;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.pc-pawn{position:absolute;width:7%;transform:translate(-50%,-72%);transition:left .26s ease,top .26s ease;z-index:3;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+.pc-pawn img{width:100%;display:block}
+.pc-pawn.dot{width:5%;aspect-ratio:1;border-radius:50%;border:2px solid #fff;transform:translate(-50%,-50%)}
+.pc-die{width:58px;height:58px;border-radius:12px;background:#f7f2e6;position:relative;box-shadow:0 3px 8px rgba(0,0,0,.4)}
+.pc-die .pip{position:absolute;width:12px;height:12px;border-radius:50%;background:#14140f;transform:translate(-50%,-50%)}
+.pc-players{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:13px}
+.pc-players .pp{display:flex;align-items:center;gap:5px;background:rgba(20,20,16,.5);border:1px solid rgba(242,232,213,.15);border-radius:999px;padding:4px 10px}
+.pc-players .pp.turn{border-color:var(--accent);color:var(--accent)}
+.pc-players .pp img{height:22px}.pc-players .pp .mini{width:14px;height:14px;border-radius:50%;border:1px solid #fff;display:inline-block}
+.casecard-bg{position:fixed;inset:0;background:rgba(10,10,8,.72);z-index:70;display:flex;align-items:center;justify-content:center;padding:22px;opacity:0;pointer-events:none;transition:opacity .2s}
+.casecard-bg.show{opacity:1;pointer-events:auto}
+.casecard{background:linear-gradient(160deg,#2a2620,#14140f);border:2px solid var(--accent);border-radius:22px;max-width:400px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6);transform:scale(.9);transition:transform .25s}
+.casecard-bg.show .casecard{transform:scale(1)}
+.casecard .num{display:inline-block;background:var(--accent);color:#14140f;font-weight:bold;border-radius:999px;padding:4px 16px;font-size:16px;letter-spacing:.08em}
+.casecard .emoji{font-size:64px;margin:14px 0 6px;line-height:1}
+.casecard .txt{font-size:20px;line-height:1.35;margin:6px 0 4px}
+.casecard .fx{font-size:16px;color:var(--accent);font-weight:bold;margin-top:10px}
+.casecard button{margin-top:20px;font-family:inherit;font-size:18px;background:var(--accent);color:#14140f;border:none;border-radius:999px;padding:12px 34px;font-weight:bold;cursor:pointer}
+</style>
+<script src="rules-data.js"></script>
+<script src="parcours.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+const NoSkin={ buildSkinSelect(sel){ sel.style.display='none'; }, el(){ return document.createElement('span'); } };
+const PIPS={1:[[50,50]],2:[[30,30],[70,70]],3:[[30,30],[50,50],[70,70]],4:[[30,30],[70,30],[30,70],[70,70]],5:[[30,30],[70,30],[50,50],[30,70],[70,70]],6:[[30,28],[70,28],[30,50],[70,50],[30,72],[70,72]]};
+const NB=108;
+/* Effets générés : un pool varié, quelques pièges répartis. Case 108 = arrivée. */
+const POOL=[
+ ['🐧','Un pingouin te fait la course !',{t:'fwd',n:2}],
+ ['🍩','Un donut magique t\u2019offre un boost.',{t:'fwd',n:1}],
+ ['🍌','Peau de banane… glissade !',{t:'back',n:1}],
+ ['🚀','Coup de turbo fusée !',{t:'fwd',n:3}],
+ ['🐌','Tu suis un escargot… lentement.',{t:'back',n:1}],
+ ['🌈','Un arc-en-ciel t\u2019illumine.',{t:'fwd',n:1}],
+ ['🦄','La licorne t\u2019emmène au galop !',{t:'fwd',n:2}],
+ ['🐙','Une pieuvre te retient !',{t:'back',n:2}],
+ ['🍬','Pluie de bonbons !',{t:'fwd',n:2}],
+ ['👻','Un fantôme te fait « bouh » !',{t:'back',n:1}],
+ ['🎈','Des ballons te soulèvent.',{t:'fwd',n:2}],
+ ['🐸','Une grenouille te fait sursauter.',{t:'back',n:1}],
+ ['⭐','Une étoile filante, fais un vœu !',{t:'fwd',n:1}],
+ ['🍕','Pause pizza… tu traînes.',{t:'back',n:1}],
+ ['🎩','Le magicien te télé-porte en avant !',{t:'fwd',n:2}],
+];
+const TRAPS={
+ 9:['🕳️','Le trou mystère ! Retour à la case 4.',{t:'goto',c:4}],
+ 21:['🐍','Le serpent farceur te renvoie en arrière.',{t:'goto',c:12}],
+ 34:['🤧','Poudre éternuante ! Passe ton tour.',{t:'skip'}],
+ 43:['👽','Un alien te prend en photo ! Passe ton tour.',{t:'skip'}],
+ 58:['🌉','Pont de corde : file jusqu\u2019à la case 70.',{t:'goto',c:70}],
+ 66:['🍦','Glace trop froide, tu frissonnes.',{t:'back',n:2}],
+ 79:['🛸','Une soucoupe t\u2019enlève… retour case 60.',{t:'goto',c:60}],
+ 88:['🐉','Le dragon t\u2019envoie voler en avant !',{t:'goto',c:99}],
+ 100:['🌩️','Gros orage ! Passe ton tour.',{t:'skip'}],
+ 108:['👑','ARRIVÉE ! Oie légendaire, tu gagnes !',{t:'win'}],
+};
+function effAt(n){ if(TRAPS[n]){ const e=TRAPS[n]; return {emoji:e[0],txt:e[1],fx:e[2]}; }
+  const e=POOL[(n*7)%POOL.length]; return {emoji:e[0],txt:e[1],fx:e[2]}; }
+/* Chemin en serpentin : 9 rangées de 12, boustrophédon (1 en bas-gauche, 108 en haut-gauche) */
+const COLS=12, ROWS=9;
+const G={ x0:0.095, y0:0.905, dx:0.0705, dy:0.0955 };
+function cellPos(n){ const i=n-1; const row=Math.floor(i/COLS); const inRow=i%COLS;
+  const col=(row%2===0)? inRow : (COLS-1-inRow);
+  return { x: G.x0 + col*G.dx, y: G.y0 - row*G.dy }; }
+const PATH=[]; for(let n=1;n<=NB;n++) PATH.push(cellPos(n));
+const CFG={ image:'parcours/delirant108.webp', path:PATH, start:{x:0.06,y:0.905} };
+</script>
+</head>
+<body class="menu">
+<div class="casecard-bg" id="cardBg"><div class="casecard">
+  <span class="num" id="cardNum"></span><div class="emoji" id="cardEmoji"></div>
+  <div class="txt" id="cardTxt"></div><div class="fx" id="cardFx"></div>
+  <button id="cardOk">OK 👍</button>
+</div></div>
+<script>
+'use strict';
+CardShell({
+  id:'oiedelirant108', title:'L\u2019OIE DÉLIRANTE GÉANTE', minPlayers:1, maxPlayers:5, skinModule:NoSkin,
+  run: async GC => {
+    const P=GC.players, N=P.length;
+    (function(){ let el=document.getElementById('bwToast');
+      if(!el){ el=document.createElement('div'); el.id='bwToast'; el.className='aw-toast'; document.body.appendChild(el); }
+      let tmr=null; const show=(t,strong)=>{ if(!t){el.classList.remove('show');return;}
+        el.textContent=t; el.classList.toggle('strong',!!strong); el.classList.add('show');
+        clearTimeout(tmr); tmr=setTimeout(()=>el.classList.remove('show'), strong?2000:2200); };
+      const oSay=GC.say,oCombo=GC.combo; GC.say=t=>{oSay&&oSay(t);show(t,false);}; GC.combo=t=>{oCombo&&oCombo(t);show(t,true);};
+    })();
+    const defaults=['roi','fusee','monstre','clown','mage'];
+    const pawns=P.map((p,i)=>({pos:0, pawnId:defaults[i%defaults.length], name:p.name, skip:false}));
+    let turn=0, winner=-1;
+    function bar(){ const b=document.createElement('div'); b.className='pc-players';
+      pawns.forEach((pw,i)=>{ const d=document.createElement('div'); d.className='pp'+(i===turn?' turn':'');
+        const pj=Parcours.byId(pw.pawnId); if(pj&&pj.img){const im=new Image();im.src=pj.img;d.appendChild(im);} else {const s=document.createElement('span');s.className='mini';s.style.background=(pj&&pj.color)||'#888';d.appendChild(s);}
+        const t=document.createElement('span'); t.textContent=pw.name+' — '+(pw.pos>0?('case '+pw.pos):'départ'); d.appendChild(t); b.appendChild(d); }); return b; }
+    function dieEl(v){ const d=document.createElement('div'); d.className='pc-die'; (PIPS[v]||[]).forEach(([x,y])=>{const p=document.createElement('div');p.className='pip';p.style.left=x+'%';p.style.top=y+'%';d.appendChild(p);}); return d; }
+    function draw(dv){ const c=GC.center(''); const wrap=document.createElement('div'); wrap.className='pc-wrap'; wrap.appendChild(bar());
+      const bc=document.createElement('div'); Parcours.drawBoard(bc, CFG, {pawns}, {highlight:pawns[turn].pos}); wrap.appendChild(bc.firstChild);
+      if(dv){ const dr=document.createElement('div'); dr.appendChild(dieEl(dv)); wrap.appendChild(dr); } c.appendChild(wrap); }
+    function card(cell,e){ return new Promise(res=>{ document.getElementById('cardNum').textContent='Case '+cell;
+      document.getElementById('cardEmoji').textContent=e.emoji; document.getElementById('cardTxt').textContent=e.txt;
+      const fxlabel={fwd:'➡️ Tu avances',back:'⬅️ Tu recules',skip:'⏭️ Passe ton tour',goto:'🌀 Tu changes de case',win:'🏆 Victoire !'};
+      document.getElementById('cardFx').textContent = e.fx?(fxlabel[e.fx.t]||''):'';
+      const bg=document.getElementById('cardBg'); bg.classList.add('show'); const ok=document.getElementById('cardOk');
+      const done=()=>{ bg.classList.remove('show'); ok.removeEventListener('click',done); res(); }; ok.addEventListener('click',done); }); }
+    async function animateTo(pi,target){ const pw=pawns[pi]; const dir=target>pw.pos?1:-1; if(target===pw.pos){draw();return;}
+      while(pw.pos!==target){ pw.pos+=dir; draw(); GC.play&&GC.play(); await GC.sleep(120); } }
+    async function rollAnim(){ for(let k=0;k<6;k++){ draw(1+Math.floor(Math.random()*6)); await GC.sleep(65); } }
+    async function resolve(pi, depth){ const pw=pawns[pi]; if(pw.pos>=NB){winner=pi;return;}
+      const e=effAt(pw.pos); await card(pw.pos, e); const fx=e.fx;
+      if(fx.t==='win'){ winner=pi; }
+      else if(fx.t==='fwd'){ let to=Math.min(NB,pw.pos+fx.n); await animateTo(pi,to); if(pw.pos>=NB){winner=pi;return;} if(depth<8&&TRAPS[pw.pos]) return resolve(pi,depth+1); }
+      else if(fx.t==='back'){ await animateTo(pi, Math.max(1,pw.pos-fx.n)); if(depth<8&&TRAPS[pw.pos]) return resolve(pi,depth+1); }
+      else if(fx.t==='goto'){ await animateTo(pi, Math.max(1,Math.min(NB,fx.c))); if(pw.pos>=NB){winner=pi;return;} if(depth<8&&TRAPS[pw.pos]) return resolve(pi,depth+1); }
+      else if(fx.t==='skip'){ pw.skip=true; } }
+    async function takeTurn(pi){ const pw=pawns[pi];
+      if(pw.skip){ pw.skip=false; GC.combo(pw.name+' passe son tour.'); draw(); await GC.sleep(650); return; }
+      GC.say('À vous, '+pw.name+' — lancez le dé.');
+      await GC.ask([{id:'roll',label:'🎲 Lancer le dé',primary:true}]); GC.setButtons([]);
+      await rollAnim(); const d=1+Math.floor(Math.random()*6); draw(d); await GC.sleep(280); GC.combo(pw.name+' fait '+d+' !');
+      let t=pw.pos+d; if(t>NB){ t=NB-(t-NB); GC.combo('Trop loin ! Rebond à '+t+'.'); }
+      await animateTo(pi,t); await resolve(pi,0); }
+    draw(); GC.say('108 cases de folie ! Chaque case a sa surprise. Premier à l\u2019arrivée gagne.');
+    await GC.sleep(800);
+    while(winner<0){ await takeTurn(turn); if(winner>=0)break; turn=(turn+1)%N; await GC.sleep(110); }
+    draw();
+    return GC.gameOver('Victoire de '+pawns[winner].name+' !', pawns[winner].name+' atteint la case 108 ! 🎉', pawns[winner].name);
+  }
+});
+</script>
+</body>
+</html>

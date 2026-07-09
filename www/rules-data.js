@@ -354,4 +354,17 @@ oiedelirant: { title:'L\u2019oie délirante', html:`
 s\u2019affiche : lisez-la, cliquez OK, et l\u2019effet s\u2019applique \u2014 avancer, reculer,
 sauter jusqu\u2019\u00e0 une case, ou passer son tour. Attention aux surprises !</p>
 <p>Le premier \u00e0 atteindre la <b>case 72</b> (l\u2019arriv\u00e9e) devient l\u2019oie l\u00e9gendaire. \ud83c\udfc6</p>`},
+oieclassique: { title:'Le jeu de l\u2019oie', html:`
+<p>Le grand classique ! 1 \u00e0 5 joueurs lancent le d\u00e9 et avancent le long de la spirale
+jusqu\u2019\u00e0 la <b>case 63</b>.</p>
+<p><b>Les oies</b> (cases 5, 9, 14\u2026) te font <b>rejouer</b> aussitôt du même nombre \u2014
+de belles acc\u00e9l\u00e9rations ! Mais gare aux pi\u00e8ges : le <b>pont</b> (6), l\u2019<b>auberge</b>
+(19), le <b>puits</b> (31), le <b>labyrinthe</b> (42), la <b>prison</b> (52) et la redoutable
+<b>t\u00eate de mort</b> (58) qui te renvoie au d\u00e9part !</p>
+<p>Pour gagner, il faut tomber <b>pile</b> sur la 63 : si tu d\u00e9passes, tu <b>rebondis</b> en arri\u00e8re.</p>`},
+oiedelirant108: { title:'L\u2019oie délirante géante', html:`
+<p>La version XXL : <b>108 cases</b> en serpentin, encore plus de folie ! 1 \u00e0 5 joueurs, on
+lance le d\u00e9 et on lit la <b>grande carte</b> de chaque case o\u00f9 l\u2019on s\u2019arr\u00eate.</p>
+<p>Surprises \u00e0 gogo, quelques <b>pi\u00e8ges</b> (trous, serpents, soucoupes\u2026) et de bons
+<b>raccourcis</b> (ponts, dragons\u2026). Premier \u00e0 la <b>case 108</b> gagne !</p>`},
 };
