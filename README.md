@@ -104,6 +104,11 @@ Plateau et jetons détourés (`www/p4/`), grille calée au pixel. Salon : **23 j
 ## Monopoly 🎩🏠 (jeu complet 40 cases)
 **Monopoli** (`monopoly.html`) : vrai plateau **40 cases**, deux thèmes (Paris à l'ancienne / Néo Monopole futuriste) qui **correspondent aux cartes de propriété** fournies. Économie complète : achats, **loyers exacts** (barème par tableau + gares/compagnies), Départ +200, **Chance/Caisse**, **prison**, **taxes**, **maisons & hôtels** (loyers progressifs), **faillite**. Valeur hypothécaire affichée. À venir : hypothèques jouables + réseau.
 
+## Cochon troué 3D 🐷
+Bouton **« Vue 3D »** : petits **cochons roses modélisés** (corps + groin + oreilles + queue) sur
+**bâtonnet** qui **plongent** dans les trous du plateau (`pig3d.js`) ; un 6 fait s'envoler un cochon par
+le trou de sortie. Le dé se lance en surimpression pour garder la scène 3D intacte.
+
 ## Dominos 3D 🁢
 Bouton **« Vue 3D »** sur le **domino classique** : vraies **tuiles 3D** (vos textures) posées sur un
 **tapis de feutre**, chaîne auto-ajustée + main cliquable (`dom3d.js`). Extensible aux variantes

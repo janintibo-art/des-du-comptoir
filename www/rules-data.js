@@ -298,7 +298,7 @@ d\u00e9finitivement du jeu.</p>
 <b>ramasser tous les cochons</b> pr\u00e9sents sur le plateau, et votre tour s'arr\u00eate.</p>
 <p><b>Stop ou encore :</b> au 1er tour on lance une fois, au 2e deux fois ; \u00e0 partir du 3e
 tour on relance tant qu'on veut \u2014 mais un trou occup\u00e9 met fin au tour. \u00c0 vous de savoir
-vous arr\u00eater !</p>`},
+vous arr\u00eater !</p>\n<p><b>Nouveau :</b> le bouton « \ud83e\uddca Vue 3D » montre de vrais petits <b>cochons 3D</b> sur b\u00e2tonnet qui plongent dans les trous \u2014 plateau orientable au doigt.</p>`},
 dames: { title:'Les Dames', html:`
 <p>Sur les cases fonc\u00e9es d'un damier 8\u00d78, 12 pions chacun. Les <b>Blancs</b> (en bas)
 commencent. Gagne celui qui <b>prend ou bloque</b> toutes les pi\u00e8ces adverses.</p>

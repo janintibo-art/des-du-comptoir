@@ -39,6 +39,9 @@
 </style>
 <script src="rules-data.js"></script>
 <script src="card-shell.js"></script>
+<script src="lib/babylon.js"></script>
+<script>if(typeof BABYLON==='undefined')document.write('<script src="https://cdn.babylonjs.com/babylon.js"><\/script>')</script>
+<script src="pig3d.js"></script>
 <script>
 'use strict';
 const NoSkin={ buildSkinSelect(sel){ sel.style.display='none'; }, el(){ return document.createElement('span'); } };
@@ -93,8 +96,12 @@ CardShell({
     let round=1, flashExit=false;
 
     const scores=turn=>GC.scores(P.map((p,i)=>({label:p.name,value:p.finished?'✓':p.hand,active:i===turn&&!p.finished})));
+    let MODE3D=false;
+    window.__toggle3D=()=>{ if(typeof BABYLON==='undefined'){ GC.combo&&GC.combo('3D indisponible.'); return; } MODE3D=!MODE3D; const bt=document.getElementById('btn3d'); if(bt) bt.textContent=MODE3D?'🧈 Vue 2D':'🧊 Vue 3D'; if(!MODE3D&&window.Pig3D)Pig3D.unmount(); if(lastArgs)render.apply(null,lastArgs); };
     function render(turn, dieVal, rolling){
       lastArgs=[turn,dieVal,rolling];
+      if(MODE3D&&window.Pig3D&&typeof BABYLON!=='undefined'){ const c=GC.center(''); Pig3D.mount(c, HOLES, 'cochon/board.webp'); Pig3D.setState(holes, pegStyle, flashExit);
+        const cap=document.createElement('div'); cap.style.cssText='text-align:center;margin-top:6px;opacity:.85'; cap.innerHTML = dieVal ? ('Dernier lancer : <b style="color:var(--accent)">'+dieVal+'</b>') : '&nbsp;'; c.appendChild(cap); return; }
       const c=GC.center('');
       const wrap=document.createElement('div'); wrap.className='cochonwrap';
       const bar=document.createElement('div'); bar.style.cssText='display:flex;justify-content:flex-end;width:100%;max-width:430px;font-size:13px;opacity:.85';
@@ -115,6 +122,13 @@ CardShell({
     }
     async function rollDie(turn){
       const v=1+Math.floor(Math.random()*6);
+      if(MODE3D&&window.Pig3D&&typeof BABYLON!=='undefined'){
+        const ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:rgba(8,8,6,.55)';
+        const tray=document.createElement('div'); tray.className='dice-tray'; tray.style.maxWidth='320px';
+        const tt=document.createElement('div'); tt.className='tray-title'; tt.textContent='🎲 Lancer du dé…';
+        const die=makeDie(dieFace); tray.appendChild(tt); tray.appendChild(die); ov.appendChild(tray); document.body.appendChild(ov);
+        const cube=die.querySelector('.die3d'); if(cube){ void cube.offsetWidth; cube.style.transition='transform 1.2s cubic-bezier(.15,.7,.25,1)'; const r=DROT[v]; cube.style.transform='rotateX('+(r[0]-720)+'deg) rotateY('+(r[1]-1080)+'deg)'; }
+        GC.play(); await GC.sleep(1300); dieFace=v; tt.innerHTML='Résultat : <b style="color:#ffd98a;font-size:20px">'+v+'</b>'; await GC.sleep(700); ov.remove(); return v; }
       // plateau de lancer dédié
       const c=GC.center('');
       const tray=document.createElement('div'); tray.className='dice-tray';
@@ -185,5 +199,7 @@ CardShell({
   }
 });
 </script>
+<button id="btn3d" style="position:fixed;top:8px;right:8px;z-index:80;background:rgba(20,20,16,.82);color:#f2e8d5;border:1px solid rgba(224,163,76,.55);border-radius:10px;padding:7px 12px;font-family:Georgia,serif;font-size:13px;cursor:pointer">🧊 Vue 3D</button>
+<script>document.getElementById('btn3d').addEventListener('click',function(){ if(window.__toggle3D) window.__toggle3D(); });</script>
 </body>
 </html>
