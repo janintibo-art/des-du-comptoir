@@ -120,20 +120,25 @@ function countColor(color){ return Object.values(board).filter(v=>v===color).len
 /* ---------- Rendu 3D Babylon ---------- */
 const canvas=document.getElementById('abaCanvas');
 let engine,scene,camera,shadow, marbleMat={}, marbles={}, arrows=[], sel=[], current=1, mode='2p', out={1:0,2:0}, busy=false;
-const SP=0.86, RAD=0.46, Y=RAD; // espacement, rayon, hauteur au repos
-function worldPos(c){ return new BABYLON.Vector3(SP*Math.sqrt(3)*(c[0]+c[2]/2), Y, SP*1.5*c[2]); }
+// --- Calage sur la grille de trous du plateau (mesuré sur l'image) ---
+const PS=12;            // taille du plan (= largeur de l'image du plateau)
+const CXG=0.481, CYG=0.500;   // centre de la grille de trous (fraction de l'image)
+const SPACING=0.0751;  // espacement horizontal (fraction) par pas de colonne
+const VS=0.0650;       // espacement vertical (fraction) par rangée
+const RAD=0.44, Y=0.30;// rayon des billes, hauteur au repos (nichées dans l'alvéole)
+function worldPos(c){ const fx=CXG+SPACING*(c[0]+c[2]/2), fy=CYG+VS*c[2];
+  return new BABYLON.Vector3((fx-0.5)*PS, Y, (fy-0.5)*PS); }
 
 function build3D(){
   engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true});
   scene=new BABYLON.Scene(engine); scene.clearColor=new BABYLON.Color4(0.05,0.05,0.045,1);
-  camera=new BABYLON.ArcRotateCamera('cam',-Math.PI/2,0.62,13,new BABYLON.Vector3(0,0,0),scene);
+  camera=new BABYLON.ArcRotateCamera('cam',-Math.PI/2,0.58,10,new BABYLON.Vector3(0,0,0),scene);
   camera.attachControl(canvas,true); camera.lowerBetaLimit=0.15; camera.upperBetaLimit=1.15;
-  camera.lowerRadiusLimit=8; camera.upperRadiusLimit=20; camera.wheelPrecision=40; camera.panningSensibility=0; camera.minZ=0.1;
+  camera.lowerRadiusLimit=6.5; camera.upperRadiusLimit=16; camera.wheelPrecision=40; camera.panningSensibility=0; camera.minZ=0.1;
   const hemi=new BABYLON.HemisphericLight('h',new BABYLON.Vector3(0,1,0),scene); hemi.intensity=0.72; hemi.groundColor=new BABYLON.Color3(0.1,0.1,0.12);
   const dir=new BABYLON.DirectionalLight('d',new BABYLON.Vector3(-0.4,-1,0.5),scene); dir.position=new BABYLON.Vector3(6,12,-6); dir.intensity=0.9;
   shadow=new BABYLON.ShadowGenerator(1024,dir); shadow.useBlurExponentialShadowMap=true; shadow.blurKernel=24;
   // plateau (votre image posée à plat)
-  const PS=SP*Math.sqrt(3)*2*R*1.14; // taille du plan
   const ground=BABYLON.MeshBuilder.CreateGround('board',{width:PS,height:PS},scene);
   const bm=new BABYLON.StandardMaterial('bm',scene); const tex=new BABYLON.Texture('abalone/plateau.webp',scene);
   tex.hasAlpha=true; bm.diffuseTexture=tex; bm.useAlphaFromDiffuseTexture=true; bm.specularColor=new BABYLON.Color3(0.05,0.05,0.05);
@@ -156,8 +161,8 @@ function showArrows(){ clearArrows(); if(!sel.length) return; const opts=validDi
   const centroid=sel.reduce((a,c)=>[a[0]+c[0],a[1]+c[1],a[2]+c[2]],[0,0,0]).map(v=>v/sel.length);
   const cpos=worldPos(centroid);
   opts.forEach(({d,plan},i)=>{ const dpos=worldPos(add(centroid,d)); const dirv=dpos.subtract(cpos); const len=dirv.length(); dirv.normalize();
-    const cone=BABYLON.MeshBuilder.CreateCylinder('a:'+i,{diameterTop:0,diameterBottom:0.34,height:0.5,tessellation:16},scene);
-    const base=cpos.add(dirv.scale(SP*0.95)); base.y=Y+0.05; cone.position=base;
+    const cone=BABYLON.MeshBuilder.CreateCylinder('a:'+i,{diameterTop:0,diameterBottom:0.30,height:0.44,tessellation:16},scene);
+    const base=cpos.add(dirv.scale(len*0.9)); base.y=Y+0.05; cone.position=base;
     const up=new BABYLON.Vector3(0,1,0); const axis=BABYLON.Vector3.Cross(up,dirv); const ang=Math.acos(BABYLON.Vector3.Dot(up,dirv.clone().normalize()));
     if(axis.length()>1e-4) cone.rotationQuaternion=BABYLON.Quaternion.RotationAxis(axis.normalize(),ang);
     const m=new BABYLON.StandardMaterial('am'+i,scene); const eject=plan.ejects.length>0;
