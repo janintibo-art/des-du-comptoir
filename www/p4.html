@@ -22,6 +22,9 @@
 </style>
 <script src="rules-data.js"></script>
 <script src="card-shell.js"></script>
+<script src="lib/babylon.js"></script>
+<script>if(typeof BABYLON==='undefined')document.write('<script src="https://cdn.babylonjs.com/babylon.js"><\/script>')</script>
+<script src="p43d.js"></script>
 <script>
 'use strict';
 const NoSkin={ buildSkinSelect(sel){ sel.style.display='none'; }, el(){ return document.createElement('span'); } };
@@ -88,7 +91,10 @@ CardShell({
     const scores=()=>GC.scores([
       {label:names[0]+' 🔴',value:'',active:turn===1},
       {label:names[1]+' 🟡',value:'',active:turn===-1}]);
-    function draw(opts){ opts=opts||{};
+    let MODE3D=false, curDrawOpts={};
+    window.__toggle3D=()=>{ if(typeof BABYLON==='undefined'){ GC.combo&&GC.combo('3D indisponible.'); return; } MODE3D=!MODE3D; const bt=document.getElementById('btn3d'); if(bt) bt.textContent=MODE3D?'🧈 Vue 2D':'🧊 Vue 3D'; if(!MODE3D&&window.P43D)P43D.unmount(); draw(curDrawOpts); };
+    function draw(opts){ opts=opts||{}; curDrawOpts=opts;
+      if(MODE3D&&window.P43D&&typeof BABYLON!=='undefined'){ const c=GC.center(''); P43D.render(c, b, opts, {plateau:'p4/plateau.webp',GRID:GRID,COLS:COLS,ROWS:ROWS,winLine:winLine}); return; }
       const c=GC.center('');
       const wrap=document.createElement('div'); wrap.className='p4-wrap';
       const tokLayer=document.createElement('div'); tokLayer.className='p4-layer';
@@ -149,5 +155,7 @@ CardShell({
   }
 });
 </script>
+<button id="btn3d" style="position:fixed;top:8px;right:8px;z-index:80;background:rgba(20,20,16,.82);color:#f2e8d5;border:1px solid rgba(224,163,76,.55);border-radius:10px;padding:7px 12px;font-family:Georgia,serif;font-size:13px;cursor:pointer">🧊 Vue 3D</button>
+<script>document.getElementById('btn3d').addEventListener('click',function(){ if(window.__toggle3D) window.__toggle3D(); });</script>
 </body>
 </html>

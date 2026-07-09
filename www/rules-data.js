@@ -339,7 +339,7 @@ p4: { title:'Puissance 4', html:`
 (rouge / jaune).</p>
 <p><b>Jouer.</b> \u00c0 votre tour, touchez une colonne : votre jeton <b>tombe</b> sur la pile.</p>
 <p><b>Gagner.</b> Le premier \u00e0 <b>aligner quatre</b> jetons de sa couleur \u2014 en ligne,
-en colonne ou en <b>diagonale</b> \u2014 remporte la partie. Plateau plein sans alignement : <b>nul</b>.</p>`},
+en colonne ou en <b>diagonale</b> \u2014 remporte la partie. Plateau plein sans alignement : <b>nul</b>.</p>\n<p><b>Nouveau :</b> le bouton « \ud83e\uddca Vue 3D » affiche une grille verticale o\u00f9 les <b>jetons tombent</b> avec la gravit\u00e9 \u2014 orientable au doigt.</p>`},
 echelles: { title:'Jeu des \u00e9chelles', html:`
 <p>1 \u00e0 5 joueurs. Chacun choisit un pion et le place au d\u00e9part. \u00c0 son tour, on
 <b>lance le d\u00e9</b> et on avance d'autant de cases.</p>
