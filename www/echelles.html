@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jeu des échelles</title>
+<link rel="icon" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14140f">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+#cMsg,#cCombo{display:none!important}
+.aw-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%) translateY(12px);max-width:92vw;background:rgba(20,20,16,.93);color:var(--cream);border:1px solid rgba(224,163,76,.5);border-radius:999px;padding:9px 18px;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60;text-align:center}
+.aw-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.aw-toast.strong{color:var(--accent);font-weight:bold;border-color:var(--accent)}
+.pc-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
+.pc-board{position:relative;width:100%;max-width:520px;aspect-ratio:1/1;background-size:contain;background-repeat:no-repeat;background-position:center;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.pc-links{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pc-links line.up{stroke:rgba(90,200,120,.85);stroke-width:1.1;stroke-linecap:round;stroke-dasharray:2 1.4}
+.pc-links line.down{stroke:rgba(220,90,90,.85);stroke-width:1.1;stroke-linecap:round;stroke-dasharray:2 1.4}
+.pc-pawn{position:absolute;width:9%;transform:translate(-50%,-78%);transition:left .28s ease,top .28s ease;z-index:3;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+.pc-pawn img{width:100%;display:block}
+.pc-pawn.dot{width:6.5%;aspect-ratio:1;border-radius:50%;border:2px solid #fff;transform:translate(-50%,-50%);box-shadow:0 2px 5px rgba(0,0,0,.5)}
+.pc-pawn.hi{animation:pchop .5s ease}
+@keyframes pchop{0%,100%{transform:translate(-50%,-78%) scale(1)}50%{transform:translate(-50%,-92%) scale(1.12)}}
+.pc-die{width:58px;height:58px;border-radius:12px;background:#f7f2e6;position:relative;box-shadow:0 3px 8px rgba(0,0,0,.4)}
+.pc-die .pip{position:absolute;width:12px;height:12px;border-radius:50%;background:#14140f;transform:translate(-50%,-50%)}
+.pc-players{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:13px}
+.pc-players .pp{display:flex;align-items:center;gap:5px;background:rgba(20,20,16,.5);border:1px solid rgba(242,232,213,.15);border-radius:999px;padding:4px 10px}
+.pc-players .pp.turn{border-color:var(--accent);color:var(--accent)}
+.pc-players .pp img{height:22px}
+.pc-players .pp .mini{width:14px;height:14px;border-radius:50%;border:1px solid #fff;display:inline-block}
+</style>
+<script src="rules-data.js"></script>
+<script src="parcours.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+const NoSkin={ buildSkinSelect(sel){ sel.style.display='none'; }, el(){ return document.createElement('span'); } };
+const PIPS={1:[[50,50]],2:[[30,30],[70,70]],3:[[30,30],[50,50],[70,70]],4:[[30,30],[70,30],[30,70],[70,70]],5:[[30,30],[70,30],[50,50],[30,70],[70,70]],6:[[30,28],[70,28],[30,50],[70,50],[30,72],[70,72]]};
+// --- Plateau : grille 10x10 boustrophédon (case 1 en bas-gauche, 100 en haut-gauche) ---
+const GRID={ x0:0.112, y0:0.928, dx:0.0855, dy:0.0762 };  // fractions — ajustables au pixel près
+function cellPos(n){ const i=n-1; const row=Math.floor(i/10); const inRow=i%10;
+  const col=(row%2===0)? inRow : (9-inRow);
+  return { x: GRID.x0 + col*GRID.dx, y: GRID.y0 - row*GRID.dy }; }
+const PATH=[]; for(let n=1;n<=100;n++) PATH.push(cellPos(n));
+// Échelles (montent). À confirmer/ajuster visuellement avec le dessin du plateau.
+const LADDERS={ 4:14, 9:31, 20:38, 28:84, 40:59, 51:67, 63:81, 71:91 };
+const CFG={ image:'parcours/echelles.webp', path:PATH, start:{x:0.06,y:0.93},
+  links:Object.entries(LADDERS).map(([f,t])=>({from:+f,to:t})) };
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+CardShell({
+  id:'echelles', title:'JEU DES ÉCHELLES', minPlayers:1, maxPlayers:5, skinModule:NoSkin,
+  run: async GC => {
+    const P=GC.players, N=P.length;
+    (function(){ let el=document.getElementById('bwToast');
+      if(!el){ el=document.createElement('div'); el.id='bwToast'; el.className='aw-toast'; document.body.appendChild(el); }
+      let tmr=null; const show=(t,strong)=>{ if(!t){el.classList.remove('show');return;}
+        el.textContent=t; el.classList.toggle('strong',!!strong); el.classList.add('show');
+        clearTimeout(tmr); tmr=setTimeout(()=>el.classList.remove('show'), strong?2400:2600); };
+      const oSay=GC.say,oCombo=GC.combo; GC.say=t=>{oSay&&oSay(t);show(t,false);}; GC.combo=t=>{oCombo&&oCombo(t);show(t,true);};
+    })();
+    // attribution des pions (par défaut : personnages puis pastilles)
+    const defaults=['roi','fusee','monstre','clown','mage'];
+    const pawns=P.map((p,i)=>({pos:0, pawnId:defaults[i%defaults.length], name:p.name, ai:p.ai}));
+    let turn=0, winner=-1;
+
+    function playersBar(){ const bar=document.createElement('div'); bar.className='pc-players';
+      pawns.forEach((pw,i)=>{ const d=document.createElement('div'); d.className='pp'+(i===turn?' turn':'');
+        const pj=Parcours.byId(pw.pawnId);
+        if(pj&&pj.img){ const im=new Image(); im.src=pj.img; d.appendChild(im); }
+        else { const s=document.createElement('span'); s.className='mini'; s.style.background=(pj&&pj.color)||'#888'; d.appendChild(s); }
+        const t=document.createElement('span'); t.textContent=pw.name+' — '+(pw.pos>0?('case '+pw.pos):'départ'); d.appendChild(t);
+        bar.appendChild(d); });
+      return bar; }
+    function dieEl(v){ const d=document.createElement('div'); d.className='pc-die';
+      (PIPS[v]||[]).forEach(([x,y])=>{ const p=document.createElement('div'); p.className='pip'; p.style.left=x+'%'; p.style.top=y+'%'; d.appendChild(p); }); return d; }
+    function draw(dieVal){ const c=GC.center('');
+      const wrap=document.createElement('div'); wrap.className='pc-wrap';
+      wrap.appendChild(playersBar());
+      const bc=document.createElement('div'); Parcours.drawBoard(bc, CFG, {pawns}, {highlight:pawns[turn].pos}); wrap.appendChild(bc.firstChild);
+      if(dieVal){ const dr=document.createElement('div'); dr.appendChild(dieEl(dieVal)); wrap.appendChild(dr); }
+      c.appendChild(wrap); }
+
+    async function animateMove(pi, steps){ // avance case par case
+      for(let k=0;k<steps;k++){ pawns[pi].pos++; draw(); GC.play&&GC.play(); await GC.sleep(180); }
+    }
+    async function rollAnim(){ for(let k=0;k<6;k++){ draw(1+Math.floor(Math.random()*6)); await GC.sleep(70); } }
+
+    async function takeTurn(pi){
+      const pw=pawns[pi];
+      if(!pw.ai){ GC.say('À vous, '+pw.name+' — lancez le dé.'); const a=await GC.ask([{id:'roll',label:'🎲 Lancer le dé',primary:true}]); GC.setButtons([]); }
+      else { GC.say(pw.name+' lance…'); await GC.sleep(500); }
+      await rollAnim();
+      const d=1+Math.floor(Math.random()*6); draw(d); await GC.sleep(350);
+      GC.combo(pw.name+' fait '+d+' !');
+      let target=pw.pos+d;
+      if(target>100){ const over=target-100; target=100-over; GC.combo('Trop loin ! On rebondit à '+target+'.'); }
+      // avancer
+      const steps=target-pw.pos;
+      if(steps>0){ await animateMove(pi, steps); } else if(steps<0){ pw.pos=target; draw(); await GC.sleep(250); }
+      // échelle ?
+      if(LADDERS[pw.pos]){ const to=LADDERS[pw.pos]; GC.combo('🪜 Échelle ! ' + pw.pos + ' → ' + to); await GC.sleep(450); pw.pos=to; draw(); await GC.sleep(300); }
+      if(pw.pos===100){ winner=pi; }
+    }
+
+    draw(); GC.say('Premier arrivé à la case 100 gagne ! (dépassement = rebond)'); await GC.sleep(900);
+    while(winner<0){ await takeTurn(turn); if(winner>=0) break; turn=(turn+1)%N; await GC.sleep(150); }
+    draw();
+    return GC.gameOver('Victoire de '+pawns[winner].name+' !', pawns[winner].name+' atteint la case 100 ! 🎉', pawns[winner].name);
+  }
+});
+</script>
+</body>
+</html>

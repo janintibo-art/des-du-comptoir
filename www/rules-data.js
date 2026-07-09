@@ -340,11 +340,11 @@ p4: { title:'Puissance 4', html:`
 <p><b>Jouer.</b> \u00c0 votre tour, touchez une colonne : votre jeton <b>tombe</b> sur la pile.</p>
 <p><b>Gagner.</b> Le premier \u00e0 <b>aligner quatre</b> jetons de sa couleur \u2014 en ligne,
 en colonne ou en <b>diagonale</b> \u2014 remporte la partie. Plateau plein sans alignement : <b>nul</b>.</p>`},
-puissance4: { title:'Puissance 4', html:`
-<p>2 joueurs, une grille de <b>7 colonnes</b> et <b>6 rang\u00e9es</b>. Chacun son tour, on
-l\u00e2che un jeton dans une colonne : il tombe sur la premi\u00e8re place libre.</p>
-<p><b>But :</b> \u00eatre le premier \u00e0 <b>aligner quatre</b> de ses jetons, horizontalement,
-verticalement ou en diagonale.</p>
-<p>Si la grille se remplit sans alignement, la partie est <b>nulle</b>. Contre l'ordinateur,
-l'IA voit venir les menaces \u2014 \u00e0 vous de piéger sa d\u00e9fense !</p>`},
+echelles: { title:'Jeu des \u00e9chelles', html:`
+<p>1 \u00e0 5 joueurs. Chacun choisit un pion et le place au d\u00e9part. \u00c0 son tour, on
+<b>lance le d\u00e9</b> et on avance d'autant de cases.</p>
+<p><b>Les \u00e9chelles</b> font grimper : si vous terminez au pied d'une \u00e9chelle, vous montez
+directement \u00e0 son sommet \u2014 un raccourci vers la victoire !</p>
+<p>Le premier \u00e0 atteindre la <b>case 100</b> gagne. Si votre d\u00e9 vous ferait d\u00e9passer 100,
+vous <b>rebondissez</b> en arri\u00e8re du nombre de cases en trop.</p>`},
 };
