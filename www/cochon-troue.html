@@ -25,6 +25,11 @@
 .die3d .face.f6{transform:rotateX(-90deg) translateZ(calc(var(--d)/2))}
 .die3d .pip{position:absolute;width:19%;height:19%;border-radius:50%;background:radial-gradient(circle at 35% 35%,#4a423a,#1a1610);transform:translate(-50%,-50%);box-shadow:inset 0 1px 1px rgba(255,255,255,.2)}
 .dielabel{font-size:12px;opacity:.6;letter-spacing:.1em;min-height:1em}
+.dice-tray{width:100%;max-width:430px;aspect-ratio:16/11;margin:0 auto;border-radius:22px;background:radial-gradient(ellipse at 50% 40%,#357a42,#1d4526 78%);border:9px solid #5a3a22;box-shadow:inset 0 0 34px rgba(0,0,0,.55),0 7px 18px rgba(0,0,0,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.dice-tray .tray-title{color:#ecdcb6;font-size:15px;letter-spacing:.12em;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.dice-tray .die-stage{--d:clamp(96px,28vw,150px)}
+.lastdie{font-size:13px;opacity:.7;margin-top:2px}
+.lastdie b{color:var(--accent)}
 </style>
 <script src="rules-data.js"></script>
 <script src="card-shell.js"></script>
@@ -91,25 +96,27 @@ CardShell({
         if(h.n<=5 && holes[h.n-1]){ const img=document.createElement('img'); img.className='peg'; img.src='cochon/peg-'+pegStyle+'.webp'; d.appendChild(img); }
         board.appendChild(d); });
       wrap.appendChild(board);
-      const die=makeDie(dieVal||dieFace);
-      wrap.appendChild(die);
-      const dl=document.createElement('div'); dl.className='dielabel'; dl.textContent=rolling?'🎲 le dé roule…':(dieVal?('Dé : '+dieVal):'');
-      wrap.appendChild(dl); c.appendChild(wrap);
+      const cap=document.createElement('div'); cap.className='lastdie';
+      cap.innerHTML = dieVal ? ('Dernier lancer : <b>'+dieVal+'</b>') : '&nbsp;';
+      wrap.appendChild(cap); c.appendChild(wrap);
     }
     async function rollDie(turn){
       const v=1+Math.floor(Math.random()*6);
-      render(turn,null,true);                    // dé au repos + libellé "roule…"
-      const cube=document.querySelector('.die3d');
-      if(cube){
-        void cube.offsetWidth;                   // reflow
-        cube.style.transition='transform 1.15s cubic-bezier(.18,.72,.24,1)';
-        const r=DROT[v]; cube.style.transform='rotateX('+(r[0]-720)+'deg) rotateY('+(r[1]-1080)+'deg)';
-      }
+      // plateau de lancer dédié
+      const c=GC.center('');
+      const tray=document.createElement('div'); tray.className='dice-tray';
+      const tt=document.createElement('div'); tt.className='tray-title'; tt.textContent='🎲 Lancer du dé…';
+      const die=makeDie(dieFace);
+      tray.appendChild(tt); tray.appendChild(die); c.appendChild(tray);
+      const cube=die.querySelector('.die3d');
+      if(cube){ void cube.offsetWidth;
+        cube.style.transition='transform 1.2s cubic-bezier(.15,.7,.25,1)';
+        const r=DROT[v]; cube.style.transform='rotateX('+(r[0]-720)+'deg) rotateY('+(r[1]-1080)+'deg)'; }
       GC.play();
-      await GC.sleep(1200);
+      await GC.sleep(1300);
       dieFace=v;
-      if(cube){ const r=DROT[v]; cube.style.transition='none'; cube.style.transform='rotateX('+r[0]+'deg) rotateY('+r[1]+'deg)'; }
-      render(turn,v,false);                       // fige l'affichage final
+      tt.innerHTML='Résultat : <b style="color:#ffd98a;font-size:20px">'+v+'</b>';
+      await GC.sleep(750);
       return v;
     }
     function processRoll(v,p){
