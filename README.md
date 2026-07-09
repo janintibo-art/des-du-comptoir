@@ -1,6 +1,6 @@
 # Les Dés du Comptoir 🎲
 
-**38 jeux de comptoir** — dés en 3D, cartes, dominos, Awalé, dames, échecs, UNO et Puissance 4 —
+**39 jeux de comptoir** — dés en 3D, cartes, dominos, Awalé, dames, échecs, UNO et Puissance 4 —
 jouables **dans le navigateur**, **installables** (appli hors-ligne) et jouables **à plusieurs téléphones**.
 Ambiance bistrot, code ouvert.
 
@@ -100,6 +100,11 @@ grille calée au pixel sur l'image. Moteur validé par simulation (conservation 
 **Puissance 4** (`p4.html`) : 7×6, jetons rouge/jaune, **IA minimax alpha-bêta** (imbattable par
 le hasard, gagne/bloque parfaitement), chute animée des jetons. En **réseau** aussi (`net-games6.js`).
 Plateau et jetons détourés (`www/p4/`), grille calée au pixel. Salon : **23 jeux**.
+
+## Reversi / Othello ⚫⚪
+**Reversi/Othello** (`reversi.html`) : 8×8, **IA forte** (alpha-bêta, poids positionnels, coins, mobilité),
+**2 plateaux** (bois vert, marbre bleu), départ **Othello** ou **Reversi** au choix, en solo, à deux et
+**en réseau** (`net-games7.js`, mode Table inclus). Pions et plateaux dans `reversi/`.
 
 ## Jeux de parcours 🦢🎲
 Nouvelle famille **Parcours** : **Jeu des échelles**, **Jeu de l'oie** classique (63 cases, oies/pont/puits/

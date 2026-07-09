@@ -367,4 +367,14 @@ oiedelirant108: { title:'L\u2019oie délirante géante', html:`
 lance le d\u00e9 et on lit la <b>grande carte</b> de chaque case o\u00f9 l\u2019on s\u2019arr\u00eate.</p>
 <p>Surprises \u00e0 gogo, quelques <b>pi\u00e8ges</b> (trous, serpents, soucoupes\u2026) et de bons
 <b>raccourcis</b> (ponts, dragons\u2026). Premier \u00e0 la <b>case 108</b> gagne !</p>`},
+reversi: { title:'Reversi / Othello', html:`
+<p>2 joueurs, l\u2019un <b>noir</b>, l\u2019autre <b>blanc</b>, sur une grille 8\u00d78.</p>
+<p><b>Le principe :</b> \u00e0 votre tour, posez un pion de sorte \u00e0 <b>encercler</b> une ou
+plusieurs lignes de pions adverses entre votre nouveau pion et un pion \u00e0 vous. Tous les pions
+encercl\u00e9s se <b>retournent</b> \u00e0 votre couleur ! Un coup n\u2019est valable que s\u2019il
+retourne au moins un pion.</p>
+<p>Si vous ne pouvez pas jouer, vous passez. \u00c0 la fin (plateau plein ou deux passes),
+le joueur qui a le <b>plus de pions</b> gagne.</p>
+<p><b>Deux d\u00e9parts au choix :</b> <b>Othello</b> (4 pions plac\u00e9s au centre) ou <b>Reversi</b>
+(plateau vide, on remplit d\u2019abord les 4 cases centrales).</p>`},
 };

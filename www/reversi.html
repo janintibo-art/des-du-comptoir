@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reversi / Othello</title>
+<link rel="icon" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14140f">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+#cMsg,#cCombo{display:none!important}
+.aw-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%) translateY(12px);max-width:92vw;background:rgba(20,20,16,.93);color:var(--cream);border:1px solid rgba(224,163,76,.5);border-radius:999px;padding:9px 18px;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60;text-align:center}
+.aw-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.aw-toast.strong{color:var(--accent);font-weight:bold;border-color:var(--accent)}
+.rv-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
+.rv-top{display:flex;gap:16px;align-items:center;font-size:15px}
+.rv-score{display:flex;align-items:center;gap:6px;background:rgba(20,20,16,.5);border:1px solid rgba(242,232,213,.15);border-radius:999px;padding:5px 12px}
+.rv-score.turn{border-color:var(--accent);color:var(--accent)}
+.rv-score .chip{width:20px;height:20px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,.4)}
+.rv-score .chip.b{background:radial-gradient(circle at 38% 32%,#4a4a4a,#111)}
+.rv-score .chip.w{background:radial-gradient(circle at 38% 32%,#fff,#cfcabf)}
+.rv-board{position:relative;width:100%;max-width:500px;aspect-ratio:1/1;background-size:contain;background-repeat:no-repeat;background-position:center;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.rv-disc{position:absolute;border-radius:50%;transform:translate(-50%,-50%);z-index:2;transition:transform .12s}
+.rv-disc img{width:100%;height:100%;display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+.rv-disc.flip{animation:rvflip .3s ease}
+@keyframes rvflip{0%{transform:translate(-50%,-50%) scaleX(.15)}100%{transform:translate(-50%,-50%) scaleX(1)}}
+.rv-hint{position:absolute;transform:translate(-50%,-50%);border-radius:50%;background:rgba(224,163,76,.5);border:2px solid var(--accent);z-index:1;cursor:pointer;animation:rvpulse 1.4s ease-in-out infinite}
+@keyframes rvpulse{0%,100%{opacity:.5}50%{opacity:.9}}
+</style>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+const SKINS=[
+  {id:'bois',   label:'Bois vert',   img:'reversi/bois.webp',   G:{x0:0.157,y0:0.156,dx:0.0980,dy:0.0980}},
+  {id:'marbre', label:'Marbre bleu', img:'reversi/marbre.webp', G:{x0:0.116,y0:0.116,dx:0.1090,dy:0.1085}},
+];
+function curSkin(){ let id='bois'; try{ id=localStorage.getItem('reversiSkin')||'bois'; }catch(e){} return SKINS.find(s=>s.id===id)||SKINS[0]; }
+const ReversiSkin={ buildSkinSelect(sel,onChange){ sel.innerHTML=''; SKINS.forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.label; sel.appendChild(o); });
+    try{ sel.value=localStorage.getItem('reversiSkin')||'bois'; }catch(e){}
+    sel.addEventListener('change',()=>{ try{ localStorage.setItem('reversiSkin',sel.value); }catch(e){} onChange&&onChange(); }); },
+  el(){ return document.createElement('span'); } };
+// moteur
+const D=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+function startOthello(){ const b=new Int8Array(64); b[27]=1;b[28]=-1;b[35]=-1;b[36]=1; return b; }
+function flips(b,sq,p){ if(b[sq]!==0) return null; const r=sq>>3,c=sq&7; const out=[];
+  for(const [dr,dc] of D){ let rr=r+dr,cc=c+dc,line=[];
+    while(rr>=0&&rr<8&&cc>=0&&cc<8){ const x=rr*8+cc;
+      if(b[x]===-p){ line.push(x); rr+=dr; cc+=dc; } else if(b[x]===p){ if(line.length) out.push(...line); break; } else break; } }
+  return out.length?out:null; }
+function legal(b,p){ const m=[]; for(let s=0;s<64;s++) if(b[s]===0&&flips(b,s,p)) m.push(s); return m; }
+function apply(b,sq,p){ const f=flips(b,sq,p); if(!f) return null; const nb=Int8Array.from(b); nb[sq]=p; for(const x of f) nb[x]=p; return {b:nb,flipped:f}; }
+function counts(b){ let n=0,w=0; for(let s=0;s<64;s++){ if(b[s]===1)n++; else if(b[s]===-1)w++; } return {n,w}; }
+const W=[120,-20,20,5,5,20,-20,120,-20,-40,-5,-5,-5,-5,-40,-20,20,-5,15,3,3,15,-5,20,5,-5,3,3,3,3,-5,5,5,-5,3,3,3,3,-5,5,20,-5,15,3,3,15,-5,20,-20,-40,-5,-5,-5,-5,-40,-20,120,-20,20,5,5,20,-20,120];
+function evalB(b,me){ let pos=0,empt=0; for(let s=0;s<64;s++){ if(b[s]===0){empt++;continue;} pos+= b[s]===me?W[s]:-W[s]; }
+  const mo=legal(b,me).length-legal(b,-me).length; if(empt>12) return pos+8*mo;
+  const c=counts(b); const disc=(me===1?c.n-c.w:c.w-c.n); return pos+3*mo+12*disc; }
+function nega(b,depth,alpha,beta,p,me){ const mine=legal(b,p);
+  if(depth===0) return evalB(b,me)*(p===me?1:-1);
+  if(!mine.length){ const opp=legal(b,-p); if(!opp.length){ const c=counts(b); const d=(me===1?c.n-c.w:c.w-c.n); return (d>0?1:d<0?-1:0)*100000*(p===me?1:-1); }
+    return -nega(b,depth-1,-beta,-alpha,-p,me); }
+  mine.sort((x,y)=>W[y]-W[x]); let best=-1e9;
+  for(const s of mine){ const v=-nega(apply(b,s,p).b,depth-1,-beta,-alpha,-p,me); if(v>best)best=v; if(best>alpha)alpha=best; if(alpha>=beta)break; } return best; }
+function pickAI(b,p,depth){ const mv=legal(b,p); if(!mv.length) return -1; mv.sort((x,y)=>W[y]-W[x]);
+  let best=mv[0],bv=-1e9; for(const s of mv){ const v=-nega(apply(b,s,p).b,depth-1,-1e9,1e9,-p,p); if(v>bv){bv=v;best=s;} } return best; }
+const DISC={1:'reversi/pion-noir.webp','-1':'reversi/pion-blanc.webp'};
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+CardShell({
+  id:'reversi', title:'REVERSI', minPlayers:2, maxPlayers:2, skinModule:ReversiSkin,
+  run: async GC => {
+    const P=GC.players, names=[P[0].name,P[1].name]; // P[0]=noir(1), P[1]=blanc(-1)
+    const humans=P.filter(p=>!p.ai).length, vsAI=humans===1;
+    (function(){ let el=document.getElementById('bwToast');
+      if(!el){ el=document.createElement('div'); el.id='bwToast'; el.className='aw-toast'; document.body.appendChild(el); }
+      let tmr=null; const show=(t,strong)=>{ if(!t){el.classList.remove('show');return;} el.textContent=t; el.classList.toggle('strong',!!strong); el.classList.add('show'); clearTimeout(tmr); tmr=setTimeout(()=>el.classList.remove('show'), strong?2200:2400); };
+      const oSay=GC.say,oCombo=GC.combo; GC.say=t=>{oSay&&oSay(t);show(t,false);}; GC.combo=t=>{oCombo&&oCombo(t);show(t,true);};
+    })();
+    const RKEY='gc-resume-reversi';
+    const clearSave=()=>{ try{ localStorage.removeItem(RKEY); }catch(e){} };
+
+    // choix de la règle de départ
+    let mode='othello';
+    GC.say('Choisissez la règle de départ.');
+    const m=await GC.ask([{id:'othello',label:'Othello (4 pions au centre)',primary:true},{id:'reversi',label:'Reversi (départ vide)'}]);
+    GC.setButtons([]); mode=m||'othello';
+    let b = mode==='othello'? startOthello() : new Int8Array(64);
+    let centerLeft = mode==='reversi'? 4 : 0;
+    let turn=1; // 1=noir commence
+    const meName=pl=> pl===1?names[0]:names[1];
+    const meIdx=pl=> pl===1?0:1;
+
+    let flipCells=[];
+    function draw(){ const sk=curSkin(); const c=GC.center('');
+      const wrap=document.createElement('div'); wrap.className='rv-wrap';
+      const cc=counts(b);
+      const top=document.createElement('div'); top.className='rv-top';
+      top.innerHTML='<div class="rv-score '+(turn===1?'turn':'')+'"><span class="chip b"></span> '+names[0]+' : <b>'+cc.n+'</b></div>'
+                   +'<div class="rv-score '+(turn===-1?'turn':'')+'"><span class="chip w"></span> '+names[1]+' : <b>'+cc.w+'</b></div>';
+      wrap.appendChild(top);
+      const bd=document.createElement('div'); bd.className='rv-board'; bd.style.backgroundImage='url('+sk.img+')';
+      const G=sk.G; const px=(col,row)=>[(G.x0+col*G.dx)*100,(G.y0+row*G.dy)*100];
+      const size=(G.dx*100*0.82);
+      for(let s=0;s<64;s++){ if(b[s]===0) continue; const col=s&7,row=s>>3; const [x,y]=px(col,row);
+        const d=document.createElement('div'); d.className='rv-disc'+(flipCells.includes(s)?' flip':'');
+        d.style.left=x+'%'; d.style.top=y+'%'; d.style.width=size+'%'; d.style.height=size+'%';
+        const im=new Image(); im.src=DISC[b[s]]; d.appendChild(im); bd.appendChild(d); }
+      // indices de coups pour l'humain courant
+      if(curHints){ curHints.forEach(s=>{ const col=s&7,row=s>>3; const [x,y]=px(col,row);
+        const h=document.createElement('div'); h.className='rv-hint'; h.style.left=x+'%'; h.style.top=y+'%';
+        h.style.width=(size*0.5)+'%'; h.style.height=(size*0.5)+'%';
+        h.addEventListener('click',()=>{ if(onPick) onPick(s); }); bd.appendChild(h); }); }
+      wrap.appendChild(bd); c.appendChild(wrap);
+    }
+    let curHints=null, onPick=null;
+
+    function saveState(){ try{ localStorage.setItem(RKEY, JSON.stringify({names, mode, b:Array.from(b), turn, centerLeft})); }catch(e){} }
+    // reprise
+    try{ const sv=JSON.parse(localStorage.getItem(RKEY)||'null');
+      if(sv && sv.names && sv.names.join('|')===names.join('|') && Array.isArray(sv.b) && sv.b.length===64){
+        b=Int8Array.from(sv.b); mode=sv.mode; turn=sv.turn; centerLeft=sv.centerLeft||0; draw();
+        GC.say('Une partie est en cours.'); const a=await GC.ask([{id:'resume',label:'▶ Reprendre'},{id:'new',label:'🔄 Nouvelle'}]); GC.setButtons([]);
+        if(a!=='resume'){ b= mode==='othello'? startOthello() : new Int8Array(64); centerLeft= mode==='reversi'?4:0; turn=1; clearSave(); }
+      } }catch(e){}
+
+    function movesFor(pl){ if(centerLeft>0){ const m=[]; [27,28,35,36].forEach(s=>{ if(b[s]===0) m.push(s); }); return m; } return legal(b,pl); }
+    async function placeCenter(pl,s){ b[s]=pl; centerLeft--; flipCells=[s]; draw(); GC.play&&GC.play(); }
+    async function place(pl,s){ const r=apply(b,s,pl); b=r.b; flipCells=r.flipped.concat([s]); draw(); GC.play&&GC.play(); }
+
+    async function humanTurn(pl){ const mv=movesFor(pl);
+      curHints=mv; GC.say('À vous, '+meName(pl)+(centerLeft>0?' — posez un pion au centre.':' — cases surlignées.'));
+      const s=await new Promise(res=>{ onPick=res; draw(); }); onPick=null; curHints=null;
+      if(centerLeft>0) await placeCenter(pl,s); else await place(pl,s);
+    }
+    async function aiTurn(pl){ curHints=null; draw(); GC.say(meName(pl)+' réfléchit…'); await GC.sleep(280); await new Promise(r=>setTimeout(r,20));
+      const cc=counts(b); const empt=64-cc.n-cc.w; const depth = empt<=11?empt : (GC.aiRisk<0.8?4:(GC.aiRisk>1.1?7:6));
+      let s; if(centerLeft>0){ const m=movesFor(pl); s=m[Math.floor(Math.random()*m.length)]; } else s=pickAI(b,pl,depth);
+      if(centerLeft>0) await placeCenter(pl,s); else await place(pl,s);
+      await GC.sleep(250);
+    }
+
+    draw(); GC.say('Encerclez les pions adverses pour les retourner. Le plus de pions à la fin gagne !');
+    await GC.sleep(900);
+    let passes=0;
+    while(true){
+      const mv=movesFor(turn);
+      if(!mv.length){ passes++; GC.combo(meName(turn)+' ne peut pas jouer — il passe.'); await GC.sleep(800);
+        if(passes>=2) break; turn=-turn; continue; }
+      passes=0;
+      if(P[meIdx(turn)].ai) await aiTurn(turn); else await humanTurn(turn);
+      const cc=counts(b); if(cc.n+cc.w===64) break;
+      turn=-turn; saveState();
+      await GC.sleep(120);
+    }
+    clearSave(); flipCells=[]; curHints=null; draw();
+    const cc=counts(b);
+    let title,text,winner;
+    if(cc.n>cc.w){ winner=names[0]; title='Victoire de '+names[0]+' !'; }
+    else if(cc.w>cc.n){ winner=names[1]; title='Victoire de '+names[1]+' !'; }
+    else { title='Match nul !'; winner=null; }
+    text=names[0]+' (noir) : '+cc.n+' &nbsp;—&nbsp; '+names[1]+' (blanc) : '+cc.w;
+    return GC.gameOver(title, text, winner);
+  }
+});
+</script>
+</body>
+</html>
