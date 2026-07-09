@@ -28,6 +28,9 @@
 .aw-toast.strong{color:var(--accent);font-weight:bold;border-color:var(--accent)}
 </style>
 <script src="awale.js"></script>
+<script src="lib/babylon.js"></script>
+<script>if(typeof BABYLON==='undefined')document.write('<script src="https://cdn.babylonjs.com/babylon.js"><\/script>')</script>
+<script src="awale3d.js"></script>
 <script src="rules-data.js"></script>
 <script src="card-shell.js"></script>
 <script>
@@ -139,5 +142,7 @@ CardShell({
   }
 });
 </script>
+<button id="btn3d" style="position:fixed;top:8px;right:8px;z-index:80;background:rgba(20,20,16,.82);color:#f2e8d5;border:1px solid rgba(224,163,76,.55);border-radius:10px;padding:7px 12px;font-family:Georgia,serif;font-size:13px;cursor:pointer">🧊 Vue 3D</button>
+<script>document.getElementById('btn3d').addEventListener('click',function(){ if(window.Awale){ Awale.set3D(!Awale.is3D()); this.textContent=Awale.is3D()?'🧈 Vue 2D':'🧊 Vue 3D'; } });</script>
 </body>
 </html>

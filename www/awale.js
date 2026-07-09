@@ -14,6 +14,7 @@ const Awale=(function(){
   let boardId='board1'; try{ const b=localStorage.getItem('awBoard'); if(b&&BOARDS.some(x=>x.id===b))boardId=b; }catch(e){}
   let seedSel='mix'; try{ const sdv=localStorage.getItem('awSeed'); if(sdv!=null)seedSel=sdv; }catch(e){}
   const B=()=>BOARDS.find(b=>b.id===boardId)||BOARDS[0];
+  let MODE3D=false, lastRender=null;
   const boardImg=()=>'awale/boards/'+boardId+'.webp';
   const seedFile=k=>'awale/seeds/seed'+(seedSel==='mix'?(((k%SEEDN)+SEEDN)%SEEDN):seedSel)+'.webp';
   function buildSkinSelect(sel,onChange){ sel.innerHTML='';
@@ -25,6 +26,8 @@ const Awale=(function(){
     sel.value=seedSel; sel.addEventListener('change',()=>{ seedSel=sel.value; try{localStorage.setItem('awSeed',seedSel);}catch(e){} if(onChange)onChange(); }); }
   function pitCenter(b,i){ return i<6 ? [b.cols[i], b.bot] : [b.cols[11-i], b.top]; }
   function render(container, s, opts){
+    lastRender={container,s,opts};
+    if(MODE3D && window.Awale3D && typeof BABYLON!=='undefined'){ Awale3D.render(container, B(), s, opts||{}, boardImg(), seedFile); return; }
     opts=opts||{}; const b=B(); container.innerHTML='';
     container.style.width='100%';
     const wrap=document.createElement('div'); wrap.className='awale-board';
@@ -52,6 +55,7 @@ const Awale=(function(){
     container.appendChild(wrap);
   }
   return {BOARDS, boardImg, seedFile, buildSkinSelect, buildSeedSelect, render, board:()=>boardId,
-    // exposé pour le sélecteur du shell
+    set3D:(v)=>{ MODE3D=!!v; if(!MODE3D&&window.Awale3D)Awale3D.unmount(); if(lastRender)render(lastRender.container,lastRender.s,lastRender.opts); },
+    is3D:()=>MODE3D,
     el:()=>document.createElement('span') };
 })();

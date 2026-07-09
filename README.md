@@ -104,6 +104,11 @@ Plateau et jetons détourés (`www/p4/`), grille calée au pixel. Salon : **23 j
 ## Monopoly 🎩🏠 (jeu complet 40 cases)
 **Monopoli** (`monopoly.html`) : vrai plateau **40 cases**, deux thèmes (Paris à l'ancienne / Néo Monopole futuriste) qui **correspondent aux cartes de propriété** fournies. Économie complète : achats, **loyers exacts** (barème par tableau + gares/compagnies), Départ +200, **Chance/Caisse**, **prison**, **taxes**, **maisons & hôtels** (loyers progressifs), **faillite**. Valeur hypothécaire affichée. À venir : hypothèques jouables + réseau.
 
+## Awalé 3D 🌰
+Bouton **« Vue 3D »** sur les trois Awalé (Oware, Kalah, 2-3-4) : rendu **Babylon.js** (`awale3d.js`) avec
+de **vraies graines 3D** qui s'empilent dans les trous et les greniers, plateau orientable. Réutilise la
+géométrie et l'état du moteur 2D. (Animation de semis à venir.)
+
 ## Mode 3D (échecs & dames) 🧊
 Bouton **« Vue 3D »** optionnel sur **Les Échecs** et **Les Dames** : un rendu **Babylon.js** (`board3d.js`)
 qui réutilise la logique 2D existante — plateau posé à plat (votre image), pièces en « standees » qui
