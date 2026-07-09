@@ -4,6 +4,12 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Les Dés du Comptoir</title>
 <link rel="icon" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14140f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Comptoir">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="style.css">
 <style>
 .cards{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;max-width:1100px;margin:0 auto;padding:0 12px 40px}
@@ -164,6 +170,19 @@ document.getElementById('shareApp').addEventListener('click', e=>{
   if(navigator.share) navigator.share({title:'Les Dés du Comptoir', text:'Installe le jeu de dés du bistrot :', url}).catch(()=>{});
   else prompt('Copiez ce lien de téléchargement :', url);
 });
+</script>
+<script>
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+(function(){
+  let dp=null;
+  const mkBtn=()=>{ let b=document.getElementById('installBtn'); if(b) return b;
+    b=document.createElement('button'); b.id='installBtn'; b.textContent='📲 Installer l\u2019appli';
+    b.style.cssText='display:none;position:fixed;right:14px;bottom:14px;z-index:80;background:var(--accent);color:#14140f;border:none;border-radius:999px;padding:12px 18px;font-family:inherit;font-weight:bold;font-size:15px;box-shadow:0 6px 16px rgba(0,0,0,.5);cursor:pointer';
+    b.addEventListener('click', async ()=>{ if(!dp) return; b.style.display='none'; dp.prompt(); try{ await dp.userChoice; }catch(e){} dp=null; });
+    document.body.appendChild(b); return b; };
+  window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); dp=e; mkBtn().style.display='inline-block'; });
+  window.addEventListener('appinstalled', ()=>{ const b=document.getElementById('installBtn'); if(b) b.style.display='none'; });
+})();
 </script>
 </body>
 </html>

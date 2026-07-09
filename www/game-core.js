@@ -317,6 +317,7 @@ async function GameShell(cfg){
       }
     } else if(w && !w.human) SFX.lose();
     else SFX.good();
+    try{ if(navigator.vibrate && LS.get('gc-vibrate',true)) navigator.vibrate((w&&w.human)?[30,60,30]:40); }catch(e){}
     log('— ' + title);
 
     /* tournoi : enregistrer la manche et enchaîner */

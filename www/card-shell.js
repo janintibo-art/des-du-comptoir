@@ -132,6 +132,7 @@ window.CardShell = async function(cfg){
     const w=/^Victoire de (.+) !$/.exec(title);
     const human=w && GC.players.some(p=>!p.ai && p.name===w[1]);
     if(human){ Snd.win(); recordWin(cfg.id); } else Snd.lose();
+    try{ if(navigator.vibrate && CLS.get('gc-vibrate',true)) navigator.vibrate(human?[30,60,30]:40); }catch(e){}
     return new Promise(res=>{
       $c('cOvTitle').textContent=title; $c('cOvText').innerHTML=text;
       $c('cOverlay').style.display='flex';

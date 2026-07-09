@@ -4,6 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Le Cochon troué</title>
 <link rel="icon" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14140f">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="cards.css">
 <style>
@@ -30,6 +32,10 @@
 .dice-tray .die-stage{--d:clamp(96px,28vw,150px)}
 .lastdie{font-size:13px;opacity:.7;margin-top:2px}
 .lastdie b{color:var(--accent)}
+#cMsg,#cCombo{display:none!important}
+.aw-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%) translateY(12px);max-width:92vw;background:rgba(20,20,16,.93);color:var(--cream);border:1px solid rgba(224,163,76,.5);border-radius:999px;padding:9px 18px;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60;text-align:center}
+.aw-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.aw-toast.strong{color:var(--accent);font-weight:bold;border-color:var(--accent)}
 </style>
 <script src="rules-data.js"></script>
 <script src="card-shell.js"></script>
@@ -61,6 +67,13 @@ function makeDie(face){
 CardShell({
   id:'cochontroue', title:'LE COCHON TROUÉ', minPlayers:2, maxPlayers:6, skinModule:NoSkin,
   run: async GC => {
+    (function(){ let el=document.getElementById('bwToast');
+      if(!el){ el=document.createElement('div'); el.id='bwToast'; el.className='aw-toast'; document.body.appendChild(el); }
+      let tmr=null; const show=(t,strong)=>{ if(!t){el.classList.remove('show');return;}
+        el.textContent=t; el.classList.toggle('strong',!!strong); el.classList.add('show');
+        clearTimeout(tmr); tmr=setTimeout(()=>el.classList.remove('show'), strong?2400:2900); };
+      const oSay=GC.say,oCombo=GC.combo; GC.say=t=>{oSay&&oSay(t);show(t,false);}; GC.combo=t=>{oCombo&&oCombo(t);show(t,true);};
+    })();
     const P=GC.players, N=P.length;
     // choix du nombre de cochons
     GC.center('<div style="text-align:center;opacity:.85">Chaque joueur reçoit des cochons.<br>Débarrassez-vous des vôtres en premier !</div>');

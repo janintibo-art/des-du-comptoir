@@ -1,0 +1,17 @@
+{
+  "name": "Les Dés du Comptoir",
+  "short_name": "Comptoir",
+  "description": "31 jeux de dés, cartes, dominos, Awalé, dames et échecs — solo, à plusieurs, ou en réseau.",
+  "lang": "fr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#14140f",
+  "theme_color": "#14140f",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
