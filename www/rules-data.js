@@ -377,4 +377,13 @@ retourne au moins un pion.</p>
 le joueur qui a le <b>plus de pions</b> gagne.</p>
 <p><b>Deux d\u00e9parts au choix :</b> <b>Othello</b> (4 pions plac\u00e9s au centre) ou <b>Reversi</b>
 (plateau vide, on remplit d\u2019abord les 4 cases centrales).</p>`},
+monopoly: { title:'Le Grand Marchand (Monopoly)', html:`
+<p>Le c\u00e9l\u00e8bre jeu de commerce ! Chacun choisit un pion, lance <b>deux d\u00e9s</b> et
+avance autour du plateau. Deux ambiances : <b>\u00e0 l\u2019ancienne</b> ou <b>futuriste</b>.</p>
+<p>Sur chaque case, une <b>grande carte</b> vous dit o\u00f9 vous \u00eates : propri\u00e9t\u00e9s \u00e0
+acheter, gares, services, Chance, Caisse de Commerce, Prison\u2026 En passant par le <b>D\u00e9part</b>,
+on touche 200.</p>
+<p><i>Jeu en construction par \u00e9tapes :</i> pour l\u2019instant, le plateau, les d\u00e9s et le
+d\u00e9placement des pions. L\u2019argent, l\u2019achat des propri\u00e9t\u00e9s, les loyers et les
+maisons/h\u00f4tels arrivent ensuite !</p>`},
 };
