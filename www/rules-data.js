@@ -376,7 +376,7 @@ retourne au moins un pion.</p>
 <p>Si vous ne pouvez pas jouer, vous passez. \u00c0 la fin (plateau plein ou deux passes),
 le joueur qui a le <b>plus de pions</b> gagne.</p>
 <p><b>Deux d\u00e9parts au choix :</b> <b>Othello</b> (4 pions plac\u00e9s au centre) ou <b>Reversi</b>
-(plateau vide, on remplit d\u2019abord les 4 cases centrales).</p>`},
+(plateau vide, on remplit d\u2019abord les 4 cases centrales).</p>\n<p><b>Nouveau :</b> le bouton « \ud83e\uddca Vue 3D » affiche des pions \u00e0 <b>deux faces</b> qui <b>se retournent</b> (noir\u2194blanc) en 3D \u2014 plateau orientable au doigt.</p>`},
 monopoly: { title:'Monopoli — le jeu immobilier', html:`
 <p>Le grand classique du commerce, sur un vrai plateau de <b>40 cases</b> ! Deux ambiances au choix :
 <b>Paris à l\u2019ancienne</b> ou <b>Néo Monopole</b> futuriste. Chacun d\u00e9marre avec <b>1500</b>,

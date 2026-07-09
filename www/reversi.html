@@ -30,6 +30,9 @@
 </style>
 <script src="rules-data.js"></script>
 <script src="card-shell.js"></script>
+<script src="lib/babylon.js"></script>
+<script>if(typeof BABYLON==='undefined')document.write('<script src="https://cdn.babylonjs.com/babylon.js"><\/script>')</script>
+<script src="r3d.js"></script>
 <script>
 'use strict';
 const SKINS=[
@@ -95,7 +98,11 @@ CardShell({
     const meIdx=pl=> pl===1?0:1;
 
     let flipCells=[];
-    function draw(){ const sk=curSkin(); const c=GC.center('');
+    let MODE3D=false;
+    window.__toggle3D=()=>{ if(typeof BABYLON==='undefined'){ GC.combo&&GC.combo('3D indisponible.'); return; } MODE3D=!MODE3D; const bt=document.getElementById('btn3d'); if(bt) bt.textContent=MODE3D?'🧈 Vue 2D':'🧊 Vue 3D'; if(!MODE3D&&window.R3D)R3D.unmount(); draw(); };
+    function draw(){ const sk=curSkin();
+      if(MODE3D&&window.R3D&&typeof BABYLON!=='undefined'){ const c=GC.center(''); R3D.render(c, b, {hints:(curHints||[]), onPick:(s)=>{ if(onPick) onPick(s); }, skin:sk}); return; }
+      const c=GC.center('');
       const wrap=document.createElement('div'); wrap.className='rv-wrap';
       const cc=counts(b);
       const top=document.createElement('div'); top.className='rv-top';
@@ -167,5 +174,7 @@ CardShell({
   }
 });
 </script>
+<button id="btn3d" style="position:fixed;top:8px;right:8px;z-index:80;background:rgba(20,20,16,.82);color:#f2e8d5;border:1px solid rgba(224,163,76,.55);border-radius:10px;padding:7px 12px;font-family:Georgia,serif;font-size:13px;cursor:pointer">🧊 Vue 3D</button>
+<script>document.getElementById('btn3d').addEventListener('click',function(){ if(window.__toggle3D) window.__toggle3D(); });</script>
 </body>
 </html>
