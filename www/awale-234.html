@@ -105,7 +105,6 @@ CardShell({
         drawBoard(); GC.combo(player.name+' sème le trou '+disp+(gain?(' et capture '+gain+' graines !'):'.'));
         await GC.sleep(750);
       } else {
-        if(humans>1) await GC.handOff(player.name);
         curLegal=new Set(moves);
         GC.say('À vous, '+player.name+' — touchez un de vos trous (surlignés).');
         const mv=await new Promise(res=>{ curOnPit=i=>{ curOnPit=null; res(i); }; drawBoard(); });

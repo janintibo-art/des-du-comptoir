@@ -136,7 +136,6 @@ CardShell({
       if(p.finished){ turn=(turn+1)%N; if(turn===0)round++; continue; }
       scores(turn);
       const minRolls = round===1?1 : round===2?2 : 1;
-      if(!p.ai){ if(P.filter(x=>!x.ai).length>1) await GC.handOff(p.name); }
       let rolls=0, busted=false;
       while(true){
         if(rolls>=minRolls){

@@ -132,7 +132,6 @@ CardShell({
 
     async function humanTurn(pIdx){
       const me=meOf(pIdx);
-      if(humans>1) await GC.handOff(P[pIdx].name);
       const {moves,mustCapture}=allMoves(b,me);
       while(true){
         // 1) choisir la pièce

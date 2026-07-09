@@ -180,7 +180,6 @@ CardShell({
 
     async function humanTurn(pIdx){
       const me=meOf(pIdx);
-      if(humans>1) await GC.handOff(P[pIdx].name);
       const moves=genMoves(st);
       while(true){
         const froms=new Set(moves.map(m=>m.from));
