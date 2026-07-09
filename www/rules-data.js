@@ -310,7 +310,7 @@ majoritaire).</p>
 <p><b>La dame.</b> Un pion qui <b>termine</b> son coup sur la derni\u00e8re rang\u00e9e est couronn\u00e9
 \ud83d\udc51. La dame est <b>volante</b> : elle glisse d'autant de cases qu'elle veut en
 diagonale, et capture \u00e0 distance en s'arr\u00eatant o\u00f9 elle veut derri\u00e8re sa victime.</p>
-<p><b>Nul :</b> 25 coups de dames sans prise ni avanc\u00e9e de pion.</p>`},
+<p><b>Nul :</b> 25 coups de dames sans prise ni avanc\u00e9e de pion.</p>\n<p><b>Nouveau :</b> touchez « \ud83e\uddca Vue 3D » en haut \u00e0 droite pour basculer en <b>rendu 3D</b> (Babylon.js) \u2014 tournez le plateau au doigt ! Retour \u00e0 la vue classique quand vous voulez.</p>`},
 echecs: { title:'Les \u00c9checs', html:`
 <p>Le grand classique : mettre le roi adverse <b>\u00e9chec et mat</b>. Les Blancs (en bas)
 commencent.</p>
@@ -322,7 +322,7 @@ et si le roi ne traverse pas de case attaqu\u00e9e), la <b>prise en passant</b>,
 <b>promotion</b> d'un pion arriv\u00e9 au bout (choisissez sa nouvelle pi\u00e8ce).</p>
 <p><b>\u00c9chec :</b> un roi attaqu\u00e9 doit \u00eatre mis \u00e0 l'abri imm\u00e9diatement \u2014 le jeu
 ne propose que les coups l\u00e9gaux. <b>Mat</b> = victoire ; <b>pat</b> (aucun coup l\u00e9gal sans
-\u00eatre en \u00e9chec), 50 coups sans prise ni pion, ou triple r\u00e9p\u00e9tition = <b>nulle</b>.</p>`},
+\u00eatre en \u00e9chec), 50 coups sans prise ni pion, ou triple r\u00e9p\u00e9tition = <b>nulle</b>.</p>\n<p><b>Nouveau :</b> touchez « \ud83e\uddca Vue 3D » en haut \u00e0 droite pour basculer en <b>rendu 3D</b> (Babylon.js) \u2014 tournez le plateau au doigt ! Retour \u00e0 la vue classique quand vous voulez.</p>`},
 uno: { title:'UNO', html:`
 <p>2 \u00e0 4 joueurs, 7 cartes chacun. But : <b>se d\u00e9barrasser de toutes ses cartes</b>.</p>
 <p><b>Jouer.</b> \u00c0 votre tour, posez une carte de <b>m\u00eame couleur</b> ou de <b>m\u00eame

@@ -27,6 +27,9 @@
 </style>
 <script src="rules-data.js"></script>
 <script src="card-shell.js"></script>
+<script src="lib/babylon.js"></script>
+<script>if(typeof BABYLON==='undefined')document.write('<script src="https://cdn.babylonjs.com/babylon.js"><\/script>')</script>
+<script src="board3d.js"></script>
 <script>
 'use strict';
 const NoSkin={ buildSkinSelect(sel){ sel.style.display='none'; }, el(){ return document.createElement('span'); } };
@@ -122,7 +125,11 @@ CardShell({
     const scores=t=>GC.scores([
       {label:names[0]+' ⚪',value:countPieces(b,1),active:t===1},
       {label:names[1]+' ⚫',value:countPieces(b,-1),active:t===-1}]);
-    function draw(opts){ opts=opts||{};
+    let MODE3D=false, curDrawOpts={};
+    const CFG3D={plateau:'dames/plateau.webp',grid:GRID,size:8,pieceSrc:v=>v?('dames/pion-'+(v>0?'blanc':'noir')+'.webp'):null};
+    window.__toggle3D=()=>{ if(typeof BABYLON==='undefined'){ GC.combo&&GC.combo('3D indisponible.'); return; } MODE3D=!MODE3D; const bt=document.getElementById('btn3d'); if(bt) bt.textContent=MODE3D?'🧈 Vue 2D':'🧊 Vue 3D'; if(!MODE3D&&window.Board3D)Board3D.unmount(); draw(curDrawOpts); };
+    function draw(opts){ opts=opts||{}; curDrawOpts=opts;
+      if(MODE3D&&window.Board3D&&typeof BABYLON!=='undefined'){ const c=GC.center(''); Board3D.mount(c,CFG3D); const shown=opts.board||b; const sel=opts.sel?opts.sel[0]*8+opts.sel[1]:-1; Board3D.update(shown,{sel,dests:opts.dests,picks:opts.picks,ghost:opts.ghost,onCell:i=>{ const r=Math.floor(i/8),cc=i%8; if(opts.dests&&opts.dests.has(i)&&opts.onDest)opts.onDest(r,cc); else if(opts.picks&&opts.picks.has(i)&&opts.onPick)opts.onPick(r,cc); },pieceSrc:v=>'dames/pion-'+(v>0?'blanc':'noir')+'.webp',king:v=>isKing(v)}); return; }
       const flip = humans>1 && turn===-1;
       const c=GC.center('');
       const board=document.createElement('div'); board.className='dames-board';
@@ -245,5 +252,7 @@ CardShell({
   }
 });
 </script>
+<button id="btn3d" style="position:fixed;top:8px;right:8px;z-index:80;background:rgba(20,20,16,.82);color:#f2e8d5;border:1px solid rgba(224,163,76,.55);border-radius:10px;padding:7px 12px;font-family:Georgia,serif;font-size:13px;cursor:pointer">🧊 Vue 3D</button>
+<script>document.getElementById('btn3d').addEventListener('click',function(){ if(window.__toggle3D) window.__toggle3D(); });</script>
 </body>
 </html>
