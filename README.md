@@ -48,6 +48,12 @@ de cochons réglable (rapide/normale/officielle). Logique validée (terminaison,
 de nul (25 coups de dames). IA minimax alpha-bêta. Plateau et pions détourés (`www/dames/`),
 grille calée au pixel sur l'image. Moteur validé par simulation (conservation des pièces).
 
+## Les Échecs ♞
+**Les Échecs** (`echecs-classique.html`) avec vos pièces marquetées or : moteur complet
+**certifié par perft** (positions de référence : initiale 20/400/8902/197281, kiwipete, pos.3),
+roque, prise en passant, promotion au choix, échec/mat/pat, règle des 50 coups et triple
+répétition. IA négamax + quiescence (3 niveaux). Sprites dans `www/echecs/`.
+
 ## Awalé 🌰
 L'**Awalé / Oware** (`awale-oware.html`), jeu de semailles à 2 joueurs (famille mancala),
 contre une **IA négamax** (alpha-bêta) ou à tour de rôle. Plateaux et graines détourés de vos

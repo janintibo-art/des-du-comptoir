@@ -309,4 +309,16 @@ majoritaire).</p>
 \ud83d\udc51. La dame est <b>volante</b> : elle glisse d'autant de cases qu'elle veut en
 diagonale, et capture \u00e0 distance en s'arr\u00eatant o\u00f9 elle veut derri\u00e8re sa victime.</p>
 <p><b>Nul :</b> 25 coups de dames sans prise ni avanc\u00e9e de pion.</p>`},
+echecs: { title:'Les \u00c9checs', html:`
+<p>Le grand classique : mettre le roi adverse <b>\u00e9chec et mat</b>. Les Blancs (en bas)
+commencent.</p>
+<p><b>D\u00e9placements :</b> le pion avance d'une case (deux depuis sa position initiale) et
+prend en diagonale ; la tour suit lignes et colonnes ; le fou les diagonales ; la dame les
+deux ; le cavalier saute en \u00ab L \u00bb ; le roi bouge d'une case.</p>
+<p><b>Coups sp\u00e9ciaux :</b> le <b>roque</b> (roi + tour, si ni l'un ni l'autre n'a boug\u00e9
+et si le roi ne traverse pas de case attaqu\u00e9e), la <b>prise en passant</b>, et la
+<b>promotion</b> d'un pion arriv\u00e9 au bout (choisissez sa nouvelle pi\u00e8ce).</p>
+<p><b>\u00c9chec :</b> un roi attaqu\u00e9 doit \u00eatre mis \u00e0 l'abri imm\u00e9diatement \u2014 le jeu
+ne propose que les coups l\u00e9gaux. <b>Mat</b> = victoire ; <b>pat</b> (aucun coup l\u00e9gal sans
+\u00eatre en \u00e9chec), 50 coups sans prise ni pion, ou triple r\u00e9p\u00e9tition = <b>nulle</b>.</p>`},
 };

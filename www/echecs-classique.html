@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Les Échecs</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+.chess-board{position:relative;width:100%;max-width:440px;margin:0 auto;aspect-ratio:1;background-size:contain;background-repeat:no-repeat;filter:drop-shadow(0 6px 16px rgba(0,0,0,.5))}
+.ccell{position:absolute;transform:translate(-50%,-50%);width:9.3%;aspect-ratio:1;display:flex;align-items:flex-end;justify-content:center;border-radius:12%}
+.ccell img.pc{height:150%;max-width:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55));pointer-events:none;margin-bottom:2%}
+.ccell.sel{box-shadow:0 0 0 3px var(--accent),0 0 14px 2px rgba(224,163,76,.55)}
+.ccell.last{box-shadow:inset 0 0 0 3px rgba(224,163,76,.45)}
+.ccell.chk{box-shadow:0 0 0 3px #e05a4a,0 0 16px 3px rgba(224,90,74,.6)}
+.ccell.dest{cursor:pointer}
+.ccell.dest::after{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:34%;height:34%;border-radius:50%;background:rgba(224,163,76,.65)}
+.ccell.dest.cap::after{width:88%;height:88%;background:transparent;border:4px solid rgba(224,163,76,.75)}
+.ccell.pick{cursor:pointer}
+.ccount{display:flex;gap:18px;justify-content:center;font-size:14px;opacity:.8;margin-top:6px}
+.ccount img{height:24px;vertical-align:middle;margin-right:3px}
+</style>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+const NoSkin={ buildSkinSelect(sel){ sel.style.display='none'; }, el(){ return document.createElement('span'); } };
+/* ===== moteur (validé par perft : 20/400/8902/197281 ; kiwipete ; pos3) ===== */
+const N8=[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+const K8=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+const DIAG=[[-1,-1],[-1,1],[1,-1],[1,1]], ORTH=[[-1,0],[1,0],[0,-1],[0,1]];
+const inB=(r,c)=> r>=0&&r<8&&c>=0&&c<8;
+function initChess(){ const b=new Int8Array(64); const back=[4,2,3,5,6,3,2,4];
+  for(let c=0;c<8;c++){ b[c]=-back[c]; b[8+c]=-1; b[48+c]=1; b[56+c]=back[c]; }
+  return {b, turn:1, cast:15, ep:-1, half:0}; }
+function attacked(b, sq, by){ const r=sq>>3, c=sq&7; const pr=r+by;
+  if(inB(pr,c-1)&&b[pr*8+c-1]===1*by) return true;
+  if(inB(pr,c+1)&&b[pr*8+c+1]===1*by) return true;
+  for(const [dr,dc] of N8){ const rr=r+dr,cc=c+dc; if(inB(rr,cc)&&b[rr*8+cc]===2*by) return true; }
+  for(const [dr,dc] of K8){ const rr=r+dr,cc=c+dc; if(inB(rr,cc)&&b[rr*8+cc]===6*by) return true; }
+  for(const [dr,dc] of DIAG){ let rr=r+dr,cc=c+dc;
+    while(inB(rr,cc)){ const v=b[rr*8+cc]; if(v){ if(v===3*by||v===5*by) return true; break; } rr+=dr;cc+=dc; } }
+  for(const [dr,dc] of ORTH){ let rr=r+dr,cc=c+dc;
+    while(inB(rr,cc)){ const v=b[rr*8+cc]; if(v){ if(v===4*by||v===5*by) return true; break; } rr+=dr;cc+=dc; } }
+  return false; }
+function kingSq(b,side){ for(let i=0;i<64;i++) if(b[i]===6*side) return i; return -1; }
+const inCheck=st=> attacked(st.b, kingSq(st.b,st.turn), -st.turn);
+function applyMove(st, m){ const b=st.b.slice(); let cast=st.cast, ep=-1, half=st.half+1;
+  const piece=b[m.from]; const side=st.turn;
+  if(m.capt||Math.abs(piece)===1) half=0;
+  b[m.to]=m.promo? m.promo*side : piece; b[m.from]=0;
+  if(m.epCap) b[m.to+8*side]=0;
+  if(m.castle==='K'){ b[m.to-1]=4*side; b[(side===1?63:7)]=0; }
+  if(m.castle==='Q'){ b[m.to+1]=4*side; b[(side===1?56:0)]=0; }
+  if(Math.abs(piece)===6) cast &= side===1? ~3 : ~12;
+  const CB={56:2,63:1,0:8,7:4};
+  if(CB[m.from]) cast&=~CB[m.from];
+  if(CB[m.to]) cast&=~CB[m.to];
+  if(m.dbl) ep=m.from-8*side;
+  return {b, turn:-side, cast, ep, half}; }
+function genMoves(st){ const {b, turn:side}=st; const out=[];
+  const push=m=>{ const ns=applyMove(st,m); if(!attacked(ns.b, kingSq(ns.b,side), -side)) out.push(m); };
+  for(let sq=0;sq<64;sq++){ const v=b[sq]; if(!v||Math.sign(v)!==side) continue;
+    const r=sq>>3,c=sq&7, t=Math.abs(v);
+    if(t===1){ const dr=-side, one=(r+dr)*8+c;
+      if(inB(r+dr,c)&&b[one]===0){
+        if(r+dr===0||r+dr===7){ for(const p of [5,4,3,2]) push({from:sq,to:one,promo:p}); }
+        else push({from:sq,to:one});
+        const sR=side===1?6:1;
+        if(r===sR && b[(r+2*dr)*8+c]===0) push({from:sq,to:(r+2*dr)*8+c,dbl:true}); }
+      for(const dc of [-1,1]){ const rr=r+dr,cc=c+dc; if(!inB(rr,cc)) continue; const to=rr*8+cc;
+        if(b[to]!==0 && Math.sign(b[to])===-side){
+          if(rr===0||rr===7){ for(const p of [5,4,3,2]) push({from:sq,to,promo:p,capt:true}); }
+          else push({from:sq,to,capt:true}); }
+        else if(to===st.ep && b[to]===0) push({from:sq,to,capt:true,epCap:true}); }
+    } else if(t===2||t===6){
+      for(const [dr,dc] of (t===2?N8:K8)){ const rr=r+dr,cc=c+dc; if(!inB(rr,cc)) continue;
+        const to=rr*8+cc; if(b[to]===0||Math.sign(b[to])===-side) push({from:sq,to,capt:b[to]!==0}); }
+      if(t===6){ const home=side===1?60:4;
+        if(sq===home && !attacked(b,home,-side)){
+          if((st.cast&(side===1?1:4)) && b[home+1]===0 && b[home+2]===0 &&
+             !attacked(b,home+1,-side) && !attacked(b,home+2,-side) && b[home+3]===4*side)
+            push({from:sq,to:home+2,castle:'K'});
+          if((st.cast&(side===1?2:8)) && b[home-1]===0 && b[home-2]===0 && b[home-3]===0 &&
+             !attacked(b,home-1,-side) && !attacked(b,home-2,-side) && b[home-4]===4*side)
+            push({from:sq,to:home-2,castle:'Q'}); } }
+    } else { const dirs=t===3?DIAG:t===4?ORTH:DIAG.concat(ORTH);
+      for(const [dr,dc] of dirs){ let rr=r+dr,cc=c+dc;
+        while(inB(rr,cc)){ const to=rr*8+cc;
+          if(b[to]===0) push({from:sq,to});
+          else { if(Math.sign(b[to])===-side) push({from:sq,to,capt:true}); break; }
+          rr+=dr;cc+=dc; } } } }
+  return out; }
+/* ===== IA ===== */
+const PV={1:100,2:320,3:330,4:500,5:900,6:0};
+const CENT=[0,1,2,3,3,2,1,0];
+function evalB(b){ let s=0;
+  for(let i=0;i<64;i++){ const v=b[i]; if(!v)continue; const t=Math.abs(v),sg=Math.sign(v);
+    let val=PV[t]; const r=i>>3,c=i&7;
+    if(t===1) val+=(sg===1?(6-r):(r-1))*4;
+    if(t===2||t===3) val+=(CENT[r]+CENT[c])*3;
+    s+=sg*val; }
+  return s; }
+const order=mv=>mv.sort((a,b)=>(b.capt?1:0)-(a.capt?1:0));
+function qsearch(st,alpha,beta,qd){ const stand=evalB(st.b)*st.turn;
+  if(stand>=beta) return beta; if(stand>alpha) alpha=stand;
+  if(qd<=0) return alpha;
+  const caps=genMoves(st).filter(m=>m.capt);
+  for(const m of caps){ const v=-qsearch(applyMove(st,m),-beta,-alpha,qd-1);
+    if(v>=beta)return beta; if(v>alpha)alpha=v; }
+  return alpha; }
+function nega(st,d,alpha,beta,ply){ const mv=genMoves(st);
+  if(!mv.length) return inCheck(st)? -100000+ply : 0;
+  if(st.half>=100) return 0;
+  if(d===0) return qsearch(st,alpha,beta,4);
+  order(mv); let best=-1e9;
+  for(const m of mv){ const v=-nega(applyMove(st,m),d-1,-beta,-alpha,ply+1);
+    if(v>best)best=v; if(best>alpha)alpha=best; if(alpha>=beta)break; }
+  return best; }
+function pickAI(st,d){ const mv=order(genMoves(st)); let best=mv[0],bv=-1e9;
+  for(const m of mv){ const v=-nega(applyMove(st,m),d-1,-1e9,1e9,1); if(v>bv){bv=v;best=m;} } return best; }
+const GRID={left:0.1277, top:0.1246, cw:0.0930, ch:0.0937};
+const PNAME={1:'pion',2:'cavalier',3:'fou',4:'tour',5:'dame',6:'roi'};
+const cellPos=(r,c)=>[(GRID.left+(c+0.5)*GRID.cw)*100, (GRID.top+(r+0.5)*GRID.ch)*100];
+function countP(b,side){ let n=0; for(const v of b) if(v&&Math.sign(v)===side)n++; return n; }
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+CardShell({
+  id:'echecs', title:'LES ÉCHECS', minPlayers:2, maxPlayers:2, skinModule:NoSkin,
+  run: async GC => {
+    const P=GC.players, names=[P[0].name,P[1].name];   // P[0]=blancs, P[1]=noirs
+    const humans=P.filter(p=>!p.ai).length;
+    const depth=GC.aiRisk<0.8?2:(GC.aiRisk>1.1?4:3);
+    let st=initChess(), lastMv=null; const reps={};
+    const meOf=idx=> idx===0?1:-1;
+
+    const scores=t=>GC.scores([
+      {label:names[0]+' ⚪',value:countP(st.b,1),active:t===1},
+      {label:names[1]+' ⚫',value:countP(st.b,-1),active:t===-1}]);
+    function draw(opts){ opts=opts||{};
+      const c=GC.center('');
+      const board=document.createElement('div'); board.className='chess-board';
+      board.style.backgroundImage='url(echecs/plateau.webp)';
+      const chkSq = inCheck(st)? kingSq(st.b, st.turn) : -1;
+      for(let r=0;r<8;r++)for(let cc=0;cc<8;cc++){
+        const i=r*8+cc, v=st.b[i]; const [x,y]=cellPos(r,cc);
+        const cell=document.createElement('div'); cell.className='ccell';
+        cell.style.left=x+'%'; cell.style.top=y+'%'; cell.style.zIndex=r+1;
+        if(lastMv && (i===lastMv.from||i===lastMv.to)) cell.classList.add('last');
+        if(opts.sel===i) cell.classList.add('sel');
+        if(i===chkSq) cell.classList.add('chk');
+        if(v){ const img=new Image(); img.className='pc';
+          img.src='echecs/'+(v>0?'b':'n')+'-'+PNAME[Math.abs(v)]+'.webp'; img.draggable=false; cell.appendChild(img); }
+        if(opts.picks && opts.picks.has(i)){ cell.classList.add('pick'); cell.addEventListener('click',()=>opts.onPick(i)); }
+        if(opts.dests && opts.dests.has(i)){ cell.classList.add('dest'); if(v) cell.classList.add('cap');
+          cell.style.zIndex=20; cell.addEventListener('click',()=>opts.onDest(i)); }
+        board.appendChild(cell);
+      }
+      c.appendChild(board);
+      const cnt=document.createElement('div'); cnt.className='ccount';
+      cnt.innerHTML='<span><img src="echecs/b-pion.webp">'+countP(st.b,1)+'</span><span><img src="echecs/n-pion.webp">'+countP(st.b,-1)+'</span>';
+      c.appendChild(cnt);
+    }
+    function statusAfterMove(){ // null | {end, title, text}
+      const mv=genMoves(st);
+      if(!mv.length){
+        if(inCheck(st)){ const w=st.turn===1?1:0;
+          return {title:'Échec et mat !', text:'Victoire de <b>'+names[w]+'</b> — le roi '+(st.turn===1?'blanc':'noir')+' est mat.'}; }
+        return {title:'Pat — match nul', text:'Aucun coup légal, mais pas d\u2019\u00e9chec : \u00e9galit\u00e9.'};
+      }
+      if(st.half>=100) return {title:'Match nul', text:'50 coups sans prise ni pion : \u00e9galit\u00e9.'};
+      const key=st.b.join(',')+st.turn+st.cast+st.ep;
+      reps[key]=(reps[key]||0)+1;
+      if(reps[key]>=3) return {title:'Match nul', text:'Triple r\u00e9p\u00e9tition de la position : \u00e9galit\u00e9.'};
+      return null;
+    }
+
+    async function humanTurn(pIdx){
+      const me=meOf(pIdx);
+      if(humans>1) await GC.handOff(P[pIdx].name);
+      const moves=genMoves(st);
+      while(true){
+        const froms=new Set(moves.map(m=>m.from));
+        scores(me);
+        GC.say('À vous, '+P[pIdx].name+(inCheck(st)?' — ÉCHEC au roi !':' — touchez une pièce.'));
+        const from=await new Promise(res=> draw({picks:froms, onPick:res}));
+        const mine=moves.filter(m=>m.from===from);
+        const dests=new Set(mine.map(m=>m.to));
+        GC.say('Touchez la case d\u2019arriv\u00e9e (ou re-touchez la pi\u00e8ce pour changer).');
+        const to=await new Promise(res=> draw({sel:from, dests, onDest:res, picks:new Set([from]), onPick:()=>res(-1)}));
+        if(to<0) continue;
+        let cand=mine.filter(m=>m.to===to);
+        let mv=cand[0];
+        if(cand.length>1){ // promotion : choix
+          const a=await GC.ask([{id:'5',label:'♛ Dame',primary:true},{id:'4',label:'♜ Tour'},{id:'3',label:'♝ Fou'},{id:'2',label:'♞ Cavalier'}]);
+          GC.setButtons([]); mv=cand.find(m=>m.promo===+a)||cand[0];
+        }
+        if(mv.castle) GC.combo(P[pIdx].name+' roque ('+(mv.castle==='K'?'petit':'grand')+').');
+        else if(mv.epCap) GC.combo('Prise en passant !');
+        else if(mv.promo) GC.combo('Promotion !');
+        else if(mv.capt) GC.combo(P[pIdx].name+' prend.');
+        st=applyMove(st,mv); lastMv=mv; GC.play();
+        return;
+      }
+    }
+    async function aiTurn(pIdx){
+      scores(meOf(pIdx)); draw({});
+      GC.say(P[pIdx].name+' réfléchit…'); await GC.sleep(120);
+      await new Promise(r=>setTimeout(r,30)); // laisser peindre
+      const mv=pickAI(st,depth);
+      if(mv.castle) GC.combo(P[pIdx].name+' roque.');
+      else if(mv.promo) GC.combo(P[pIdx].name+' promeut un pion !');
+      else if(mv.capt) GC.combo(P[pIdx].name+' prend.');
+      st=applyMove(st,mv); lastMv=mv; GC.play();
+      draw({}); await GC.sleep(420);
+    }
+
+    GC.say('Blancs en bas. Échec et mat pour gagner — roque, prise en passant et promotion inclus !');
+    scores(1); draw({}); await GC.sleep(1300);
+    let guard=0;
+    while(true){
+      if(++guard>600) return GC.gameOver('Match nul !','Partie interminable — égalité.');
+      const pIdx = st.turn===1?0:1;
+      if(P[pIdx].ai) await aiTurn(pIdx); else await humanTurn(pIdx);
+      const end=statusAfterMove();
+      if(end){ scores(0); draw({}); if(inCheck(st)) GC.combo('Échec et mat !');
+        return GC.gameOver(end.title, end.text); }
+      if(inCheck(st)) GC.combo('Échec !');
+      scores(st.turn);
+      await GC.sleep(200);
+    }
+  }
+});
+</script>
+</body>
+</html>
