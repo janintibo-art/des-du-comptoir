@@ -48,6 +48,11 @@ de cochons réglable (rapide/normale/officielle). Logique validée (terminaison,
 de nul (25 coups de dames). IA minimax alpha-bêta. Plateau et pions détourés (`www/dames/`),
 grille calée au pixel sur l'image. Moteur validé par simulation (conservation des pièces).
 
+## Réglages & Mexico réseau ⚙️
+Écran **Réglages** (`reglages.html`) : interrupteurs Sons (`gc-sound`) et Vibrations (`gc-vibrate`),
+test de vibration, bouton de mise à jour de l'app (PWA). Le **Mexico** (bluff aux dés) est désormais
+jouable en réseau (`net-games4.js`), soit **21 jeux** au Salon.
+
 ## Confort damier ⚙️
 Aux Dames et aux Échecs : messages en **toast discret**, bouton **↩ Annuler** (revient sur son dernier
 coup et la réponse de l'IA, en solo), et **rotation du plateau** en jeu à deux sur le même téléphone
