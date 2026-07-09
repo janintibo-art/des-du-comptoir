@@ -185,5 +185,16 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
   window.addEventListener('appinstalled', ()=>{ const b=document.getElementById('installBtn'); if(b) b.style.display='none'; });
 })();
 </script>
+<script>
+(function(){ try{
+  const map={ 'dames-classique.html':'gc-resume-dames', 'echecs-classique.html':'gc-resume-echecs' };
+  Object.keys(map).forEach(href=>{ if(!localStorage.getItem(map[href])) return;
+    const a=document.querySelector('a.card[href="'+href+'"]'); if(!a) return;
+    const b=document.createElement('div'); b.textContent='▶ Reprendre';
+    b.style.cssText='display:inline-block;margin-top:6px;background:var(--accent);color:#14140f;font-weight:bold;font-size:12px;border-radius:999px;padding:3px 10px';
+    a.appendChild(b);
+  });
+}catch(e){} })();
+</script>
 </body>
 </html>

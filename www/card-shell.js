@@ -128,10 +128,12 @@ window.CardShell = async function(cfg){
   }
 
   let endChoice='replay';
-  function gameOver(title,text){
-    const w=/^Victoire de (.+) !$/.exec(title);
-    const human=w && GC.players.some(p=>!p.ai && p.name===w[1]);
-    if(human){ Snd.win(); recordWin(cfg.id); } else Snd.lose();
+  function gameOver(title,text,winner){
+    let human;
+    if(winner!==undefined && winner!==null){ human=GC.players.some(p=>!p.ai && p.name===winner); }
+    else { const w=/^Victoire de (.+) !$/.exec(title); human=!!(w && GC.players.some(p=>!p.ai && p.name===w[1])); }
+    if(human) Snd.win(); else Snd.lose();
+    recordStats(cfg.id, human);
     try{ if(navigator.vibrate && CLS.get('gc-vibrate',true)) navigator.vibrate(human?[30,60,30]:40); }catch(e){}
     return new Promise(res=>{
       $c('cOvTitle').textContent=title; $c('cOvText').innerHTML=text;
@@ -140,10 +142,8 @@ window.CardShell = async function(cfg){
       $c('cResetup').onclick=()=>{ $c('cOverlay').style.display='none'; endChoice='setup'; res(); };
     });
   }
-  function recordWin(id){ const s=CLS.get('gc-stats',{}); const g=s[id]||(s[id]={played:0,won:0});
-    g.played++; g.won++; CLS.set('gc-stats',s); }
-  function recordPlay(id){ const s=CLS.get('gc-stats',{}); const g=s[id]||(s[id]={played:0,won:0});
-    /* victoire déjà comptée ailleurs ; ici on incrémente played si pas de victoire humaine */ }
+  function recordStats(id,won){ const s=CLS.get('gc-stats',{}); const g=s[id]||(s[id]={played:0,won:0});
+    g.played++; if(won)g.won++; CLS.set('gc-stats',s); }
 
   const GC={
     cfg, players:[], _rerender:null,

@@ -211,25 +211,35 @@ CardShell({
       draw({}); await GC.sleep(350);
     }
 
+    const RKEY='gc-resume-dames';
+    const saveState=()=>{ try{ localStorage.setItem(RKEY, JSON.stringify({names, b:Array.from(b), turn, noProgress})); }catch(e){} };
+    const clearSave=()=>{ try{ localStorage.removeItem(RKEY); }catch(e){} };
+    try{ const sv=JSON.parse(localStorage.getItem(RKEY)||'null');
+      if(sv && Array.isArray(sv.names) && sv.names.join('|')===names.join('|') && Array.isArray(sv.b) && sv.b.length===64){
+        b=sv.b.slice(); turn=sv.turn; noProgress=sv.noProgress||0; draw({});
+        GC.say('Une partie de dames est en cours.');
+        const a=await GC.ask([{id:'resume',label:'▶ Reprendre'},{id:'new',label:'🔄 Nouvelle'}]); GC.setButtons([]);
+        if(a!=='resume'){ b=initBoard(); turn=1; noProgress=0; clearSave(); }
+      } }catch(e){}
     GC.say('Blancs en bas, prise obligatoire (et majoritaire). Atteignez la dernière rangée pour faire dame !');
     scores(1); draw({}); await GC.sleep(1300);
     let guard=0;
     while(true){
-      if(++guard>600) return GC.gameOver('Match nul !','Partie interminable — égalité.');
+      if(++guard>600) clearSave(); return GC.gameOver('Match nul !','Partie interminable — égalité.');
       const pIdx = turn===1?0:1;
       const {moves}=allMoves(b, turn);
       if(!moves.length){ const w=turn===1?1:0; scores(0); draw({});
-        return GC.gameOver('Victoire de '+names[w]+' !', names[pIdx]+' ne peut plus jouer.'); }
+        clearSave(); return GC.gameOver('Victoire de '+names[w]+' !', names[pIdx]+' ne peut plus jouer.'); }
       if(noProgress>=50){ scores(0); draw({});
-        return GC.gameOver('Match nul !','25 coups de dames sans prise ni avancée de pion : égalité.'); }
+        clearSave(); return GC.gameOver('Match nul !','25 coups de dames sans prise ni avancée de pion : égalité.'); }
       if(P[pIdx].ai) await aiTurn(pIdx);
       else { undoStack.push(snap()); const r=await humanTurn(pIdx);
         if(r==='undo'){ undoStack.pop(); const prev=undoStack.pop(); if(prev) restore(prev);
           GC.combo('Coup annulé.'); scores(turn); draw({}); await GC.sleep(150); continue; } }
       scores(-turn);
       if(countPieces(b,-turn)===0){ draw({});
-        return GC.gameOver('Victoire de '+names[pIdx]+' !', 'Toutes les pièces adverses sont prises !'); }
-      turn=-turn;
+        clearSave(); return GC.gameOver('Victoire de '+names[pIdx]+' !', 'Toutes les pièces adverses sont prises !'); }
+      turn=-turn; saveState();
       await GC.sleep(250);
     }
   }

@@ -19,6 +19,8 @@ table.st td:first-child{text-align:left}
 .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:16px 0}
 .back{display:inline-block;margin:14px;color:var(--cream);text-decoration:none;opacity:.8}
 .muted{opacity:.6;font-size:14px}
+.grp{color:var(--accent);letter-spacing:.06em;margin:20px 4px 6px;text-align:left;font-weight:bold}
+table.st tr.sub td{opacity:.7;font-style:italic;border-top:1px solid rgba(242,232,213,.2)}
 </style>
 </head>
 <body class="menu">
@@ -34,23 +36,39 @@ table.st td:first-child{text-align:left}
 </div>
 <script>
 'use strict';
-const ORDER=['421','10000','yams','poker','zanzibar','mexico','chicago','cochon','passedix','boston','boite','martinetti'];
+const GROUPS=[
+  ['🎲 Dés', ['421','10000','yams','poker','zanzibar','mexico','chicago','cochon','passedix','boston','boite','martinetti','cochontroue']],
+  ['🃏 Cartes', ['bataille','president','huit','tarot','hearts','pouilleux','scopa','menteur','rami']],
+  ['🁢 Dominos', ['domino','toutcinq','matador','train']],
+  ['🌰 Awalé', ['awale','awale234','kalah']],
+  ['♟ Dames & Échecs', ['dames','echecs']],
+];
 const ALL=['fantasy','neon','ocean','gothic','steampunk','crystal','tribal','candy','ice','streetart','biomech','origami'];
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
           set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
 const stats=LS.get('gc-stats',{});
 const skins=LS.get('gc-skins',['fantasy','neon','ocean']);
-let played=0, won=0;
-let rows=ORDER.map(id=>{
-  const s=stats[id]||{played:0,won:0};
-  played+=s.played; won+=s.won;
-  const pct=s.played?Math.round(100*s.won/s.played)+' %':'—';
-  return '<tr><td>'+(window.RULES[id]||{title:id}).title+'</td><td>'+s.played+'</td><td>'+s.won+'</td><td>'+pct+'</td></tr>';
-}).join('');
-document.getElementById('content').innerHTML=
-  '<table class="st"><tr><th>Jeu</th><th>Parties</th><th>Victoires</th><th>%</th></tr>'+rows+
-  '<tr><th>Total</th><th>'+played+'</th><th>'+won+'</th><th>'+(played?Math.round(100*won/played)+' %':'—')+'</th></tr></table>'+
-  '<p class="skins">🎨 Styles de dés débloqués : <b>'+skins.length+' / '+ALL.length+'</b></p>';
+const title=id=>(window.RULES&&window.RULES[id]&&window.RULES[id].title)||id;
+let gPlayed=0,gWon=0, html='';
+GROUPS.forEach(([label,ids])=>{
+  const present=ids.filter(id=>stats[id]&&stats[id].played);
+  let sp=0,sw=0;
+  const rows=ids.map(id=>{ const st=stats[id]; if(!st||!st.played) return '';
+    sp+=st.played; sw+=st.won;
+    const pct=Math.round(100*st.won/st.played)+' %';
+    return '<tr><td>'+title(id)+'</td><td>'+st.played+'</td><td>'+st.won+'</td><td>'+pct+'</td></tr>';
+  }).join('');
+  if(!rows){ return; }
+  gPlayed+=sp; gWon+=sw;
+  html+='<div class="grp">'+label+'</div><table class="st">'+
+    '<tr><th>Jeu</th><th>Parties</th><th>Gagnées</th><th>%</th></tr>'+rows+
+    '<tr class="sub"><td>Sous-total</td><td>'+sp+'</td><td>'+sw+'</td><td>'+(sp?Math.round(100*sw/sp)+' %':'—')+'</td></tr>'+
+    '</table>';
+});
+if(!html) html='<p class="muted">Aucune partie jouée pour l\u2019instant. Lancez une partie et revenez !</p>';
+html+='<table class="st" style="margin-top:18px"><tr><th>TOTAL</th><th>'+gPlayed+'</th><th>'+gWon+'</th><th>'+(gPlayed?Math.round(100*gWon/gPlayed)+' %':'—')+'</th></tr></table>';
+html+='<p class="skins">🎨 Styles de dés débloqués : <b>'+skins.length+' / '+ALL.length+'</b></p>';
+document.getElementById('content').innerHTML=html;
 function unlockAll(){ LS.set('gc-skins', ALL); location.reload(); }
 </script>
 </body>

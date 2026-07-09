@@ -243,11 +243,22 @@ CardShell({
       draw({}); await GC.sleep(420);
     }
 
+    const RKEY='gc-resume-echecs';
+    const saveState=()=>{ try{ localStorage.setItem(RKEY, JSON.stringify({names, b:Array.from(st.b), turn:st.turn, cast:st.cast, ep:st.ep, half:st.half, lastMv, reps})); }catch(e){} };
+    const clearSave=()=>{ try{ localStorage.removeItem(RKEY); }catch(e){} };
+    try{ const sv=JSON.parse(localStorage.getItem(RKEY)||'null');
+      if(sv && Array.isArray(sv.names) && sv.names.join('|')===names.join('|') && Array.isArray(sv.b) && sv.b.length===64){
+        st={b:Int8Array.from(sv.b), turn:sv.turn, cast:sv.cast, ep:sv.ep, half:sv.half}; lastMv=sv.lastMv||null;
+        if(sv.reps){ Object.keys(reps).forEach(k=>delete reps[k]); Object.assign(reps,sv.reps); }
+        draw({}); GC.say('Une partie d\u2019échecs est en cours.');
+        const a=await GC.ask([{id:'resume',label:'▶ Reprendre'},{id:'new',label:'🔄 Nouvelle'}]); GC.setButtons([]);
+        if(a!=='resume'){ st=initChess(); lastMv=null; Object.keys(reps).forEach(k=>delete reps[k]); clearSave(); }
+      } }catch(e){}
     GC.say('Blancs en bas. Échec et mat pour gagner — roque, prise en passant et promotion inclus !');
     scores(1); draw({}); await GC.sleep(1300);
     let guard=0;
     while(true){
-      if(++guard>600) return GC.gameOver('Match nul !','Partie interminable — égalité.');
+      if(++guard>600){ clearSave(); return GC.gameOver('Match nul !','Partie interminable — égalité.'); }
       const pIdx = st.turn===1?0:1;
       if(P[pIdx].ai) await aiTurn(pIdx);
       else { undoStack.push(snap()); const r=await humanTurn(pIdx);
@@ -255,9 +266,11 @@ CardShell({
           GC.combo('Coup annulé.'); scores(st.turn); draw({}); await GC.sleep(150); continue; } }
       const end=statusAfterMove();
       if(end){ scores(0); draw({}); if(inCheck(st)) GC.combo('Échec et mat !');
-        return GC.gameOver(end.title, end.text); }
+        clearSave();
+        const winnerName=(end.title.indexOf('mat')>=0)? names[st.turn===1?1:0] : null;
+        return GC.gameOver(end.title, end.text, winnerName); }
       if(inCheck(st)) GC.combo('Échec !');
-      scores(st.turn);
+      scores(st.turn); saveState();
       await GC.sleep(200);
     }
   }
