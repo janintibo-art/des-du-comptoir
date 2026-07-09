@@ -48,6 +48,11 @@ de cochons réglable (rapide/normale/officielle). Logique validée (terminaison,
 de nul (25 coups de dames). IA minimax alpha-bêta. Plateau et pions détourés (`www/dames/`),
 grille calée au pixel sur l'image. Moteur validé par simulation (conservation des pièces).
 
+## Puissance 4 🔴🟡
+**Puissance 4** (`p4.html`) : 7×6, jetons rouge/jaune, **IA minimax alpha-bêta** (imbattable par
+le hasard, gagne/bloque parfaitement), chute animée des jetons. En **réseau** aussi (`net-games6.js`).
+Plateau et jetons détourés (`www/p4/`), grille calée au pixel. Salon : **23 jeux**.
+
 ## UNO 🎴
 **UNO** (`uno.html`) : jeu complet (0-9, Passer, Inverser, +2, Jokers, +4), 2-4 joueurs contre
 l'IA ou à plusieurs, et **en réseau** (`net-games5.js`). 54 faces détourées de vos planches

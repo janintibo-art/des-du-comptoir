@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Puissance 4</title>
+<link rel="icon" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14140f">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+.p4-wrap{position:relative;width:100%;max-width:520px;margin:0 auto;aspect-ratio:1273/965}
+.p4-layer{position:absolute;inset:0}
+.p4-board{position:absolute;inset:0;z-index:2;background-image:url(p4/plateau.webp);background-size:contain;background-repeat:no-repeat;background-position:center;pointer-events:none;filter:drop-shadow(0 6px 16px rgba(0,0,0,.5))}
+.p4-token{position:absolute;transform:translate(-50%,-50%);z-index:1}
+.p4-token img{width:100%;display:block}
+.p4-cols{position:absolute;inset:0;z-index:3;display:flex}
+.p4-col{flex:1;cursor:pointer}
+.p4-col.play:hover{background:rgba(255,255,255,.10)}
+.p4-hint{position:absolute;top:2%;transform:translate(-50%,0);z-index:4;font-size:22px;pointer-events:none;filter:drop-shadow(0 1px 2px #000)}
+@keyframes p4drop{0%{top:-8%}60%{}100%{}}
+</style>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+const NoSkin={ buildSkinSelect(sel){ sel.style.display='none'; }, el(){ return document.createElement('span'); } };
+const COLS=7, ROWS=6;
+const GRID={left:0.1950, top:0.1513, stepx:0.1011, stepy:0.1180, rad:0.0359};
+function emptyBoard(){ return {cells:Array.from({length:ROWS},()=>new Array(COLS).fill(0)), heights:new Array(COLS).fill(0)}; }
+const canPlay=(b,c)=> b.heights[c]<ROWS;
+function play(b,c,p){ const r=b.heights[c]; b.cells[r][c]=p; b.heights[c]++; return r; }
+function undo(b,c){ b.heights[c]--; b.cells[b.heights[c]][c]=0; }
+function winAt(b,r,c,p){ const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(const [dr,dc] of dirs){ let cnt=1;
+    for(const s of [1,-1]){ let rr=r+dr*s,cc=c+dc*s;
+      while(rr>=0&&rr<ROWS&&cc>=0&&cc<COLS&&b.cells[rr][cc]===p){ cnt++; rr+=dr*s; cc+=dc*s; } }
+    if(cnt>=4) return true; } return false; }
+function winCells(b,p){ const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){ if(b.cells[r][c]!==p)continue;
+    for(const [dr,dc] of dirs){ const line=[[r,c]]; let rr=r+dr,cc=c+dc;
+      while(rr>=0&&rr<ROWS&&cc>=0&&cc<COLS&&b.cells[rr][cc]===p){ line.push([rr,cc]); rr+=dr; cc+=dc; }
+      if(line.length>=4) return line.slice(0,4); } }
+  return null; }
+const isDraw=b=> b.heights.every(h=>h===ROWS);
+function scoreWindow(w,p){ const o=-p; let cp=0,co=0,e=0;
+  for(const x of w){ if(x===p)cp++; else if(x===o)co++; else e++; }
+  if(cp===4)return 100000; if(co===4)return -100000;
+  let s=0; if(cp===3&&e===1)s+=50; else if(cp===2&&e===2)s+=10; if(co===3&&e===1)s-=80; else if(co===2&&e===2)s-=10; return s; }
+function evaluate(b,p){ let s=0;
+  for(let r=0;r<ROWS;r++) s+=(b.cells[r][3]===p?6:b.cells[r][3]===-p?-6:0);
+  const L=[];
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS-3;c++) L.push([b.cells[r][c],b.cells[r][c+1],b.cells[r][c+2],b.cells[r][c+3]]);
+  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS-3;r++) L.push([b.cells[r][c],b.cells[r+1][c],b.cells[r+2][c],b.cells[r+3][c]]);
+  for(let r=0;r<ROWS-3;r++)for(let c=0;c<COLS-3;c++) L.push([b.cells[r][c],b.cells[r+1][c+1],b.cells[r+2][c+2],b.cells[r+3][c+3]]);
+  for(let r=0;r<ROWS-3;r++)for(let c=3;c<COLS;c++) L.push([b.cells[r][c],b.cells[r+1][c-1],b.cells[r+2][c-2],b.cells[r+3][c-3]]);
+  for(const w of L) s+=scoreWindow(w,p); return s; }
+const ORDER=[3,2,4,1,5,0,6];
+function negamax(b,depth,alpha,beta,p,lastR,lastC){
+  if(lastC>=0 && winAt(b,lastR,lastC,-p)) return -100000-depth;
+  if(isDraw(b)) return 0; if(depth===0) return evaluate(b,p);
+  let best=-1e9;
+  for(const c of ORDER){ if(!canPlay(b,c))continue; const r=play(b,c,p);
+    const v=-negamax(b,depth-1,-beta,-alpha,-p,r,c); undo(b,c);
+    if(v>best)best=v; if(best>alpha)alpha=best; if(alpha>=beta)break; }
+  return best; }
+function pickAI(b,p,depth){ let best=ORDER.find(c=>canPlay(b,c)),bv=-1e9;
+  for(const c of ORDER){ if(!canPlay(b,c))continue; const r=play(b,c,p);
+    const v=-negamax(b,depth-1,-1e9,1e9,-p,r,c); undo(b,c);
+    if(v>bv){bv=v;best=c;} } return best; }
+const cellX=c=>(GRID.left+c*GRID.stepx)*100;
+const cellY=r=>(GRID.top+(ROWS-1-r)*GRID.stepy)*100;   // r=0 bas -> rangée basse
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+CardShell({
+  id:'p4', title:'PUISSANCE 4', minPlayers:2, maxPlayers:2, skinModule:NoSkin,
+  run: async GC => {
+    const P=GC.players, names=[P[0].name,P[1].name];
+    const humans=P.filter(p=>!p.ai).length;
+    const depth=GC.aiRisk<0.8?4:(GC.aiRisk>1.1?7:6);
+    let b=emptyBoard(), turn=1, winLine=null, hoverCol=-1, dropping=false;
+    const meColor=idx=> idx===0?1:-1;            // J1 rouge(+1), J2 jaune(-1)
+    const tokImg=p=> p>0?'p4/jeton-rouge.webp':'p4/jeton-jaune.webp';
+
+    const scores=()=>GC.scores([
+      {label:names[0]+' 🔴',value:'',active:turn===1},
+      {label:names[1]+' 🟡',value:'',active:turn===-1}]);
+    function draw(opts){ opts=opts||{};
+      const c=GC.center('');
+      const wrap=document.createElement('div'); wrap.className='p4-wrap';
+      const tokLayer=document.createElement('div'); tokLayer.className='p4-layer';
+      for(let col=0;col<COLS;col++) for(let r=0;r<b.heights[col];r++){
+        const t=document.createElement('div'); t.className='p4-token';
+        t.style.left=cellX(col)+'%'; t.style.top=cellY(r)+'%'; t.style.width=(GRID.rad*2*100)+'%';
+        const img=new Image(); img.src=tokImg(b.cells[r][col]); img.draggable=false; t.appendChild(img);
+        if(winLine && winLine.some(([wr,wc])=>wr===r&&wc===col)){ t.style.filter='drop-shadow(0 0 8px #fff) drop-shadow(0 0 14px var(--accent))'; }
+        tokLayer.appendChild(t);
+      }
+      if(opts.falling){ const {col,r,p}=opts.falling;
+        const t=document.createElement('div'); t.className='p4-token'; t.id='falling';
+        t.style.left=cellX(col)+'%'; t.style.top=(GRID.top*100 - 12)+'%'; t.style.width=(GRID.rad*2*100)+'%'; t.style.transition='top .28s cubic-bezier(.4,.6,.7,1)';
+        const img=new Image(); img.src=tokImg(p); t.appendChild(img); tokLayer.appendChild(t);
+      }
+      wrap.appendChild(tokLayer);
+      const board=document.createElement('div'); board.className='p4-board'; wrap.appendChild(board);
+      if(opts.hint>=0){ const h=document.createElement('div'); h.className='p4-hint'; h.style.left=cellX(opts.hint)+'%'; h.textContent='▼'; wrap.appendChild(h); }
+      if(opts.cols){ const cols=document.createElement('div'); cols.className='p4-cols';
+        for(let col=0;col<COLS;col++){ const cc=document.createElement('div'); cc.className='p4-col'+(canPlay(b,col)?' play':'');
+          if(canPlay(b,col)){ cc.addEventListener('click',()=>opts.onCol(col)); }
+          cols.appendChild(cc); }
+        wrap.appendChild(cols); }
+      c.appendChild(wrap);
+    }
+    async function dropToken(col,p){
+      const r=b.heights[col];
+      draw({falling:{col,r,p}}); await GC.sleep(20);
+      const el=document.getElementById('falling'); if(el){ el.style.top=cellY(r)+'%'; }
+      GC.play(); await GC.sleep(300);
+      play(b,col,p);
+      draw({});
+    }
+
+    GC.say('Alignez quatre jetons — horizontal, vertical ou diagonale. À vous de jouer !');
+    scores(); draw({}); await GC.sleep(1100);
+
+    while(true){
+      const pIdx = turn===1?0:1;
+      scores();
+      let col;
+      if(P[pIdx].ai){
+        draw({}); GC.say(P[pIdx].name+' réfléchit…'); await GC.sleep(450);
+        col=pickAI(b, turn, depth);
+        GC.combo(P[pIdx].name+' joue la colonne '+(col+1)+'.');
+      } else {
+        GC.say('À vous, '+P[pIdx].name+' '+(turn>0?'🔴':'🟡')+' — touchez une colonne.');
+        col=await new Promise(res=> draw({cols:true, onCol:res}));
+      }
+      await dropToken(col, turn);
+      const lastR=b.heights[col]-1;
+      if(winAt(b,lastR,col,turn)){ winLine=winCells(b,turn); scores(); draw({});
+        return GC.gameOver('Victoire de '+names[pIdx]+' !', names[pIdx]+' aligne quatre jetons ! 🎉', names[pIdx]); }
+      if(isDraw(b)){ draw({}); return GC.gameOver('Match nul !','Le plateau est plein, personne n\u2019aligne quatre.'); }
+      turn=-turn;
+      await GC.sleep(150);
+    }
+  }
+});
+</script>
+</body>
+</html>

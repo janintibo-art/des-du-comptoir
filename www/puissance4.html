@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Puissance 4</title>
+<link rel="icon" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14140f">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+#cMsg,#cCombo{display:none!important}
+.aw-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%) translateY(12px);max-width:92vw;background:rgba(20,20,16,.93);color:var(--cream);border:1px solid rgba(224,163,76,.5);border-radius:999px;padding:9px 18px;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60;text-align:center}
+.aw-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.aw-toast.strong{color:var(--accent);font-weight:bold;border-color:var(--accent)}
+.p4-turn{display:flex;align-items:center;gap:10px;font-size:15px;opacity:.9;margin-bottom:8px;justify-content:center}
+.p4-disc{width:22px;height:22px;border-radius:50%;display:inline-block;vertical-align:middle}
+.p4-disc.p1{background:radial-gradient(circle at 38% 32%,#ff6b6b,#d61f1f)}
+.p4-disc.p2{background:radial-gradient(circle at 38% 32%,#ffe07a,#e6b800)}
+.p4-wrap{position:relative;width:100%;max-width:480px;margin:0 auto;aspect-ratio:1273/965}
+.p4-board{position:absolute;inset:0;z-index:2;background-image:url(p4/plateau.webp);background-size:contain;background-repeat:no-repeat;background-position:center;pointer-events:none;filter:drop-shadow(0 6px 16px rgba(0,0,0,.5))}
+.p4-token{position:absolute;transform:translate(-50%,-50%);z-index:1}
+.p4-token img{width:100%;display:block}
+.p4-token.win img{filter:drop-shadow(0 0 8px #fff) drop-shadow(0 0 14px var(--accent))}
+.p4-token.drop{animation:p4drop .34s cubic-bezier(.3,1.2,.5,1)}
+@keyframes p4drop{0%{transform:translate(-50%,-450%)}70%{transform:translate(-50%,-42%)}100%{transform:translate(-50%,-50%)}}
+.p4-cols{position:absolute;inset:0;z-index:3;display:flex}
+.p4-col{flex:1;cursor:default}
+.p4-col.play{cursor:pointer}
+.p4-col.play:hover{background:rgba(255,255,255,.10)}
+</style>
+<script src="rules-data.js"></script>
+<script src="card-shell.js"></script>
+<script>
+'use strict';
+const NoSkin={ buildSkinSelect(sel){ sel.style.display='none'; }, el(){ return document.createElement('span'); } };
+const COLS=7, ROWS=6;
+const GRID={left:0.1950, top:0.1513, stepx:0.1011, stepy:0.1180, rad:0.0359};
+const cellX=c=>(GRID.left+c*GRID.stepx)*100;
+const cellY=r=>(GRID.top+(ROWS-1-r)*GRID.stepy)*100;
+const initP4=()=>Array.from({length:COLS},()=>[]);
+const canPlay=(b,c)=> c>=0&&c<COLS && b[c].length<ROWS;
+function play(b,c,p){ const nb=b.map(col=>col.slice()); nb[c].push(p); return nb; }
+const get=(b,c,r)=> (c>=0&&c<COLS&&r>=0&&r<b[c].length)? b[c][r] : 0;
+function winLine(b){ const dirs=[[1,0],[0,1],[1,1],[1,-1]];
+  for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){ const v=get(b,c,r); if(!v)continue;
+    for(const [dc,dr] of dirs){ let k=1; while(k<4 && get(b,c+dc*k,r+dr*k)===v)k++;
+      if(k===4){ const cells=[]; for(let i=0;i<4;i++)cells.push([c+dc*i,r+dr*i]); return {who:v,cells}; } } }
+  return null; }
+const full=b=> b.every(col=>col.length===ROWS);
+function evalWindow(cells,me){ let mine=0,opp=0,empty=0;
+  for(const v of cells){ if(v===me)mine++; else if(v===0)empty++; else opp++; }
+  if(mine&&opp) return 0;
+  if(mine===3&&empty===1) return 50; if(mine===2&&empty===2) return 10; if(mine===1&&empty===3) return 1;
+  if(opp===3&&empty===1) return -80; if(opp===2&&empty===2) return -12; if(opp===1&&empty===3) return -1;
+  return 0; }
+function score(b,me){ let s=0;
+  for(let r=0;r<b[3].length;r++){ if(b[3][r]===me) s+=6; else if(b[3][r]) s-=6; }
+  const dirs=[[1,0],[0,1],[1,1],[1,-1]];
+  for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++) for(const [dc,dr] of dirs){
+    if(c+dc*3<0||c+dc*3>=COLS||r+dr*3<0||r+dr*3>=ROWS) continue;
+    s+=evalWindow([get(b,c,r),get(b,c+dc,r+dr),get(b,c+dc*2,r+dr*2),get(b,c+dc*3,r+dr*3)],me); }
+  return s; }
+function nega(b,depth,alpha,beta,cur,ply){ if(winLine(b)) return -100000+ply; if(full(b)) return 0;
+  if(depth===0) return score(b,cur);
+  const order=[3,2,4,1,5,0,6].filter(c=>canPlay(b,c)); const other=cur===1?2:1; let best=-1e9;
+  for(const c of order){ const v=-nega(play(b,c,cur),depth-1,-beta,-alpha,other,ply+1);
+    if(v>best)best=v; if(best>alpha)alpha=best; if(alpha>=beta)break; } return best; }
+function pickAI(b,cur,depth){ const order=[3,2,4,1,5,0,6].filter(c=>canPlay(b,c)); const other=cur===1?2:1;
+  let best=order[0],bv=-1e9; for(const c of order){ const v=-nega(play(b,c,cur),depth-1,-1e9,1e9,other,1); if(v>bv){bv=v;best=c;} } return best; }
+const tokFile=p=> p===1?'p4/jeton-rouge.webp':'p4/jeton-jaune.webp';
+</script>
+</head>
+<body class="menu">
+<script>
+'use strict';
+CardShell({
+  id:'puissance4', title:'PUISSANCE 4', minPlayers:2, maxPlayers:2, skinModule:NoSkin,
+  run: async GC => {
+    const P=GC.players, names=[P[0].name,P[1].name];
+    const humans=P.filter(p=>!p.ai).length;
+    const depth=GC.aiRisk<0.8?4:(GC.aiRisk>1.1?8:6);
+    let b=initP4(), turn=1, lastDrop=null;
+    (function(){ let el=document.getElementById('bwToast');
+      if(!el){ el=document.createElement('div'); el.id='bwToast'; el.className='aw-toast'; document.body.appendChild(el); }
+      let tmr=null; const show=(t,strong)=>{ if(!t){el.classList.remove('show');return;}
+        el.textContent=t; el.classList.toggle('strong',!!strong); el.classList.add('show');
+        clearTimeout(tmr); tmr=setTimeout(()=>el.classList.remove('show'), strong?2400:2600); };
+      const oSay=GC.say,oCombo=GC.combo; GC.say=t=>{oSay&&oSay(t);show(t,false);}; GC.combo=t=>{oCombo&&oCombo(t);show(t,true);};
+    })();
+    const RKEY='gc-resume-puissance4';
+    const saveState=()=>{ try{ localStorage.setItem(RKEY, JSON.stringify({names, b, turn})); }catch(e){} };
+    const clearSave=()=>{ try{ localStorage.removeItem(RKEY); }catch(e){} };
+    const scores=()=>GC.scores([{label:names[0]+' 🔴',value:'',active:turn===1},{label:names[1]+' 🟡',value:'',active:turn===2}]);
+
+    function draw(opts){ opts=opts||{};
+      const c=GC.center('');
+      const outer=document.createElement('div');
+      const tinfo=document.createElement('div'); tinfo.className='p4-turn';
+      tinfo.innerHTML='Au tour de <span class="p4-disc p'+turn+'"></span> <b>'+names[turn-1]+'</b>';
+      outer.appendChild(tinfo);
+      const wrap=document.createElement('div'); wrap.className='p4-wrap';
+      const layer=document.createElement('div'); layer.style.cssText='position:absolute;inset:0';
+      const winSet=new Set((opts.win||[]).map(([c2,r2])=>c2+','+r2));
+      for(let c2=0;c2<COLS;c2++) for(let r2=0;r2<b[c2].length;r2++){
+        const tok=document.createElement('div'); tok.className='p4-token'
+          +(winSet.has(c2+','+r2)?' win':'')+((opts.dropCol===c2&&opts.dropRow===r2)?' drop':'');
+        tok.style.left=cellX(c2)+'%'; tok.style.top=cellY(r2)+'%'; tok.style.width=(GRID.rad*2*100)+'%';
+        const img=new Image(); img.src=tokFile(b[c2][r2]); tok.appendChild(img); layer.appendChild(tok);
+      }
+      wrap.appendChild(layer);
+      const board=document.createElement('div'); board.className='p4-board'; wrap.appendChild(board);
+      const cols=document.createElement('div'); cols.className='p4-cols';
+      for(let c2=0;c2<COLS;c2++){ const col=document.createElement('div');
+        col.className='p4-col'+((opts.playable&&canPlay(b,c2))?' play':'');
+        if(opts.playable&&canPlay(b,c2)&&opts.onDrop){ const cx=c2; col.addEventListener('click',()=>opts.onDrop(cx)); }
+        cols.appendChild(col); }
+      wrap.appendChild(cols); outer.appendChild(wrap); c.appendChild(outer);
+    }
+
+    try{ const sv=JSON.parse(localStorage.getItem(RKEY)||'null');
+      if(sv && Array.isArray(sv.names) && sv.names.join('|')===names.join('|') && Array.isArray(sv.b)){
+        b=sv.b.map(col=>col.slice()); turn=sv.turn; draw({}); GC.say('Une partie est en cours.');
+        const a=await GC.ask([{id:'resume',label:'▶ Reprendre'},{id:'new',label:'🔄 Nouvelle'}]); GC.setButtons([]);
+        if(a!=='resume'){ b=initP4(); turn=1; clearSave(); }
+      } }catch(e){}
+
+    async function drop(c,who){ const r=b[c].length; b=play(b,c,who);
+      draw({dropCol:c, dropRow:r}); GC.play(); await GC.sleep(340); }
+    function endCheck(){ const wl=winLine(b);
+      if(wl){ draw({win:wl.cells}); clearSave();
+        return GC.gameOver('Victoire de '+names[wl.who-1]+' !', names[wl.who-1]+' aligne quatre jetons ! 🎉', names[wl.who-1]); }
+      if(full(b)){ draw({}); clearSave(); return GC.gameOver('Match nul !','Grille pleine — égalité.'); }
+      return null; }
+
+    GC.say('Alignez quatre jetons — en ligne, en colonne ou en diagonale !');
+    scores(); draw({}); await GC.sleep(900);
+    while(true){
+      const pIdx=turn-1, player=P[pIdx]; scores();
+      if(player.ai){ draw({}); GC.say(player.name+' réfléchit…'); await GC.sleep(120); await new Promise(r=>setTimeout(r,20));
+        const c=pickAI(b,turn,depth); await drop(c,turn); }
+      else { GC.say('À vous, '+names[pIdx]+' — touchez une colonne.');
+        const c=await new Promise(res=> draw({playable:true, onDrop:res})); await drop(c,turn); }
+      const end=endCheck(); if(end) return end;
+      turn=turn===1?2:1; saveState(); await GC.sleep(120);
+    }
+  }
+});
+</script>
+</body>
+</html>
