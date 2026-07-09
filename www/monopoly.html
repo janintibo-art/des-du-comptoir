@@ -166,17 +166,17 @@ CardShell({
       let tmr=null; const show=(t,strong)=>{ if(!t){el.classList.remove('show');return;} el.textContent=t; el.classList.toggle('strong',!!strong); el.classList.add('show'); clearTimeout(tmr); tmr=setTimeout(()=>el.classList.remove('show'), strong?2400:2600); };
       const oSay=GC.say,oCombo=GC.combo; GC.say=t=>{oSay&&oSay(t);show(t,false);}; GC.combo=t=>{oCombo&&oCombo(t);show(t,true);}; })();
     const pl=P.map((p,i)=>({pos:0,name:p.name,pion:TH.pions[i%TH.pions.length],money:START_MONEY,alive:true,jail:0,getout:0,col:PLAYER_COL[i%5]}));
-    const owner=new Array(NB).fill(-1), houses=new Array(NB).fill(0);
+    const owner=new Array(NB).fill(-1), houses=new Array(NB).fill(0), mortgaged=new Array(NB).fill(false);
     let turn=0; let chanceDeck=shuffle(CHANCE.slice()), chestDeck=shuffle(CHEST.slice());
     const drawCard=deck=>{ if(!deck.length) deck.push(...shuffle((deck===chanceDeck?CHANCE:CHEST).slice())); return deck.shift(); };
     const railIdx=[],utilIdx=[]; LAYOUT.forEach((c,i)=>{ if(c.t==='rail')railIdx.push(i); if(c.t==='utility')utilIdx.push(i); });
     function ownsAllGroup(pi,g){ if(!g) return false; for(let i=0;i<NB;i++){ if(LAYOUT[i].g===g && owner[i]!==pi) return false; } return true; }
-    function rentOf(i,dice){ const c=LAYOUT[i], o=owner[i]; if(o<0) return 0;
+    function rentOf(i,dice){ const c=LAYOUT[i], o=owner[i]; if(o<0||mortgaged[i]) return 0;
       if(c.t==='rail'){ const cnt=railIdx.filter(x=>owner[x]===o).length; return c.r[Math.max(0,cnt-1)]; }
       if(c.t==='utility'){ const cnt=utilIdx.filter(x=>owner[x]===o).length; return dice*(cnt>=2?10:4); }
       if(houses[i]>0) return c.r[Math.min(5,houses[i])];
       let base=c.r[0]; if(ownsAllGroup(o,c.g)) base*=2; return base; }
-    function canBuild(pi,i){ const c=LAYOUT[i]; return c.t==='street'&&owner[i]===pi&&ownsAllGroup(pi,c.g)&&houses[i]<5&&pl[pi].money>=c.hc; }
+    function canBuild(pi,i){ const c=LAYOUT[i]; return c.t==='street'&&owner[i]===pi&&!mortgaged[i]&&ownsAllGroup(pi,c.g)&&houses[i]<5&&pl[pi].money>=c.hc; }
 
     function bar(){ const b=document.createElement('div'); b.className='mo-players';
       pl.forEach((pw,i)=>{ if(!pw.alive)return; const d=document.createElement('div'); d.className='pp'+(i===turn?' turn':'');
@@ -186,7 +186,7 @@ CardShell({
       const bd=document.createElement('div'); bd.className='mo-board'; bd.style.backgroundImage='url('+TH.board+')';
       for(let i=0;i<NB;i++){ if(owner[i]>=0){ const p=cellPos(i); const m=document.createElement('div');
         m.style.cssText='position:absolute;width:12px;height:12px;border-radius:50%;border:2px solid #fff;z-index:2;transform:translate(-50%,-50%);background:'+pl[owner[i]].col;
-        m.style.left=(p.x*100)+'%'; m.style.top=(p.y*100)+'%'; bd.appendChild(m); } }
+        m.style.left=(p.x*100)+'%'; m.style.top=(p.y*100)+'%'; if(mortgaged[i]) m.style.opacity='0.35'; bd.appendChild(m); } }
       for(let i=0;i<NB;i++){ if(houses[i]>0){ const p=cellPos(i); const n=houses[i]===5?1:houses[i]; const src=houses[i]===5?TH.hotel:TH.maison;
         for(let h=0;h<n;h++){ const hi=new Image(); hi.src=src; hi.style.cssText='position:absolute;height:3%;z-index:2;transform:translate(-50%,-50%);filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))';
           hi.style.left=(p.x*100+(h-(n-1)/2)*2.4)+'%'; hi.style.top=(p.y*100-5.5)+'%'; bd.appendChild(hi); } } }
@@ -213,7 +213,13 @@ CardShell({
       const lab=['Terrain seul','1 maison','2 maisons','3 maisons','4 maisons','HÔTEL'];
       return c.r.map((v,k)=>lab[k]+' : <b>'+v+CUR+'</b>').join('<br>')+'<br><i>Hypothèque : '+c.m+CUR+'</i>'; }
 
-    function bankruptCheck(pi){ if(pl[pi].money<0){ pl[pi].alive=false; for(let i=0;i<NB;i++) if(owner[i]===pi){owner[i]=-1;houses[i]=0;} GC.combo(pl[pi].name+' est en faillite ! 💸'); return true; } return false; }
+    function raiseCashAuto(pi){ // revendre maisons (moitié) puis hypothéquer
+      for(let i=0;i<NB && pl[pi].money<0;i++){ while(houses[i]>0 && pl[pi].money<0){ houses[i]--; pl[pi].money+=Math.floor(LAYOUT[i].hc/2); } }
+      const props=[]; for(let i=0;i<NB;i++) if(owner[i]===pi && !mortgaged[i] && houses[i]===0 && LAYOUT[i].m) props.push(i);
+      props.sort((a,b)=>LAYOUT[b].m-LAYOUT[a].m);
+      for(const i of props){ if(pl[pi].money>=0) break; mortgaged[i]=true; pl[pi].money+=LAYOUT[i].m; GC.combo(pl[pi].name+' hypothèque '+nameOf(i,theme)+'.'); } }
+    function bankruptCheck(pi){ if(pl[pi].money<0) raiseCashAuto(pi);
+      if(pl[pi].money<0){ pl[pi].alive=false; for(let i=0;i<NB;i++) if(owner[i]===pi){owner[i]=-1;houses[i]=0;mortgaged[i]=false;} GC.combo(pl[pi].name+' est en faillite ! 💸'); return true; } return false; }
 
     async function resolveLanding(pi,dice,fromCard){ const i=pl[pi].pos, c=LAYOUT[i], ty=TY[c.t];
       if(c.t==='go'){ await bigCard({band:'DÉPART',bandColor:'#2e8b3d',name:nameOf(i,theme),sub:'Vous touchez 200'+CUR+' à chaque passage.'}); return; }
@@ -254,6 +260,17 @@ CardShell({
         opts.push({id:'done',label:'✅ Terminé',primary:1});
         GC.say(pl[pi].name+' — construire ?'); const a=await GC.ask(opts); GC.setButtons([]);
         if(a==='done') return; const i=+a; pl[pi].money-=LAYOUT[i].hc; houses[i]++; GC.combo(pl[pi].name+(houses[i]===5?' bâtit un HÔTEL !':' bâtit une maison !')); board(); await GC.sleep(400); } }
+    async function bankPhase(pi){ while(true){ const opts=[];
+        for(let i=0;i<NB;i++){ if(owner[i]!==pi) continue;
+          if(!mortgaged[i] && houses[i]===0 && LAYOUT[i].m) opts.push({id:'m'+i,label:'🏦 Hypothéquer '+nameOf(i,theme)+' (+'+LAYOUT[i].m+CUR+')'});
+          else if(mortgaged[i]) opts.push({id:'u'+i,label:'💵 Lever '+nameOf(i,theme)+' (-'+Math.ceil(LAYOUT[i].m*1.1)+CUR+')'}); }
+        if(!opts.length){ GC.combo('Aucune propriété à gérer.'); await GC.sleep(500); return; }
+        opts.push({id:'done',label:'✅ Terminé',primary:1});
+        GC.say(pl[pi].name+' — gérer les hypothèques'); const a=await GC.ask(opts); GC.setButtons([]);
+        if(a==='done') return; const i=+a.slice(1);
+        if(a[0]==='m'){ mortgaged[i]=true; pl[pi].money+=LAYOUT[i].m; GC.combo('Hypothéquée.'); }
+        else { const cost=Math.ceil(LAYOUT[i].m*1.1); if(pl[pi].money>=cost){ mortgaged[i]=false; pl[pi].money-=cost; GC.combo('Levée.'); } else { GC.combo('Pas assez pour lever.'); } }
+        board(); await GC.sleep(300); } }
     const aliveCount=()=>pl.filter(p=>p.alive).length;
 
     board(); GC.say('Bienvenue — '+TH.title+' ! Chacun démarre avec '+START_MONEY+CUR+'.'); await GC.sleep(900);
@@ -264,8 +281,9 @@ CardShell({
         else { pw.jail--; if(pw.jail===0){ pw.money-=50; GC.combo(pw.name+' paie 50'+CUR+' et sort.'); bankruptCheck(turn); if(pw.alive){ await stepMove(turn,d1+d2); await resolveLanding(turn,d1+d2,false);} } else { GC.combo('Pas de double… ('+pw.jail+' essai'+(pw.jail>1?'s':'')+')'); await GC.sleep(700);} }
         turn=(turn+1)%N; continue; }
       const canB=(()=>{ for(let i=0;i<NB;i++) if(canBuild(turn,i)) return true; return false; })();
-      GC.say('À '+pw.name+' de jouer.'); const acts=[{id:'roll',label:'🎲🎲 Lancer les dés',primary:true}]; if(canB) acts.push({id:'build',label:'🏠 Construire'});
-      const act=await GC.ask(acts); GC.setButtons([]); if(act==='build'){ await buildPhase(turn); continue; }
+      GC.say('À '+pw.name+' de jouer.'); const ownsAny=(()=>{ for(let i=0;i<NB;i++) if(owner[i]===turn) return true; return false; })();
+      const acts=[{id:'roll',label:'🎲🎲 Lancer les dés',primary:true}]; if(canB) acts.push({id:'build',label:'🏠 Construire'}); if(ownsAny) acts.push({id:'bank',label:'🏦 Hypothèques'});
+      const act=await GC.ask(acts); GC.setButtons([]); if(act==='build'){ await buildPhase(turn); continue; } if(act==='bank'){ await bankPhase(turn); continue; }
       const {d1,d2}=await rollDice(); const tot=d1+d2; GC.combo(pw.name+' fait '+d1+' + '+d2+' = '+tot+(d1===d2?' (double !)':'')+'.'); await GC.sleep(450);
       await stepMove(turn,tot); await resolveLanding(turn,tot,false);
       if(!pw.alive && aliveCount()<=1) break;
