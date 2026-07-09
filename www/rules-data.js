@@ -323,4 +323,15 @@ et si le roi ne traverse pas de case attaqu\u00e9e), la <b>prise en passant</b>,
 <p><b>\u00c9chec :</b> un roi attaqu\u00e9 doit \u00eatre mis \u00e0 l'abri imm\u00e9diatement \u2014 le jeu
 ne propose que les coups l\u00e9gaux. <b>Mat</b> = victoire ; <b>pat</b> (aucun coup l\u00e9gal sans
 \u00eatre en \u00e9chec), 50 coups sans prise ni pion, ou triple r\u00e9p\u00e9tition = <b>nulle</b>.</p>`},
+uno: { title:'UNO', html:`
+<p>2 \u00e0 4 joueurs, 7 cartes chacun. But : <b>se d\u00e9barrasser de toutes ses cartes</b>.</p>
+<p><b>Jouer.</b> \u00c0 votre tour, posez une carte de <b>m\u00eame couleur</b> ou de <b>m\u00eame
+valeur</b> que celle du dessus. Sinon, <b>piochez</b> : si la carte pioch\u00e9e est jouable, vous
+pouvez la poser, sinon le tour passe.</p>
+<p><b>Cartes sp\u00e9ciales :</b> <b>Passer</b> (⊘) saute le joueur suivant ; <b>Inverser</b> (↯)
+change le sens (\u00e0 2, elle fait rejouer) ; <b>+2</b> fait piocher deux cartes au suivant, qui
+passe son tour.</p>
+<p><b>Jokers (noirs) :</b> le <b>Joker</b> se joue sur n'importe quoi et vous choisissez la couleur ;
+le <b>+4</b> fait en plus piocher <b>quatre</b> cartes au suivant.</p>
+<p>Le premier joueur sans carte gagne la manche.</p>`},
 };

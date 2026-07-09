@@ -48,6 +48,11 @@ de cochons réglable (rapide/normale/officielle). Logique validée (terminaison,
 de nul (25 coups de dames). IA minimax alpha-bêta. Plateau et pions détourés (`www/dames/`),
 grille calée au pixel sur l'image. Moteur validé par simulation (conservation des pièces).
 
+## UNO 🎴
+**UNO** (`uno.html`) : jeu complet (0-9, Passer, Inverser, +2, Jokers, +4), 2-4 joueurs contre
+l'IA ou à plusieurs, et **en réseau** (`net-games5.js`). 54 faces détourées de vos planches
+(`www/uno/`). Moteur validé (108 cartes conservées, terminaison sur 24 000 parties). Salon : **22 jeux**.
+
 ## Réglages & Mexico réseau ⚙️
 Écran **Réglages** (`reglages.html`) : interrupteurs Sons (`gc-sound`) et Vibrations (`gc-vibrate`),
 test de vibration, bouton de mise à jour de l'app (PWA). Le **Mexico** (bluff aux dés) est désormais
