@@ -1,7 +1,55 @@
 # Les Dés du Comptoir 🎲
 
-Douze jeux de dés traditionnels en 3D (Babylon.js + physique Cannon.js), ambiance
-bistrot, jouables dans le navigateur et empaquetés en APK Android via GitHub Actions.
+**34 jeux de comptoir** — dés en 3D, cartes, dominos, Awalé, dames, échecs, UNO et Puissance 4 —
+jouables **dans le navigateur**, **installables** (appli hors-ligne) et jouables **à plusieurs téléphones**.
+Ambiance bistrot, code ouvert.
+
+## 🎮 Comment jouer
+
+- **En ligne, tout de suite** : ouvrez le site (GitHub Pages) — rien à installer.
+- **Installer l'appli** : sur le site, touchez « 📲 Installer l'appli » (ou « Ajouter à l'écran d'accueil »).
+  Une fois installée, elle **fonctionne hors connexion**.
+- **À plusieurs téléphones** (Salon 🌐) : un joueur crée une table, partage un **code à 4 lettres**,
+  les autres le tapent. Nouveau **mode Table** : une tablette au centre affiche le plateau commun,
+  chacun garde sa main privée sur son téléphone.
+
+## 📶 Hors-ligne : ce qui marche sans Internet
+
+| Mode | Hors-ligne ? |
+|---|---|
+| Solo (contre l'ordinateur) | ✅ Oui |
+| À un seul téléphone (passe-téléphone) | ✅ Oui |
+| Mode **Table local** (une tablette + joueurs sur le **même Wi-Fi**… voir note) | ⚠️ Voir ci-dessous |
+| Multi-téléphones (appareils différents) | ❌ A besoin d'un peu d'Internet pour que les appareils **se trouvent** |
+
+> **Pourquoi ?** Une page web (même en appli) ne peut pas, pour des raisons de sécurité du navigateur,
+> ouvrir un réseau **Bluetooth/Wi-Fi Direct** entre téléphones. La connexion multi utilise WebRTC :
+> les données passent en direct entre les téléphones, mais un petit service en ligne sert **uniquement**
+> à ce qu'ils se découvrent (très peu de données). Le solo et le mode Table **local** n'en ont pas besoin.
+> Une vraie connexion 100 % hors-ligne entre téléphones nécessiterait une brique **native** (Wi-Fi Direct /
+> Nearby) — c'est un chantier prévu plus tard.
+
+## 📱 L'application Android (APK)
+
+L'APK est une **coquille WebView** : elle embarque tout le jeu et le sert depuis une origine locale sûre,
+donc **le solo et le mode Table local marchent entièrement hors-ligne**. Elle a les **mêmes possibilités
+de connexion** que la version web (le multi entre appareils différents demande un peu d'Internet).
+
+- **Construction automatique** : à chaque `push` sur `main`, GitHub Actions build l'APK
+  (`.github/workflows/build-apk.yml`) et le publie en **Release `latest`**.
+- **Partager l'appli** : l'APK peut se partager lui-même (bouton relié à `window.AndroidApp.shareApk()`).
+- Permission demandée : **INTERNET** uniquement.
+
+> **Pour les joueurs : aucune installation compliquée.** On installe simplement l'APK (ou on ouvre le
+> lien web) et on joue. **Termux n'est pas nécessaire** : c'est seulement une commodité *optionnelle*
+> pour le développeur qui veut publier depuis un téléphone (voir `TERMUX.md`).
+
+## 📜 Licence
+
+Code sous licence **MIT** (voir `LICENSE`). Les images fournies par l'auteur peuvent avoir leurs propres
+conditions. Contributions bienvenues !
+
+---
 
 ## Les jeux
 | Jeu | Dés | Joueurs | En bref |
@@ -142,5 +190,7 @@ choisi en jeu, indépendamment sur chaque téléphone.
   `des-du-comptoir-apk` dans l'onglet Actions).
 
 ## Construire l'APK
-Poussez sur GitHub : l'APK de debug est produit automatiquement par Actions.
-Voir `TERMUX.md` pour tout faire depuis un téléphone Android.
+Poussez sur `main` : GitHub Actions construit l'APK et le publie en **Release `latest`**
+(lien stable à partager). Rien à installer sur votre machine.
+`TERMUX.md` explique comment tout faire depuis un téléphone Android — **optionnel**, réservé au
+développeur ; **les joueurs n'en ont pas besoin**.

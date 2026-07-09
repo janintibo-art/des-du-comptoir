@@ -11,6 +11,8 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.view.WindowManager;
+import android.content.ActivityNotFoundException;
 import androidx.core.content.FileProvider;
 import androidx.webkit.WebViewAssetLoader;
 import java.io.File;
@@ -55,7 +57,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         webView = new WebView(this);
+        webView.setBackgroundColor(0xFF14140F);
 
         final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
                 .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
@@ -65,6 +69,17 @@ public class MainActivity extends Activity {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 return loader.shouldInterceptRequest(request.getUrl());
+            }
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                String url = request.getUrl().toString();
+                // La navigation interne du jeu passe par l'origine locale sécurisée :
+                if (url.startsWith("https://appassets.androidplatform.net/")) return false;
+                // Tout lien externe (http, mailto, tel...) s'ouvre dans l'app appropriée :
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, request.getUrl()));
+                } catch (ActivityNotFoundException e) { /* ignoré */ }
+                return true;
             }
         });
 

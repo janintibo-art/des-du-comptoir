@@ -159,6 +159,9 @@ button.primary{font-size:16px;padding:11px 22px}
 #vGame.is-table #ghand{display:none}
 #vGame.is-table #gcenter{transform:scale(1.04);transform-origin:top center}
 #vGame.is-table #gbtns{display:none}
+.netstatus{margin:10px 0;padding:10px 12px;border-radius:12px;font-size:13.5px;line-height:1.5}
+.netstatus.on{background:rgba(58,166,58,.12);border:1px solid rgba(58,166,58,.4)}
+.netstatus.off{background:rgba(224,120,80,.14);border:1px solid rgba(224,120,80,.5)}
 </style>
 </head>
 <body class="menu">
@@ -180,6 +183,7 @@ button.primary{font-size:16px;padding:11px 22px}
       <input id="jCode" class="big code" maxlength="4" placeholder="CODE" autocapitalize="characters">
       <button class="primary" id="btnJoin">Rejoindre</button></div>
     <div id="homeWarn" class="warn"></div>
+    <div id="netStatus" class="netstatus"></div>
     <p class="muted">Une connexion Internet sert à se trouver ; le jeu passe ensuite en direct
     de téléphone à téléphone. Idéalement, tout le monde sur le même Wi-Fi.</p>
   </div>
@@ -237,6 +241,14 @@ function buildGamePick(){ const box=$('gamepick'); box.innerHTML='';
     lab.innerHTML='<input type="radio" name="game" value="'+g.id+'"'+(g.id===pickedGameId?' checked':'')+'> <b>'+g.label+'</b> <small style="opacity:.6">('+g.minP+'-'+g.maxP+' j.)</small>';
     lab.querySelector('input').addEventListener('change',()=>{ pickedGameId=g.id; [...box.children].forEach(c=>c.classList.remove('sel')); lab.classList.add('sel'); updateStart(gamePlayers().length); });
     box.appendChild(lab); }); }
+
+(function(){ const el=document.getElementById('netStatus'); if(!el) return;
+  const upd=()=>{ if(navigator.onLine){ el.className='netstatus on';
+      el.innerHTML='🟢 En ligne — vous pouvez créer ou rejoindre une table multi-téléphones.'; }
+    else { el.className='netstatus off';
+      el.innerHTML='🔴 Hors ligne — le multi-téléphones a besoin d\u2019un peu d\u2019Internet pour que les appareils se trouvent.<br>👉 Le <b>solo</b>, le <b>passe-téléphone</b> et le <b>mode Table local</b> fonctionnent sans connexion.'; } };
+  upd(); window.addEventListener('online',upd); window.addEventListener('offline',upd);
+})();
 
 $('btnHost').addEventListener('click',()=>{
   const name=$('hName').value.trim(); if(!name){ $('homeWarn').textContent='Entrez votre nom.'; return; }
