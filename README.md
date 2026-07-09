@@ -74,7 +74,7 @@ se trouver, puis les échanges sont directs entre téléphones.
 
 Le Salon utilise un **cadre réseau générique** (`www/net-games.js`) : chaque jeu est un
 module `{deal, view, apply, isOver, render}` avec l'hôte pour autorité. L'hôte choisit le
-jeu dans le salon. Jeux en réseau (**16**) : **8 américain, 8 loco, Président, Pouilleux, Menteur, Scopa, Bataille, Domino, Matador, Tout-Cinq, Awalé, Awalé 2-3-4, Kalah, Dames, Échecs, Cochon troué** (`net-games.js` + `net-games2.js`) ; les autres
+jeu dans le salon. Jeux en réseau (**20** — tous les jeux de cartes, dominos et plateaux) : **8 américain, 8 loco, Président, Pouilleux, Menteur, Scopa, Bataille, Dame de pique, Tarot, Rami, Domino, Matador, Tout-Cinq, Train mexicain, Awalé, Awalé 2-3-4, Kalah, Dames, Échecs, Cochon troué** (`net-games.js` + `net-games2.js` + `net-games3.js`) ; les 12 jeux de dés purs (tout y est public)
 se branchent sur le même patron. Reducers validés hors-ligne (12 000 parties simulées).
 
 Le fichier `www/net.js` (couche réseau, hôte = autorité) et `www/cards.js` (paquets de

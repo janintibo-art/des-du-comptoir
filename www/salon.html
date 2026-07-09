@@ -13,6 +13,7 @@
 <script src="awale.js"></script>
 <script src="net-games.js"></script>
 <script src="net-games2.js"></script>
+<script src="net-games3.js"></script>
 <style>
 .wrap{max-width:560px;margin:0 auto;padding:20px 14px 40px;text-align:center}
 .wrap h1{color:var(--accent);letter-spacing:.13em;margin:14px 0 6px}
@@ -98,6 +99,26 @@ button.primary{font-size:16px;padding:11px 22px}
 .cochon-hole.exit{box-shadow:inset 0 0 0 3px rgba(20,20,16,.6);background:radial-gradient(circle,#1a1712 55%,transparent 70%)}
 .ndie{width:64px;height:64px;border-radius:14%;background:#f7f2e6;border:1px solid #b9b09b;position:relative;box-shadow:0 4px 10px rgba(0,0,0,.4)}
 .npip{position:absolute;width:18%;height:18%;border-radius:50%;background:#26221c;transform:translate(-50%,-50%)}
+
+/* ---- lot 3 : plis, trains, rami ---- */
+.pcard.sel,.card.sel{transform:translateY(-12px);outline:4px solid var(--accent);outline-offset:-3px}
+.trick{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:8px 0}
+.trick .slot{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px;border-radius:10px}
+.trick .slot.win{background:rgba(224,163,76,.16);box-shadow:0 0 0 2px rgba(224,163,76,.5)}
+.trick .nm{font-size:11.5px;opacity:.75}
+.hub{text-align:center;font-size:13px;opacity:.8;margin-bottom:6px}
+.trains{display:flex;flex-direction:column;gap:7px;width:100%}
+.train{display:flex;align-items:center;gap:8px;background:rgba(20,20,16,.55);border:1px solid rgba(242,232,213,.14);border-radius:12px;padding:6px 8px}
+.train.mine{border-color:rgba(224,163,76,.45)}
+.train.mex{border-style:dashed}
+.train.target{cursor:pointer;box-shadow:0 0 0 3px var(--accent),0 0 14px 2px rgba(224,163,76,.5)}
+.train .tlabel{min-width:86px;font-size:12.5px;opacity:.85}
+.train .tend{font-weight:bold;color:var(--accent);min-width:20px;text-align:center}
+.train .ttiles{display:flex;gap:4px;overflow-x:auto;flex:1;padding:2px 0}
+.train .empty{opacity:.4;font-size:12px}
+.melds{display:flex;flex-direction:column;gap:6px;margin-top:10px;align-items:center}
+.meld{display:flex;gap:4px;background:rgba(20,20,16,.45);border-radius:10px;padding:5px 7px}
+.meld .pcard,.trick .pcard{transform:scale(.86);transform-origin:center}
 </style>
 </head>
 <body class="menu">
@@ -231,7 +252,12 @@ function setupSkin(){ const sel=$('gskin'); sel.style.display='none'; sel.innerH
   const fam=mod.family || (['domino','matador'].includes(mod.id)?'domino':'cards');
   if(fam==='domino'&&window.Dominos){ sel.style.display=''; Dominos.buildSkinSelect(sel,()=>{}); }
   else if(fam==='cards'&&window.Cards){ sel.style.display=''; Cards.buildSkinSelect(sel,()=>{}); }
-  else if(fam==='awale'&&window.Awale){ sel.style.display=''; Awale.buildSkinSelect(sel,()=>{}); } }
+  else if(fam==='awale'&&window.Awale){ sel.style.display=''; Awale.buildSkinSelect(sel,()=>{}); }
+  else if(fam==='tarot'&&window.Cards){ sel.style.display=''; Cards.buildSkinSelect(sel,()=>{});
+    [...sel.options].forEach(o=>{ const sk=Cards.SKINS.find(k=>k.id===o.value);
+      if(!sk||!sk.tarot){ o.disabled=true; o.textContent='🂠 '+o.textContent; } });
+    const cur=Cards.SKINS.find(k=>k.id===Cards.skin());
+    if(!cur||!cur.tarot){ sel.value='taverne'; sel.dispatchEvent(new Event('change')); } } }
 
 function showEnd(text,host){ $('gsay').textContent=''; $('gbtns').innerHTML=''; $('gpick').innerHTML=''; $('ghand').innerHTML='';
   $('endTitle').textContent=text.replace(/<[^>]*>/g,' '); $('endBox').style.display='block';

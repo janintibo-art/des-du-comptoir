@@ -117,9 +117,10 @@ le saisissent pour rejoindre. Une connexion Internet est n\u00e9cessaire pour se
 puis les t\u00e9l\u00e9phones communiquent en direct (id\u00e9alement sur le m\u00eame Wi-Fi ou en
 partage de connexion).</p>
 <p>L'h\u00f4te <b>choisit le jeu</b> dans le salon puis lance la partie. En r\u00e9seau :
-<b>16 jeux</b> : 8 am\u00e9ricain, 8 loco, Pr\u00e9sident, Pouilleux, Menteur, Scopa,
-Bataille, Domino, Matador, Tout-Cinq, Awal\u00e9 (et 2-3-4), Kalah, Dames, \u00c9checs et
-Cochon trou\u00e9 ; d'autres suivront.</p>
+<b>20 jeux</b> : 8 am\u00e9ricain, 8 loco, Pr\u00e9sident, Pouilleux, Menteur, Scopa,
+Bataille, Dame de pique, Tarot, Rami, Domino, Matador, Tout-Cinq, Train mexicain,
+Awal\u00e9 (et 2-3-4), Kalah, Dames, \u00c9checs et Cochon trou\u00e9 \u2014 soit tous les jeux
+de cartes, de dominos et de plateau du comptoir !</p>
 <p>Pour offrir le jeu \u00e0 un ami : bouton <b>\ud83d\udce4 Partager l'app</b> sur le menu — l'APK
 part par Bluetooth, WhatsApp ou tout autre canal, sans magasin d'applications.</p>
 <p><b>Styles de cartes.</b> En jeu, un s\u00e9lecteur permet de choisir parmi 5 jeux de
