@@ -26,7 +26,9 @@ const Awale=(function(){
   function pitCenter(b,i){ return i<6 ? [b.cols[i], b.bot] : [b.cols[11-i], b.top]; }
   function render(container, s, opts){
     opts=opts||{}; const b=B(); container.innerHTML='';
+    container.style.width='100%';
     const wrap=document.createElement('div'); wrap.className='awale-board';
+    wrap.style.width='100%'; wrap.style.maxWidth='660px'; wrap.style.margin='0 auto';
     wrap.style.aspectRatio=b.w+'/'+b.h; wrap.style.backgroundImage='url('+boardImg()+')';
     for(let i=0;i<12;i++){ const c=pitCenter(b,i); const cnt=s.pits[i];
       const pit=document.createElement('div'); pit.className='awale-pit';
