@@ -18,6 +18,10 @@
 .dcell .crown{position:absolute;top:8%;font-size:clamp(13px,3.4vw,19px);text-shadow:0 1px 3px #000;pointer-events:none}
 .dcount{display:flex;gap:18px;justify-content:center;font-size:14px;opacity:.8;margin-top:6px}
 .dcount img{height:22px;vertical-align:middle;margin-right:4px}
+#cMsg,#cCombo{display:none!important}
+.aw-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%) translateY(12px);max-width:92vw;background:rgba(20,20,16,.93);color:var(--cream);border:1px solid rgba(224,163,76,.5);border-radius:999px;padding:9px 18px;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60;text-align:center}
+.aw-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.aw-toast.strong{color:var(--accent);font-weight:bold;border-color:var(--accent)}
 </style>
 <script src="rules-data.js"></script>
 <script src="card-shell.js"></script>
@@ -101,18 +105,30 @@ CardShell({
     const depth=GC.aiRisk<0.8?3:(GC.aiRisk>1.1?6:5);
     let b=initBoard(), turn=1, noProgress=0;
     const meOf=idx=> idx===0?1:-1;
+    const vsAI = humans===1;
+    (function(){ let el=document.getElementById('bwToast');
+      if(!el){ el=document.createElement('div'); el.id='bwToast'; el.className='aw-toast'; document.body.appendChild(el); }
+      let tmr=null; const show=(t,strong)=>{ if(!t){el.classList.remove('show');return;}
+        el.textContent=t; el.classList.toggle('strong',!!strong); el.classList.add('show');
+        clearTimeout(tmr); tmr=setTimeout(()=>el.classList.remove('show'), strong?2400:2900); };
+      const oSay=GC.say,oCombo=GC.combo; GC.say=t=>{oSay&&oSay(t);show(t,false);}; GC.combo=t=>{oCombo&&oCombo(t);show(t,true);};
+    })();
+    const undoStack=[];
+    const snap=()=>({b:b.slice(),turn,noProgress});
+    const restore=s=>{ b=s.b.slice(); turn=s.turn; noProgress=s.noProgress; };
 
     const scores=t=>GC.scores([
       {label:names[0]+' ⚪',value:countPieces(b,1),active:t===1},
       {label:names[1]+' ⚫',value:countPieces(b,-1),active:t===-1}]);
     function draw(opts){ opts=opts||{};
+      const flip = humans>1 && turn===-1;
       const c=GC.center('');
       const board=document.createElement('div'); board.className='dames-board';
       board.style.backgroundImage='url(dames/plateau.webp)';
       const shown=opts.board||b;
       for(let r=0;r<8;r++)for(let cc=0;cc<8;cc++){
         if((r+cc)%2!==0) continue;
-        const v=shown[r*8+cc]; const [x,y]=cellPos(r,cc);
+        const v=shown[r*8+cc]; const [x,y]=cellPos(flip?7-r:r, flip?7-cc:cc);
         const cell=document.createElement('div'); cell.className='dcell';
         cell.style.left=x+'%'; cell.style.top=y+'%';
         if(opts.sel && opts.sel[0]===r && opts.sel[1]===cc) cell.classList.add('sel');
@@ -138,7 +154,14 @@ CardShell({
         const starts=new Set(moves.map(m=>m.path[0][0]*8+m.path[0][1]));
         GC.say('À vous, '+P[pIdx].name+(mustCapture?' — prise obligatoire !':' — touchez une pièce.'));
         scores(me);
-        const [sr,sc]=await new Promise(res=> draw({picks:starts, onPick:(r,c)=>res([r,c])}));
+        const canUndo = vsAI && undoStack.length>=2;
+        GC.setButtons(canUndo?[{id:'undo',label:'↩ Annuler'}]:[]);
+        const pick=await new Promise(res=>{ let done=false; const fin=v=>{if(!done){done=true;res(v);}};
+          draw({picks:starts, onPick:(r,c)=>fin({rc:[r,c]})});
+          if(canUndo) GC.waitAction().then(id=>{ if(id==='undo') fin({undo:true}); }); });
+        GC.setButtons([]);
+        if(pick.undo) return 'undo';
+        const [sr,sc]=pick.rc;
         // 2) suivre le chemin (rafles pas à pas)
         let prefix=[[sr,sc]];
         let pool=moves.filter(m=>m.path[0][0]===sr&&m.path[0][1]===sc);
@@ -197,7 +220,10 @@ CardShell({
         return GC.gameOver('Victoire de '+names[w]+' !', names[pIdx]+' ne peut plus jouer.'); }
       if(noProgress>=50){ scores(0); draw({});
         return GC.gameOver('Match nul !','25 coups de dames sans prise ni avancée de pion : égalité.'); }
-      if(P[pIdx].ai) await aiTurn(pIdx); else await humanTurn(pIdx);
+      if(P[pIdx].ai) await aiTurn(pIdx);
+      else { undoStack.push(snap()); const r=await humanTurn(pIdx);
+        if(r==='undo'){ undoStack.pop(); const prev=undoStack.pop(); if(prev) restore(prev);
+          GC.combo('Coup annulé.'); scores(turn); draw({}); await GC.sleep(150); continue; } }
       scores(-turn);
       if(countPieces(b,-turn)===0){ draw({});
         return GC.gameOver('Victoire de '+names[pIdx]+' !', 'Toutes les pièces adverses sont prises !'); }

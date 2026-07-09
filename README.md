@@ -48,6 +48,11 @@ de cochons réglable (rapide/normale/officielle). Logique validée (terminaison,
 de nul (25 coups de dames). IA minimax alpha-bêta. Plateau et pions détourés (`www/dames/`),
 grille calée au pixel sur l'image. Moteur validé par simulation (conservation des pièces).
 
+## Confort damier ⚙️
+Aux Dames et aux Échecs : messages en **toast discret**, bouton **↩ Annuler** (revient sur son dernier
+coup et la réponse de l'IA, en solo), et **rotation du plateau** en jeu à deux sur le même téléphone
+(chacun voit ses pièces devant soi). Le passe-téléphone est réservé aux jeux de cartes.
+
 ## Les Échecs ♞
 **Les Échecs** (`echecs-classique.html`) avec vos pièces marquetées or : moteur complet
 **certifié par perft** (positions de référence : initiale 20/400/8902/197281, kiwipete, pos.3),
