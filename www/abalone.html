@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Abalone 3D</title>
+<link rel="icon" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14140f">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:#0c0c0a;font-family:Georgia,'Times New Roman',serif;color:#f2e8d5;-webkit-user-select:none;user-select:none}
+#abaCanvas{width:100vw;height:100vh;display:block;touch-action:none;outline:none}
+.hud{position:fixed;left:0;right:0;pointer-events:none;z-index:10}
+#hudTop{top:0;display:flex;justify-content:space-between;align-items:flex-start;padding:10px 12px;gap:8px}
+.score{display:flex;align-items:center;gap:8px;background:rgba(20,20,16,.72);border:1px solid rgba(224,163,76,.4);border-radius:14px;padding:8px 14px;backdrop-filter:blur(4px)}
+.score.turn{border-color:var(--accent,#e0a34c);box-shadow:0 0 14px rgba(224,163,76,.4)}
+.score .ball{width:26px;height:26px;border-radius:50%;box-shadow:inset -4px -4px 8px rgba(0,0,0,.5),inset 3px 3px 6px rgba(255,255,255,.25)}
+.score .ball.b{background:radial-gradient(circle at 36% 30%,#5a5a5a,#0a0a0a)}
+.score .ball.w{background:radial-gradient(circle at 36% 30%,#fff,#c9c2b4)}
+.score b{color:#e0a34c;font-size:20px}
+.score small{opacity:.7;font-size:11px}
+#backBtn{pointer-events:auto;position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(20,20,16,.72);border:1px solid rgba(242,232,213,.25);border-radius:12px;color:#f2e8d5;padding:7px 14px;font-family:inherit;font-size:13px;text-decoration:none;z-index:11}
+#hudBot{bottom:0;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px}
+#hint{background:rgba(20,20,16,.72);border:1px solid rgba(224,163,76,.35);border-radius:999px;padding:9px 18px;font-size:14px;max-width:92vw;text-align:center}
+#botBtns{display:flex;gap:10px;pointer-events:auto}
+#botBtns button{pointer-events:auto;font-family:inherit;font-size:14px;background:rgba(20,20,16,.8);color:#f2e8d5;border:1px solid rgba(224,163,76,.4);border-radius:999px;padding:9px 18px;cursor:pointer}
+#botBtns button.primary{background:#e0a34c;color:#14140f;font-weight:bold;border-color:#e0a34c}
+/* écran d'accueil */
+#startScreen{position:fixed;inset:0;z-index:20;background:radial-gradient(circle at 50% 40%,#26241d,#0c0c0a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;text-align:center}
+#startScreen h1{font-size:34px;letter-spacing:.15em;color:#e0a34c}
+#startScreen p{opacity:.85;max-width:440px;line-height:1.5;font-size:15px}
+.opt{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.opt button{font-family:inherit;font-size:16px;background:#2a2620;color:#f2e8d5;border:2px solid rgba(224,163,76,.5);border-radius:14px;padding:14px 22px;cursor:pointer;min-width:150px}
+.opt button:hover{border-color:#e0a34c}
+#winScreen{position:fixed;inset:0;z-index:30;background:rgba(10,10,8,.9);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:24px}
+#winScreen h1{font-size:32px;color:#e0a34c}
+:root{--accent:#e0a34c}
+</style>
+<script src="lib/babylon.js"></script>
+<script>if(typeof BABYLON==='undefined')document.write('<script src="https://cdn.babylonjs.com/babylon.js"><\/script>')</script>
+</head>
+<body>
+<canvas id="abaCanvas" touch-action="none"></canvas>
+<a href="index.html" id="backBtn">← Menu</a>
+<div class="hud" id="hudTop">
+  <div class="score b" id="scoreB"><span class="ball b"></span><div>Noir<br><b id="outB">0</b><small>/6 sortie(s)</small></div></div>
+  <div class="score w" id="scoreW"><span class="ball w"></span><div>Blanc<br><b id="outW">0</b><small>/6 sortie(s)</small></div></div>
+</div>
+<div class="hud" id="hudBot">
+  <div id="hint">Touchez vos billes pour former une ligne (1 à 3), puis une flèche pour pousser.</div>
+  <div id="botBtns"><button id="deselBtn">Désélectionner</button></div>
+</div>
+<div id="startScreen">
+  <h1>ABALONE</h1>
+  <p>Poussez 6 billes adverses hors du plateau ! Alignez 1, 2 ou 3 billes et poussez : une ligne supérieure en nombre repousse l'adversaire (le « sumito »).</p>
+  <div class="opt">
+    <button data-mode="2p">👥 2 joueurs</button>
+    <button data-mode="ai">🤖 Contre l'ordinateur</button>
+  </div>
+</div>
+<div id="winScreen"><h1 id="winTitle"></h1><button class="primary" id="againBtn" style="font-family:inherit;font-size:17px;background:#e0a34c;color:#14140f;border:none;border-radius:999px;padding:12px 30px;font-weight:bold;cursor:pointer">Rejouer</button></div>
+<script>
+'use strict';
+/* ---------- Logique Abalone (coordonnées cubiques, hexagone rayon 4 = 61 cases) ---------- */
+const R=4;
+const DIRS=[[1,-1,0],[1,0,-1],[0,1,-1],[-1,1,0],[-1,0,1],[0,-1,1]];
+const CELLS=[]; for(let x=-R;x<=R;x++) for(let y=-R;y<=R;y++){ const z=-x-y; if(Math.abs(z)<=R) CELLS.push([x,y,z]); }
+const key=c=>c[0]+','+c[1]+','+c[2];
+const add=(a,d)=>[a[0]+d[0],a[1]+d[1],a[2]+d[2]];
+const eq=(a,b)=>a[0]===b[0]&&a[1]===b[1]&&a[2]===b[2];
+const inB=c=>Math.abs(c[0])<=R&&Math.abs(c[1])<=R&&Math.abs(c[2])<=R;
+let board={}; // key -> 1 (noir) | 2 (blanc)
+function setupStart(){ board={};
+  // z = -x-y ; "rangées" par z (haut z=-4 .. bas z=4). Blanc en haut, Noir en bas.
+  function row(z){ return CELLS.filter(c=>c[2]===z); }
+  function fill(z,color){ row(z).forEach(c=>board[key(c)]=color); }
+  function mid3(z,color){ const r=row(z).sort((a,b)=>a[0]-b[0]); const s=Math.floor((r.length-3)/2); for(let i=0;i<3;i++) board[key(r[s+i])]=color; }
+  fill(-4,2); fill(-3,2); mid3(-2,2);   // blanc
+  fill(4,1);  fill(3,1);  mid3(2,1);    // noir
+}
+/* voisins/axes */
+function axisOf(cells){ if(cells.length<2) return null; // direction unitaire de la ligne
+  for(const d of DIRS){ if(eq(add(cells[0],d),cells[1])||eq(add(cells[1],d),cells[0])){ return d; } }
+  return null; }
+function neg(d){ return [-d[0],-d[1],-d[2]]; }
+function dot(a,b){ return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
+/* calcule le plan d'un coup pour une sélection (liste de cellules, même couleur alignées) et une direction d.
+   renvoie {kind, moves:[{from,to}], ejects:[cell]} ou null si illégal. */
+function planMove(sel, d, color){ const opp=color===1?2:1;
+  const axis=axisOf(sel);
+  const inline = sel.length===1 || (axis && (eq(d,axis)||eq(d,neg(axis))));
+  if(inline){ const ordered=sel.slice().sort((a,b)=>dot(a,d)-dot(b,d)); const front=ordered[ordered.length-1];
+    let cur=add(front,d); const ahead=[];
+    while(inB(cur)&&board[key(cur)]===opp){ ahead.push(cur); cur=add(cur,d); }
+    if(ahead.length===0){ if(!inB(add(front,d))) return null; if(board[key(add(front,d))]) return null;
+      return {kind:'move',moves:sel.map(c=>({from:c,to:add(c,d)})),ejects:[]}; }
+    if(ahead.length>=sel.length) return null; // pas assez fort
+    const after=cur; const ejects=[]; const moves=[];
+    if(!inB(after)){ ejects.push(ahead[ahead.length-1]); }
+    else if(board[key(after)]!==0 && board[key(after)]!==undefined) return null; // bloqué
+    // déplacer les adverses (sauf éjecté) puis les nôtres
+    ahead.forEach(c=>{ const t=add(c,d); if(inB(t)) moves.push({from:c,to:t}); });
+    sel.forEach(c=>moves.push({from:c,to:add(c,d)}));
+    return {kind:'push',moves,ejects}; }
+  // pas de sumito en pas-de-côté : toutes les cases cibles doivent être vides
+  for(const c of sel){ const t=add(c,d); if(!inB(t)||board[key(t)]) return null; }
+  return {kind:'side',moves:sel.map(c=>({from:c,to:add(c,d)})),ejects:[]}; }
+
+function validDirs(sel,color){ const res=[]; for(const d of DIRS){ const p=planMove(sel,d,color); if(p) res.push({d,plan:p}); } return res; }
+/* sélection valide ? (même couleur, contiguë, alignée, <=3) */
+function selValid(sel,color){ if(sel.length===0) return false; if(sel.some(c=>board[key(c)]!==color)) return false;
+  if(sel.length===1) return true; if(sel.length>3) return false;
+  const ax=axisOf(sel.slice(0,2)); if(!ax) return false;
+  const sorted=sel.slice().sort((a,b)=>dot(a,ax)-dot(b,ax));
+  for(let i=1;i<sorted.length;i++){ if(!eq(add(sorted[i-1],ax),sorted[i])) return false; } return true; }
+function countColor(color){ return Object.values(board).filter(v=>v===color).length; }
+</script>
+<script>
+'use strict';
+/* ---------- Rendu 3D Babylon ---------- */
+const canvas=document.getElementById('abaCanvas');
+let engine,scene,camera,shadow, marbleMat={}, marbles={}, arrows=[], sel=[], current=1, mode='2p', out={1:0,2:0}, busy=false;
+const SP=0.86, RAD=0.46, Y=RAD; // espacement, rayon, hauteur au repos
+function worldPos(c){ return new BABYLON.Vector3(SP*Math.sqrt(3)*(c[0]+c[2]/2), Y, SP*1.5*c[2]); }
+
+function build3D(){
+  engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true});
+  scene=new BABYLON.Scene(engine); scene.clearColor=new BABYLON.Color4(0.05,0.05,0.045,1);
+  camera=new BABYLON.ArcRotateCamera('cam',-Math.PI/2,0.62,13,new BABYLON.Vector3(0,0,0),scene);
+  camera.attachControl(canvas,true); camera.lowerBetaLimit=0.15; camera.upperBetaLimit=1.15;
+  camera.lowerRadiusLimit=8; camera.upperRadiusLimit=20; camera.wheelPrecision=40; camera.panningSensibility=0; camera.minZ=0.1;
+  const hemi=new BABYLON.HemisphericLight('h',new BABYLON.Vector3(0,1,0),scene); hemi.intensity=0.72; hemi.groundColor=new BABYLON.Color3(0.1,0.1,0.12);
+  const dir=new BABYLON.DirectionalLight('d',new BABYLON.Vector3(-0.4,-1,0.5),scene); dir.position=new BABYLON.Vector3(6,12,-6); dir.intensity=0.9;
+  shadow=new BABYLON.ShadowGenerator(1024,dir); shadow.useBlurExponentialShadowMap=true; shadow.blurKernel=24;
+  // plateau (votre image posée à plat)
+  const PS=SP*Math.sqrt(3)*2*R*1.14; // taille du plan
+  const ground=BABYLON.MeshBuilder.CreateGround('board',{width:PS,height:PS},scene);
+  const bm=new BABYLON.StandardMaterial('bm',scene); const tex=new BABYLON.Texture('abalone/plateau.webp',scene);
+  tex.hasAlpha=true; bm.diffuseTexture=tex; bm.useAlphaFromDiffuseTexture=true; bm.specularColor=new BABYLON.Color3(0.05,0.05,0.05);
+  bm.backFaceCulling=false; ground.material=bm; ground.receiveShadows=true;
+  // matériaux billes
+  const mk=(name,diff,spec,pw,emi)=>{ const m=new BABYLON.StandardMaterial(name,scene); m.diffuseColor=diff; m.specularColor=spec; m.specularPower=pw; if(emi)m.emissiveColor=emi; return m; };
+  marbleMat[1]=mk('noir',new BABYLON.Color3(0.03,0.03,0.035),new BABYLON.Color3(1,1,1),90,new BABYLON.Color3(0.02,0.02,0.03));
+  marbleMat[2]=mk('blanc',new BABYLON.Color3(0.92,0.90,0.86),new BABYLON.Color3(1,1,1),80);
+  marbleMat.selGlow=new BABYLON.Color3(0.9,0.64,0.3);
+  engine.runRenderLoop(()=>scene.render());
+  addEventListener('resize',()=>engine.resize());
+}
+function makeMarble(c,color){ const s=BABYLON.MeshBuilder.CreateSphere('m:'+key(c),{diameter:RAD*2,segments:24},scene);
+  s.position=worldPos(c); s.material=marbleMat[color]; s.metadata={cell:c,color}; shadow.addShadowCaster(s); marbles[key(c)]=s; return s; }
+function clearMarbles(){ Object.values(marbles).forEach(m=>m.dispose()); marbles={}; }
+function renderBoard(){ clearMarbles(); for(const k in board){ const c=k.split(',').map(Number); makeMarble(c,board[k]); } refreshSelVisual(); }
+
+function clearArrows(){ arrows.forEach(a=>a.dispose()); arrows=[]; }
+function showArrows(){ clearArrows(); if(!sel.length) return; const opts=validDirs(sel,current);
+  const centroid=sel.reduce((a,c)=>[a[0]+c[0],a[1]+c[1],a[2]+c[2]],[0,0,0]).map(v=>v/sel.length);
+  const cpos=worldPos(centroid);
+  opts.forEach(({d,plan},i)=>{ const dpos=worldPos(add(centroid,d)); const dirv=dpos.subtract(cpos); const len=dirv.length(); dirv.normalize();
+    const cone=BABYLON.MeshBuilder.CreateCylinder('a:'+i,{diameterTop:0,diameterBottom:0.34,height:0.5,tessellation:16},scene);
+    const base=cpos.add(dirv.scale(SP*0.95)); base.y=Y+0.05; cone.position=base;
+    const up=new BABYLON.Vector3(0,1,0); const axis=BABYLON.Vector3.Cross(up,dirv); const ang=Math.acos(BABYLON.Vector3.Dot(up,dirv.clone().normalize()));
+    if(axis.length()>1e-4) cone.rotationQuaternion=BABYLON.Quaternion.RotationAxis(axis.normalize(),ang);
+    const m=new BABYLON.StandardMaterial('am'+i,scene); const eject=plan.ejects.length>0;
+    m.diffuseColor=eject?new BABYLON.Color3(0.85,0.2,0.2):new BABYLON.Color3(0.88,0.66,0.3); m.emissiveColor=m.diffuseColor.scale(0.6); cone.material=m;
+    cone.metadata={plan}; arrows.push(cone);
+    // pulsation
+    let t=Math.random()*6; scene.onBeforeRenderObservable.add(()=>{ t+=0.05; cone.scaling.setAll(1+Math.sin(t)*0.08); });
+  });
+}
+function refreshSelVisual(){ Object.values(marbles).forEach(m=>{ m.renderOutline=false; });
+  sel.forEach(c=>{ const m=marbles[key(c)]; if(m){ m.renderOutline=true; m.outlineColor=BABYLON.Color3.FromHexString('#e0a34c'); m.outlineWidth=0.06; } });
+  showArrows(); }
+
+/* ---------- Interaction ---------- */
+function tryExtendSel(c){ if(board[key(c)]!==current){ return false; }
+  if(sel.some(s=>eq(s,c))){ sel=sel.filter(s=>!eq(s,c)); return true; } // retirer
+  const cand=sel.concat([c]);
+  if(selValid(cand,current)){ sel=cand; return true; }
+  sel=[c]; return true; }
+
+async function doMove(plan){ if(busy) return; busy=true; clearArrows();
+  // appliquer sur l'état
+  const color=current; const froms=plan.moves.map(m=>m.from); const tos=plan.moves.map(m=>m.to);
+  // animer
+  const anims=[];
+  plan.moves.forEach(mv=>{ const mesh=marbles[key(mv.from)]; if(mesh){ anims.push(animateTo(mesh,worldPos(mv.to),260)); } });
+  plan.ejects.forEach(c=>{ const mesh=marbles[key(c)]; if(mesh){ const off=worldPos(c).add(worldPos(c).subtract(new BABYLON.Vector3(0,Y,0)).normalize().scale(0)); 
+    // pousser vers l'extérieur puis chute
+    const dir=BABYLON.Vector3.Zero(); // direction = du centre vers la case
+    const p=worldPos(c); const outv=new BABYLON.Vector3(p.x,Y,p.z).normalize().scale(3); 
+    anims.push(animateTo(mesh,new BABYLON.Vector3(p.x+outv.x, -1.5, p.z+outv.z),520,true)); } });
+  await Promise.all(anims);
+  // mettre à jour board : retirer tous les from, poser tous les to, éjecter
+  const moved={}; plan.moves.forEach(mv=>{ moved[key(mv.from)]=true; });
+  const newVals={}; plan.moves.forEach(mv=>{ newVals[key(mv.to)] = board[key(mv.from)]; });
+  plan.ejects.forEach(c=>{ moved[key(c)]=true; });
+  // retirer les from
+  Object.keys(moved).forEach(k=>{ delete board[k]; });
+  Object.keys(newVals).forEach(k=>{ board[k]=newVals[k]; });
+  plan.ejects.forEach(c=>{ out[color===1?2:1]++; });
+  sel=[]; renderBoard(); updateHUD();
+  busy=false;
+  const loser = out[1]>=6?1:(out[2]>=6?2:0); // out[x] = billes de x sorties
+  if(out[2]>=6){ endGame(1); return; } if(out[1]>=6){ endGame(2); return; }
+  current = color===1?2:1; updateHUD();
+  if(mode==='ai' && current===2){ setTimeout(aiMove,500); }
+}
+function animateTo(mesh,target,ms,fall){ return new Promise(res=>{
+  const fps=60; const frames=Math.round(ms/1000*fps);
+  const a=new BABYLON.Animation('mv',fall?'position':'position',fps,BABYLON.Animation.ANIMATIONTYPE_VECTOR3,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+  a.setKeys([{frame:0,value:mesh.position.clone()},{frame:frames,value:target}]);
+  const ease=new BABYLON.CubicEase(); ease.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT); a.setEasingFunction(ease);
+  scene.beginDirectAnimation(mesh,[a],0,frames,false,1,()=>{ if(fall) mesh.dispose(); res(); }); }); }
+
+function onPick(mesh){ if(busy||!mesh||!mesh.name) return;
+  if(mesh.name.startsWith('a:')){ const plan=mesh.metadata&&mesh.metadata.plan; if(plan) doMove(plan); return; }
+  if(mesh.name.startsWith('m:')){ const c=mesh.metadata.cell;
+    if(board[key(c)]===current){ tryExtendSel(c); refreshSelVisual(); }
+    else { // clic sur adverse : tenter un coup direct si une flèche va vers lui
+      sel=[]; refreshSelVisual(); }
+    return; }
+}
+
+/* ---------- IA simple (gloutonne) ---------- */
+function allGroups(color){ const cellsC=CELLS.filter(c=>board[key(c)]===color); const groups=cellsC.map(c=>[c]);
+  for(const d of [DIRS[0],DIRS[1],DIRS[2]]){ // 3 axes
+    for(const c of cellsC){ const c2=add(c,d); if(board[key(c2)]===color){ groups.push([c,c2]); const c3=add(c2,d); if(board[key(c3)]===color) groups.push([c,c2,c3]); } } }
+  return groups; }
+function aiMove(){ if(busy) return; const groups=allGroups(2); let best=null,bs=-1e9;
+  for(const g of groups){ if(!selValid(g,2)) continue; for(const {d,plan} of validDirs(g,2)){
+    let s=plan.ejects.length*100 + (plan.kind==='push'?6:0) + g.length*0.5 + Math.random()*2;
+    // éviter de s'approcher trop du bord avec des billes isolées : bonus centre
+    const cen=g.reduce((a,c)=>a+Math.max(Math.abs(c[0]),Math.abs(c[1]),Math.abs(c[2])),0)/g.length; s-=cen*0.3;
+    if(s>bs){ bs=s; best=plan; } } }
+  if(best){ current=2; doMove(best); } else { current=1; updateHUD(); } }
+
+/* ---------- HUD ---------- */
+function updateHUD(){ document.getElementById('outB').textContent=out[2]; // billes noires sorties = celles poussées par blanc ? on affiche billes SORTIES de chaque couleur
+  // out[color] = nb de billes de 'color' sorties. Noir a perdu out[1], Blanc out[2].
+  document.getElementById('outB').textContent=out[1]; document.getElementById('outW').textContent=out[2];
+  document.getElementById('scoreB').classList.toggle('turn',current===1); document.getElementById('scoreW').classList.toggle('turn',current===2);
+  const h=document.getElementById('hint');
+  if(mode==='ai'&&current===2) h.textContent='🤖 L\u2019ordinateur réfléchit…';
+  else h.textContent=(current===1?'Noir':'Blanc')+' : formez une ligne (1-3 billes) et touchez une flèche. Rouge = éjection !';
+}
+function recordStats(id,won){ try{ const s=JSON.parse(localStorage.getItem('gc-stats')||'{}'); const g=s[id]||(s[id]={played:0,won:0}); g.played++; if(won)g.won++; localStorage.setItem('gc-stats',JSON.stringify(s)); }catch(e){} }
+function endGame(winner){ document.getElementById('winTitle').textContent=(winner===1?'⚫ Noir':'⚪ Blanc')+' gagne ! 🎉';
+  document.getElementById('winScreen').style.display='flex'; recordStats('abalone', mode==='ai'&&winner===1); if(navigator.vibrate)try{navigator.vibrate(60);}catch(e){} }
+
+/* ---------- Démarrage ---------- */
+function startGame(m){ mode=m; document.getElementById('startScreen').style.display='none'; document.getElementById('winScreen').style.display='none';
+  setupStart(); out={1:0,2:0}; current=1; sel=[]; if(!engine) build3D(); renderBoard(); updateHUD(); }
+document.querySelectorAll('#startScreen [data-mode]').forEach(b=>b.addEventListener('click',()=>startGame(b.dataset.mode)));
+document.getElementById('againBtn').addEventListener('click',()=>startGame(mode));
+document.getElementById('deselBtn').addEventListener('click',()=>{ if(!busy){ sel=[]; refreshSelVisual(); } });
+// picking
+addEventListener('load',()=>{ if(!engine) build3D(); scene.onPointerObservable.add(pi=>{ if(pi.type===BABYLON.PointerEventTypes.POINTERPICK){ const r=pi.pickInfo; if(r&&r.hit) onPick(r.pickedMesh); } }); });
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # Les Dés du Comptoir 🎲
 
-**39 jeux de comptoir** — dés en 3D, cartes, dominos, Awalé, dames, échecs, UNO et Puissance 4 —
+**40 jeux de comptoir** — dés en 3D, cartes, dominos, Awalé, dames, échecs, UNO et Puissance 4 —
 jouables **dans le navigateur**, **installables** (appli hors-ligne) et jouables **à plusieurs téléphones**.
 Ambiance bistrot, code ouvert.
 
@@ -103,6 +103,12 @@ Plateau et jetons détourés (`www/p4/`), grille calée au pixel. Salon : **23 j
 
 ## Monopoly 🎩🏠 (jeu complet 40 cases)
 **Monopoli** (`monopoly.html`) : vrai plateau **40 cases**, deux thèmes (Paris à l'ancienne / Néo Monopole futuriste) qui **correspondent aux cartes de propriété** fournies. Économie complète : achats, **loyers exacts** (barème par tableau + gares/compagnies), Départ +200, **Chance/Caisse**, **prison**, **taxes**, **maisons & hôtels** (loyers progressifs), **faillite**. Valeur hypothécaire affichée. À venir : hypothèques jouables + réseau.
+
+## Abalone 3D 🎱
+**Abalone** (`abalone.html`) en **3D temps réel (Babylon.js)**, plein écran : plateau hexagonal (votre
+texture), **billes 3D qui glissent et se poussent**. Règles complètes (déplacement de 1-3 billes alignées,
+**sumito**, pas-de-côté, **éjection**, victoire à 6 billes sorties). IA gloutonne ou 2 joueurs. Logique
+validée sur 300 parties simulées (0 incohérence). Assets dans `abalone/`.
 
 ## Reversi / Othello ⚫⚪
 **Reversi/Othello** (`reversi.html`) : 8×8, **IA forte** (alpha-bêta, poids positionnels, coins, mobilité),

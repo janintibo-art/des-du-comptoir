@@ -387,4 +387,13 @@ lance <b>deux d\u00e9s</b> et fait le tour du plateau.</p>
 et faire flamber les loyers. Gares (25\u2192200) et compagnies (d\u00e9s \u00d74/\u00d710) selon leur nombre.</p>
 <p>D\u00e9part +200, <b>Chance</b> et <b>Caisse de Communaut\u00e9</b>, prison, taxes\u2026 Le dernier
 joueur solvable remporte la partie ! <i>\u00c0 venir : hypoth\u00e8ques jouables et mode r\u00e9seau.</i></p>`},
+abalone: { title:'Abalone', html:`
+<p>2 joueurs, 14 billes chacun sur un plateau <b>hexagonal</b>. But : <b>éjecter 6 billes</b> adverses
+hors du plateau.</p>
+<p>À votre tour, déplacez <b>1, 2 ou 3 billes align\u00e9es</b> d\u2019une case. Vous pouvez <b>pousser</b>
+les billes adverses (le « sumito ») seulement si votre ligne est <b>plus nombreuse</b> (2 contre 1, 3 contre 1
+ou 3 contre 2) et qu\u2019il y a de la place (ou le vide) derri\u00e8re elles. Une bille pouss\u00e9e hors
+du bord est <b>\u00e9ject\u00e9e</b> !</p>
+<p>On peut aussi d\u00e9placer une ligne <b>de c\u00f4t\u00e9</b> (pas-de-c\u00f4t\u00e9) si toutes les cases
+d\u2019arriv\u00e9e sont libres. Touchez vos billes pour former la ligne, puis une <b>fl\u00e8che</b> (rouge = \u00e9jection).</p>`},
 };
