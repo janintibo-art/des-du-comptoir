@@ -377,14 +377,14 @@ retourne au moins un pion.</p>
 le joueur qui a le <b>plus de pions</b> gagne.</p>
 <p><b>Deux d\u00e9parts au choix :</b> <b>Othello</b> (4 pions plac\u00e9s au centre) ou <b>Reversi</b>
 (plateau vide, on remplit d\u2019abord les 4 cases centrales).</p>`},
-monopoly: { title:'Le Grand Marchand (Monopoly)', html:`
-<p>Le c\u00e9l\u00e8bre jeu de commerce ! Chacun choisit un pion, d\u00e9marre avec <b>1500\ud83d\udcb0</b>,
-lance <b>deux d\u00e9s</b> et fait le tour du plateau. Deux ambiances : <b>\u00e0 l\u2019ancienne</b> ou
-<b>futuriste</b>.</p>
-<p><b>Achetez</b> les propri\u00e9t\u00e9s libres o\u00f9 vous tombez ; si elles appartiennent \u00e0 un
-autre joueur, payez-lui un <b>loyer</b> (double si toute la couleur est \u00e0 lui ; les gares et services
-rapportent selon leur nombre). En passant par le <b>D\u00e9part</b>, touchez 200. Piochez <b>Chance</b> et
-<b>Caisse de Commerce</b>. La <b>prison</b> vous bloque jusqu\u2019\u00e0 un double (ou 50\ud83d\udcb0).</p>
-<p>Un joueur \u00e0 court d\u2019argent fait <b>faillite</b> : le dernier marchand solvable gagne !</p>
-<p>Poss\u00e9dez toute une <b>couleur</b> pour b\u00e2tir des <b>maisons</b> puis un <b>h\u00f4tel</b> : les loyers grimpent en fl\u00e8che ! <i>\u00c0 venir : le mode r\u00e9seau.</i></p>`},
+monopoly: { title:'Monopoli — le jeu immobilier', html:`
+<p>Le grand classique du commerce, sur un vrai plateau de <b>40 cases</b> ! Deux ambiances au choix :
+<b>Paris à l\u2019ancienne</b> ou <b>Néo Monopole</b> futuriste. Chacun d\u00e9marre avec <b>1500</b>,
+lance <b>deux d\u00e9s</b> et fait le tour du plateau.</p>
+<p><b>Achetez</b> les propri\u00e9t\u00e9s libres (la grande carte montre le prix et le tableau des
+<b>loyers</b> et la valeur hypoth\u00e9caire). Sur la propri\u00e9t\u00e9 d\u2019un autre joueur, payez le
+<b>loyer</b> ; poss\u00e9dez toute une <b>couleur</b> pour b\u00e2tir <b>maisons</b> et <b>h\u00f4tels</b>
+et faire flamber les loyers. Gares (25\u2192200) et compagnies (d\u00e9s \u00d74/\u00d710) selon leur nombre.</p>
+<p>D\u00e9part +200, <b>Chance</b> et <b>Caisse de Communaut\u00e9</b>, prison, taxes\u2026 Le dernier
+joueur solvable remporte la partie ! <i>\u00c0 venir : hypoth\u00e8ques jouables et mode r\u00e9seau.</i></p>`},
 };

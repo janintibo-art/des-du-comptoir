@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Le Grand Marchand — Monopoly</title>
+<title>Monopoli — Le Jeu Immobilier</title>
 <link rel="icon" href="favicon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#14140f">
@@ -14,100 +14,137 @@
 .aw-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .aw-toast.strong{color:var(--accent);font-weight:bold;border-color:var(--accent)}
 .mo-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
-.mo-players{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:13px}
+.mo-players{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;font-size:12.5px}
 .mo-players .pp{display:flex;align-items:center;gap:5px;background:rgba(20,20,16,.5);border:1px solid rgba(242,232,213,.15);border-radius:999px;padding:3px 9px}
 .mo-players .pp.turn{border-color:var(--accent);color:var(--accent)}
-.mo-players .pp img{height:22px}
-.mo-board{position:relative;width:100%;max-width:560px;aspect-ratio:1/1;background-size:contain;background-repeat:no-repeat;background-position:center;border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.55)}
-.mo-pawn{position:absolute;width:6.5%;transform:translate(-50%,-70%);transition:left .3s ease,top .3s ease;z-index:3;filter:drop-shadow(0 3px 4px rgba(0,0,0,.6))}
+.mo-players .pp img{height:20px}
+.mo-board{position:relative;width:100%;max-width:580px;aspect-ratio:1/1;background-size:contain;background-repeat:no-repeat;background-position:center;border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.55)}
+.mo-pawn{position:absolute;width:5.5%;transform:translate(-50%,-65%);transition:left .3s ease,top .3s ease;z-index:3;filter:drop-shadow(0 3px 4px rgba(0,0,0,.6))}
 .mo-pawn img{width:100%;display:block}
-.mo-hl{position:absolute;width:8%;height:8%;transform:translate(-50%,-50%);border:3px solid var(--accent);border-radius:8px;z-index:2;box-shadow:0 0 12px 2px rgba(224,163,76,.6);pointer-events:none}
-/* lancer de dés */
+.mo-hl{position:absolute;width:7%;height:7%;transform:translate(-50%,-50%);border:3px solid var(--accent);border-radius:6px;z-index:2;box-shadow:0 0 12px 2px rgba(224,163,76,.6);pointer-events:none}
 .dice-tray{display:flex;gap:16px;justify-content:center;align-items:center;min-height:70px}
 .die3d{width:56px;height:56px;position:relative;border-radius:12px;background:#f7f2e6;box-shadow:0 4px 10px rgba(0,0,0,.4)}
 .die3d.roll{animation:dshake .5s ease}
 @keyframes dshake{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-10px) rotate(-12deg)}50%{transform:translateY(4px) rotate(10deg)}75%{transform:translateY(-6px) rotate(-6deg)}}
 .die3d .pip{position:absolute;width:11px;height:11px;border-radius:50%;background:#14140f;transform:translate(-50%,-50%)}
-/* grande carte de case */
 .mo-card-bg{position:fixed;inset:0;background:rgba(10,10,8,.74);z-index:70;display:flex;align-items:center;justify-content:center;padding:22px;opacity:0;pointer-events:none;transition:opacity .2s}
 .mo-card-bg.show{opacity:1;pointer-events:auto}
-.mo-card{background:linear-gradient(160deg,#2a2620,#14140f);border:2px solid var(--accent);border-radius:20px;max-width:380px;width:100%;padding:24px 22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6);transform:scale(.9);transition:transform .25s}
+.mo-card{background:linear-gradient(160deg,#2a2620,#14140f);border:2px solid var(--accent);border-radius:20px;max-width:390px;width:100%;padding:22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6);transform:scale(.9);transition:transform .25s}
 .mo-card-bg.show .mo-card{transform:scale(1)}
-.mo-card .band{height:26px;border-radius:8px;margin:-6px -6px 12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;letter-spacing:.05em;font-size:13px}
-.mo-card .nm{font-size:22px;line-height:1.2;margin:6px 0}
-.mo-card .price{font-size:19px;color:var(--accent);font-weight:bold;margin-top:8px}
-.mo-card .sub{font-size:14px;opacity:.75;margin-top:6px}
-.mo-card button{margin-top:18px;font-family:inherit;font-size:17px;background:var(--accent);color:#14140f;border:none;border-radius:999px;padding:11px 30px;font-weight:bold;cursor:pointer}
+.mo-card .band{height:30px;border-radius:8px;margin:-4px -4px 12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;letter-spacing:.04em;font-size:13px;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.mo-card .nm{font-size:22px;line-height:1.2;margin:4px 0}
+.mo-card .price{font-size:18px;color:var(--accent);font-weight:bold;margin-top:6px}
+.mo-card .rent{font-size:12.5px;opacity:.85;margin-top:10px;text-align:left;display:inline-block;line-height:1.7}
+.mo-card .sub{font-size:14px;opacity:.8;margin-top:8px}
+.mo-card #moBtns{margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.mo-card button{font-family:inherit;font-size:16px;background:#3a352c;color:var(--cream);border:1px solid rgba(224,163,76,.4);border-radius:999px;padding:10px 22px;font-weight:bold;cursor:pointer}
+.mo-card button.primary{background:var(--accent);color:#14140f;border-color:var(--accent)}
 </style>
 <script src="rules-data.js"></script>
 <script src="card-shell.js"></script>
 <script>
 'use strict';
 const THEMES={
-  ancien:{ board:'monopoly/plateau-ancien.webp', title:'Le Grand Marchand',
-    pions:[['chapeau','🎩','monopoly/anc-pion-chapeau.webp'],['montre','⏱️','monopoly/anc-pion-montre.webp'],['cle','🔑','monopoly/anc-pion-cle.webp'],['bateau','⛵','monopoly/anc-pion-bateau.webp'],['chat','🐱','monopoly/anc-pion-chat.webp']], maison:'monopoly/anc-maison.webp', hotel:'monopoly/anc-hotel.webp' },
-  futur:{ board:'monopoly/plateau-futur.webp', title:'Néo Marchand',
-    pions:[['p1','🚀','monopoly/fut-pion-1.webp'],['p2','🛸','monopoly/fut-pion-2.webp'],['p3','🤖','monopoly/fut-pion-3.webp'],['p4','👾','monopoly/fut-pion-4.webp'],['p5','⚡','monopoly/fut-pion-5.webp']], maison:'monopoly/fut-maison.webp', hotel:'monopoly/fut-hotel.webp' },
+  ancien:{ board:'monopoly/plateau-ancien.webp', title:'Le Jeu Immobilier de Paris', cur:'F',
+    pions:[['chapeau','🎩','monopoly/anc-pion-chapeau.webp'],['montre','⏱️','monopoly/anc-pion-montre.webp'],['cle','🔑','monopoly/anc-pion-cle.webp'],['bateau','⛵','monopoly/anc-pion-bateau.webp'],['chat','🐱','monopoly/anc-pion-chat.webp']],
+    maison:'monopoly/anc-maison.webp', hotel:'monopoly/anc-hotel.webp' },
+  futur:{ board:'monopoly/plateau-futur.webp', title:'Néo Monopole', cur:'¤',
+    pions:[['p1','🚀','monopoly/fut-pion-1.webp'],['p2','🛸','monopoly/fut-pion-2.webp'],['p3','🤖','monopoly/fut-pion-3.webp'],['p4','👾','monopoly/fut-pion-4.webp'],['p5','⚡','monopoly/fut-pion-5.webp']],
+    maison:'monopoly/fut-maison.webp', hotel:'monopoly/fut-hotel.webp' },
 };
 function curTheme(){ let id='ancien'; try{ id=localStorage.getItem('monoTheme')||'ancien'; }catch(e){} return THEMES[id]?id:'ancien'; }
 const MonoSkin={ buildSkinSelect(sel,onChange){ sel.innerHTML='';
-    [['ancien','🏛️ À l\u2019ancienne'],['futur','🌆 Futuriste']].forEach(([id,lab])=>{ const o=document.createElement('option'); o.value=id; o.textContent=lab; sel.appendChild(o); });
+    [['ancien','🏛️ Paris à l\u2019ancienne'],['futur','🌆 Néo Monopole']].forEach(([id,lab])=>{ const o=document.createElement('option'); o.value=id; o.textContent=lab; sel.appendChild(o); });
     try{ sel.value=localStorage.getItem('monoTheme')||'ancien'; }catch(e){}
     sel.addEventListener('change',()=>{ try{ localStorage.setItem('monoTheme',sel.value); }catch(e){} onChange&&onChange(); }); },
   el(){ return document.createElement('span'); } };
-// --- Plateau : 34 cases (0..33). name = ancien ; nf = futur (si différent). ---
-const S=(type,name,opts)=>Object.assign({type,name},opts||{});
+// couleurs de groupe
+const G={brown:'#7a5230',lb:'#7fb2d9',pink:'#d2489b',orange:'#e2841c',red:'#c0392b',yellow:'#f0c419',green:'#2e8b3d',blue:'#12324f'};
+// entrée rue : rue(nom_anc, nom_fut, prix, groupe, [loyers], coût_maison)
+function rue(n,nf,p,g,r,hc){ return {t:'street',n,nf,p,g,r,hc,m:p/2}; }
+function rail(n,nf){ return {t:'rail',n,nf,p:200,r:[25,50,100,200],m:100}; }
+function util(n,nf){ return {t:'utility',n,nf,p:150,m:75}; }
+// Plateau 40 cases (0..39). Structure Monopoly classique, barème de loyers classique.
 const LAYOUT=[
- S('go','Départ'),
- S('street','Avenue Montaigne',{price:400,group:'#12324f'}),
- S('street','Boulevard Saint-Germain',{price:350,group:'#12324f'}),
- S('chance','Chance'),
- S('street','Rue Saint-Honoré',{price:400,group:'#d33'}),
- S('rail','Compagnie de Chemin de Fer',{price:200,nf:'Compagnie de Chemin Hyperloop'}),
- S('street','Place Vendôme',{price:100,group:'#8a4fd0'}),
- S('chest','Caisse de Commerce'),
- S('street','Rue de la Fayette',{price:100,group:'#8a4fd0'}),
- S('street','Avenue des Champs',{price:120,group:'#8a4fd0'}),
- S('jail','Prison / Visite'),
- S('chest','Caisse de Commerce'),
- S('street','Rue de Courcelles',{price:180,group:'#e26a2c'}),
- S('street','Rue de Vaugirard',{price:180,group:'#e26a2c'}),
- S('rail','Compagnie de Chemin de Fer',{price:200,nf:'Compagnie de Chemin Magnétique'}),
- S('street','Rue Lecourbe',{price:200,group:'#e26a2c'}),
- S('street','Rue Bellevue',{price:200,group:'#e26a2c'}),
- S('parking','Parc Gratuit'),
- S('street','Avenue des Érables',{price:220,group:'#2e8b3d',nf:'Avenue des Astres'}),
- S('street','Rue de la Paix',{price:220,group:'#2e8b3d',nf:'Rue de l\u2019Horizon'}),
- S('utility','Compagnie des Eaux',{price:150,nf:'Compagnie des Flux'}),
- S('chance','Chance'),
- S('street','Boulevard Saint-Martin',{price:280,group:'#c0392b',nf:'Boulevard Nébulaire'}),
- S('street','Avenue de l\u2019Opéra',{price:280,group:'#c0392b',nf:'Avenue Quantique'}),
- S('utility','Compagnie d\u2019Électricité',{price:150,nf:'Compagnie de Néonergie'}),
- S('street','Rue de Rivoli',{price:300,group:'#e6b800',nf:'Rue Vortex'}),
- S('street','Avenue Victoria',{price:300,group:'#e6b800',nf:'Avenue Nova'}),
- S('gotojail','Allez en Prison'),
- S('street','Avenue de Neuilly',{price:320,group:'#2e8b3d'}),
- S('street','Avenue Hoche',{price:320,group:'#2e8b3d'}),
- S('utility','Compagnie de Télégraphes',{price:150,nf:'Compagnie de Télégraphes Quantiques'}),
- S('street','Boulevard Malesherbes',{price:350,group:'#12324f'}),
- S('street','Boulevard Haussmann',{price:350,group:'#12324f'}),
- S('chance','Chance'),
+ {t:'go',n:'Départ',nf:'Départ'},
+ rue('Boulevard de Belleville','Quartier des Docks',60,'brown',[2,10,30,90,160,250],50),
+ {t:'chest',n:'Caisse de Communauté',nf:'Caisse de Communauté'},
+ rue('Rue Lecourbe','Allée des Hackers',60,'brown',[4,20,60,180,320,450],50),
+ {t:'tax',n:'Impôt sur le Revenu',nf:'Impôt sur le Revenu',tax:200},
+ rail('Gare Montparnasse','Gare Navette Alpha'),
+ rue('Avenue Mozart','Avenue des Androïdes',100,'lb',[6,30,90,270,400,550],50),
+ {t:'chance',n:'Chance',nf:'Imprévu'},
+ rue('Boulevard de la Villette','Secteur Solaire',100,'lb',[6,30,90,270,400,550],50),
+ rue('Avenue de Neuilly','Allée Cosmos',120,'lb',[8,40,100,300,450,600],50),
+ {t:'jail',n:'Prison / Visite',nf:'Prison / Visite'},
+ rue('Rue de Paradis','Rue des Drones',140,'pink',[10,50,150,450,625,750],100),
+ util('Compagnie d\u2019Électricité','Compagnie d\u2019Énergie Quantique'),
+ rue('Avenue de la République','Avenue Orbite',140,'pink',[10,50,150,450,625,750],100),
+ rue('Boulevard de Clichy','Cours des Météores',160,'pink',[12,60,180,500,700,900],100),
+ rail('Gare Saint-Lazare','Gare Orbitale Sigma'),
+ rue('Faubourg Saint-Honoré','Faubourg des Cyborgs',180,'orange',[14,70,200,550,750,950],100),
+ {t:'chest',n:'Caisse de Communauté',nf:'Caisse de Communauté'},
+ rue('Place Pigalle','Place du Réacteur',180,'orange',[14,70,200,550,750,950],100),
+ rue('Boulevard Saint-Michel','Boulevard Hologramme',200,'orange',[16,80,220,600,800,1000],100),
+ {t:'parking',n:'Parking Gratuit',nf:'Parking Gratuit'},
+ rue('Avenue Matignon','Avenue Quantique',220,'red',[18,90,250,700,875,1050],150),
+ {t:'chance',n:'Chance',nf:'Imprévu'},
+ rue('Boulevard Malesherbes','Cours des Nébuleuses',220,'red',[18,90,250,700,875,1050],150),
+ rue('Avenue Henri-Martin','Avenue Hyperion',240,'red',[20,100,300,750,925,1100],150),
+ rail('Gare de Lyon','Gare Hyperloop Prime'),
+ rue('Faubourg Poissonnière','Quartier des Satellites',260,'yellow',[22,110,330,800,975,1150],150),
+ rue('Rue La Fayette','Rue du Warp',260,'yellow',[22,110,330,800,975,1150],150),
+ util('Compagnie des Eaux','Réseau des Eaux Synthétiques'),
+ rue('Avenue de Breteuil','Boulevard du Zénith',280,'yellow',[24,120,360,850,1025,1200],150),
+ {t:'gotojail',n:'Allez en Prison',nf:'Allez en Prison'},
+ rue('Avenue Foch','Avenue Néo-Tokyo',300,'green',[26,130,390,900,1100,1275],200),
+ rue('Boulevard des Capucines','Place des Pulsars',300,'green',[26,130,390,900,1100,1275],200),
+ {t:'chest',n:'Caisse de Communauté',nf:'Caisse de Communauté'},
+ rue('Avenue des Champs-Élysées','Avenue des Astres',320,'green',[28,150,450,1000,1200,1400],200),
+ rail('Gare du Nord','Gare Stellaire Nord'),
+ {t:'chance',n:'Chance',nf:'Imprévu'},
+ rue('Place de la Bourse','Promenade Galactique',320,'blue',[35,175,500,1100,1300,1500],200),
+ {t:'tax',n:'Taxe de Luxe',nf:'Taxe de Luxe',tax:100},
+ rue('Avenue Montaigne','Avenue Cosmopolis',400,'blue',[50,200,600,1400,1700,2000],200),
 ];
-// positions autour de l'anneau (fractions, calibrables)
-const RING={lo:0.150,hi:0.850,band:0.092,topN:9,sideN:6};
-function cellPos(i){ const {lo,hi,band,topN,sideN}=RING; const spanT=(hi-lo)/topN, spanS=(hi-lo)/sideN;
-  if(i===0) return {x:1-band,y:1-band};      // Départ bas-droite
-  if(i===10) return {x:band,y:1-band};        // Prison bas-gauche
-  if(i===17) return {x:band,y:band};          // Parc haut-gauche
-  if(i===27) return {x:1-band,y:band};        // Allez en prison haut-droite
-  if(i>=1&&i<=9)  return {x: hi - spanT*(i-0.5),           y:1-band};  // bas : droite->gauche
-  if(i>=11&&i<=16)return {x: band,                          y: hi - spanS*((i-11)+0.5)}; // gauche : bas->haut
-  if(i>=18&&i<=26)return {x: lo + spanT*((i-18)+0.5),       y: band};  // haut : gauche->droite
-  if(i>=28&&i<=33)return {x:1-band,                         y: lo + spanS*((i-28)+0.5)}; // droite : haut->bas
+const NB=LAYOUT.length; // 40
+function nameOf(i,theme){ const c=LAYOUT[i]; return (theme==='futur'&&c.nf)? c.nf : c.n; }
+// positions autour de l'anneau (calibrables). 0=Départ bas-droite, 10=Prison bas-gauche, 20=Parking haut-gauche, 30=Allez haut-droite.
+const RING={lo:0.115,hi:0.885,band:0.058,N:9};
+function cellPos(i){ const {lo,hi,band,N}=RING; const span=(hi-lo)/N;
+  if(i===0) return {x:1-band,y:1-band};
+  if(i===10) return {x:band,y:1-band};
+  if(i===20) return {x:band,y:band};
+  if(i===30) return {x:1-band,y:band};
+  if(i>=1&&i<=9)   return {x: hi - span*(i-0.5),          y:1-band};
+  if(i>=11&&i<=19) return {x: band,                        y: hi - span*((i-11)+0.5)};
+  if(i>=21&&i<=29) return {x: lo + span*((i-21)+0.5),      y: band};
+  if(i>=31&&i<=39) return {x: 1-band,                      y: lo + span*((i-31)+0.5)};
   return {x:0.5,y:0.5}; }
-const NB=LAYOUT.length;
-function nameOf(i,theme){ const c=LAYOUT[i]; return (theme==='futur'&&c.nf)? c.nf : c.name; }
 const PIPS={1:[[50,50]],2:[[30,30],[70,70]],3:[[30,30],[50,50],[70,70]],4:[[30,30],[70,30],[30,70],[70,70]],5:[[30,30],[70,30],[50,50],[30,70],[70,70]],6:[[30,28],[70,28],[30,50],[70,50],[30,72],[70,72]]};
+const START_MONEY=1500;
+const PLAYER_COL=['#e0a34c','#4a90d9','#5cb85c','#d9534f','#9b59b6'];
+const CHANCE=[
+ ['Avancez jusqu\u2019au Départ.',{go0:1}],['La banque vous verse un dividende de 50.',{money:50}],
+ ['Reculez de 3 cases.',{move:-3}],['Réparations : payez 25 par maison, 100 par hôtel.',{repairs:[25,100]}],
+ ['Allez à la gare la plus proche.',{nearestRail:1}],['Votre bien prend de la valeur : recevez 100.',{money:100}],
+ ['Amende pour excès de vitesse : payez 15.',{money:-15}],['Concours d\u2019élégance : recevez 25.',{money:25}],
+ ['Sortez de prison — carte à conserver.',{getout:1}],['Allez directement en prison.',{tojail:1}],
+ ['Fête municipale : recevez 20.',{money:20}],['Les impôts vous remboursent : recevez 20.',{money:20}],
+ ['Voyage express : avancez de 3 cases.',{move:3}],['Petit héritage : recevez 100.',{money:100}],
+ ['Perte au jeu : payez 50.',{money:-50}],['Votre navire arrive : recevez 50.',{money:50}],
+];
+const CHEST=[
+ ['Erreur de la banque en votre faveur : recevez 200.',{money:200}],['Honoraires du notaire : payez 50.',{money:-50}],
+ ['Vente de tableaux : recevez 75.',{money:75}],['Frais de médecin : payez 50.',{money:-50}],
+ ['Héritage : recevez 100.',{money:100}],['Prime d\u2019assurance : recevez 100.',{money:100}],
+ ['Anniversaire : chaque joueur vous donne 10.',{birthday:10}],['Travaux : payez 40 par maison, 115 par hôtel.',{repairs:[40,115]}],
+ ['Bourse d\u2019étude : recevez 50.',{money:50}],['Impôt sur le revenu : payez 20.',{money:-20}],
+ ['Remboursement : recevez 150.',{money:150}],['2e prix de beauté : recevez 10.',{money:10}],
+ ['Frais d\u2019école : payez 50.',{money:-50}],['Recettes : recevez 25.',{money:25}],
+ ['Sortez de prison — carte à conserver.',{getout:1}],['Allez au Départ.',{go0:1}],
+];
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 </script>
 </head>
 <body class="menu">
@@ -115,195 +152,126 @@ const PIPS={1:[[50,50]],2:[[30,30],[70,70]],3:[[30,30],[50,50],[70,70]],4:[[30,3
   <div class="band" id="moBand"></div>
   <div class="nm" id="moNm"></div>
   <div class="price" id="moPrice"></div>
+  <div class="rent" id="moRent"></div>
   <div class="sub" id="moSub"></div>
-  <div id="moBtns" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"></div>
+  <div id="moBtns"></div>
 </div></div>
 <script>
 'use strict';
-const START_MONEY=1500;
-const PLAYER_COL=['#e0a34c','#4a90d9','#5cb85c','#d9534f','#9b59b6'];
-const CHANCE=[
- ['Avancez jusqu\u2019au Départ.',{go0:1}],
- ['La banque vous verse un dividende de 50.',{money:50}],
- ['Reculez de 3 cases.',{move:-3}],
- ['Réparations imprévues : payez 25 par maison et 100 par hôtel.',{repairs:[25,100]}],
- ['Allez à la gare la plus proche.',{nearestRail:1}],
- ['Votre collection ancienne prend de la valeur : recevez 100.',{money:100}],
- ['Amende pour excès de vitesse : payez 15.',{money:-15}],
- ['Vous gagnez le concours d\u2019élégance : recevez 25.',{money:25}],
- ['Sortez de prison — carte à conserver.',{getout:1}],
- ['Allez directement en prison.',{tojail:1}],
- ['Fête municipale : tout le monde fait la fête. Recevez 20.',{money:20}],
- ['Les impôts vous remboursent : recevez 20.',{money:20}],
- ['Voyage express : avancez de 3 cases.',{move:3}],
- ['Petit héritage : recevez 100.',{money:100}],
- ['Perte au jeu : payez 50.',{money:-50}],
- ['Votre navire arrive au port : recevez 50.',{money:50}],
-];
-const CHEST=[
- ['Erreur de la banque en votre faveur : recevez 200.',{money:200}],
- ['Honoraires du notaire : payez 50.',{money:-50}],
- ['Vente de vieux tableaux : recevez 75.',{money:75}],
- ['Frais de médecin : payez 50.',{money:-50}],
- ['Héritage inattendu : recevez 100.',{money:100}],
- ['Prime d\u2019assurance : recevez 100.',{money:100}],
- ['C\u2019est votre anniversaire : chaque joueur vous donne 10.',{birthday:10}],
- ['Travaux de voirie : payez 40 par maison et 115 par hôtel.',{repairs:[40,115]}],
- ['Bourse d\u2019étude : recevez 50.',{money:50}],
- ['Impôt sur le revenu : payez 20.',{money:-20}],
- ['Remboursement d\u2019emprunt : recevez 150.',{money:150}],
- ['Deuxième prix du concours : recevez 10.',{money:10}],
- ['Frais d\u2019école : payez 50.',{money:-50}],
- ['Recettes du marché : recevez 25.',{money:25}],
- ['Sortez de prison — carte à conserver.',{getout:1}],
- ['Allez au Départ.',{go0:1}],
-];
-function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-
 CardShell({
-  id:'monopoly', title:'LE GRAND MARCHAND', minPlayers:2, maxPlayers:5, skinModule:MonoSkin,
+  id:'monopoly', title:'MONOPOLI', minPlayers:2, maxPlayers:5, skinModule:MonoSkin,
   run: async GC => {
-    const P=GC.players, N=P.length; const theme=curTheme(); const TH=THEMES[theme];
+    const P=GC.players, N=P.length; const theme=curTheme(); const TH=THEMES[theme]; const CUR=TH.cur;
     (function(){ let el=document.getElementById('bwToast'); if(!el){ el=document.createElement('div'); el.id='bwToast'; el.className='aw-toast'; document.body.appendChild(el); }
       let tmr=null; const show=(t,strong)=>{ if(!t){el.classList.remove('show');return;} el.textContent=t; el.classList.toggle('strong',!!strong); el.classList.add('show'); clearTimeout(tmr); tmr=setTimeout(()=>el.classList.remove('show'), strong?2400:2600); };
       const oSay=GC.say,oCombo=GC.combo; GC.say=t=>{oSay&&oSay(t);show(t,false);}; GC.combo=t=>{oCombo&&oCombo(t);show(t,true);}; })();
-
-    const pl=P.map((p,i)=>({pos:0, name:p.name, pion:TH.pions[i%TH.pions.length], money:START_MONEY, alive:true, jail:0, getout:0, col:PLAYER_COL[i%5]}));
-    const owner=new Array(NB).fill(-1);   // propriétaire de chaque case (-1 = banque)
-    const houses=new Array(NB).fill(0);   // 0..4 maisons, 5 = hôtel
-    function houseCost(i){ const p=LAYOUT[i].price||0; return p<=140?50:(p<=260?100:150); }
-    function rentTiers(i){ const p=LAYOUT[i].price||0; const b=Math.max(2,Math.round(p/10)); return [b,b*5,b*15,b*40,b*55,b*70]; }
-    let turn=0;
-    let chanceDeck=shuffle(CHANCE.slice()), chestDeck=shuffle(CHEST.slice());
-    const draw=deck=>{ if(!deck.length){ deck.push(...shuffle((deck===chanceDeck?CHANCE:CHEST).slice())); } return deck.shift(); };
-    const groupOf=i=>LAYOUT[i].group;
-    const railIdx=[]; const utilIdx=[]; LAYOUT.forEach((c,i)=>{ if(c.type==='rail')railIdx.push(i); if(c.type==='utility')utilIdx.push(i); });
-    function ownsAllGroup(pi,g){ if(!g) return false; for(let i=0;i<NB;i++){ if(LAYOUT[i].group===g && owner[i]!==pi) return false; } return true; }
-    function rentOf(i, diceTot){ const c=LAYOUT[i]; const o=owner[i]; if(o<0) return 0;
-      if(c.type==='rail'){ const cnt=railIdx.filter(x=>owner[x]===o).length; return 25*cnt; }
-      if(c.type==='utility'){ const cnt=utilIdx.filter(x=>owner[x]===o).length; return diceTot*(cnt>=2?10:4); }
-      const t=rentTiers(i); if(houses[i]>0) return t[Math.min(5,houses[i])];
-      let base=t[0]; if(ownsAllGroup(o,c.group)) base*=2; return base; }
-    function canBuild(pi,i){ const c=LAYOUT[i]; return c.type==='street' && owner[i]===pi && ownsAllGroup(pi,c.group) && houses[i]<5 && pl[pi].money>=houseCost(i); }
+    const pl=P.map((p,i)=>({pos:0,name:p.name,pion:TH.pions[i%TH.pions.length],money:START_MONEY,alive:true,jail:0,getout:0,col:PLAYER_COL[i%5]}));
+    const owner=new Array(NB).fill(-1), houses=new Array(NB).fill(0);
+    let turn=0; let chanceDeck=shuffle(CHANCE.slice()), chestDeck=shuffle(CHEST.slice());
+    const drawCard=deck=>{ if(!deck.length) deck.push(...shuffle((deck===chanceDeck?CHANCE:CHEST).slice())); return deck.shift(); };
+    const railIdx=[],utilIdx=[]; LAYOUT.forEach((c,i)=>{ if(c.t==='rail')railIdx.push(i); if(c.t==='utility')utilIdx.push(i); });
+    function ownsAllGroup(pi,g){ if(!g) return false; for(let i=0;i<NB;i++){ if(LAYOUT[i].g===g && owner[i]!==pi) return false; } return true; }
+    function rentOf(i,dice){ const c=LAYOUT[i], o=owner[i]; if(o<0) return 0;
+      if(c.t==='rail'){ const cnt=railIdx.filter(x=>owner[x]===o).length; return c.r[Math.max(0,cnt-1)]; }
+      if(c.t==='utility'){ const cnt=utilIdx.filter(x=>owner[x]===o).length; return dice*(cnt>=2?10:4); }
+      if(houses[i]>0) return c.r[Math.min(5,houses[i])];
+      let base=c.r[0]; if(ownsAllGroup(o,c.g)) base*=2; return base; }
+    function canBuild(pi,i){ const c=LAYOUT[i]; return c.t==='street'&&owner[i]===pi&&ownsAllGroup(pi,c.g)&&houses[i]<5&&pl[pi].money>=c.hc; }
 
     function bar(){ const b=document.createElement('div'); b.className='mo-players';
-      pl.forEach((pw,i)=>{ if(!pw.alive) return; const d=document.createElement('div'); d.className='pp'+(i===turn?' turn':'');
+      pl.forEach((pw,i)=>{ if(!pw.alive)return; const d=document.createElement('div'); d.className='pp'+(i===turn?' turn':'');
         const im=new Image(); im.src=pw.pion[2]; d.appendChild(im);
-        const t=document.createElement('span'); t.innerHTML=pw.name+' — <b style="color:var(--accent)">'+pw.money+'</b>💰'+(pw.jail>0?' 🔒':''); d.appendChild(t); b.appendChild(d); }); return b; }
+        const t=document.createElement('span'); t.innerHTML=pw.name+' — <b style="color:var(--accent)">'+pw.money+'</b>'+CUR+(pw.jail>0?' 🔒':''); d.appendChild(t); b.appendChild(d); }); return b; }
     function board(dice){ const c=GC.center(''); const wrap=document.createElement('div'); wrap.className='mo-wrap'; wrap.appendChild(bar());
       const bd=document.createElement('div'); bd.className='mo-board'; bd.style.backgroundImage='url('+TH.board+')';
-      // marqueurs de propriété
       for(let i=0;i<NB;i++){ if(owner[i]>=0){ const p=cellPos(i); const m=document.createElement('div');
-        m.style.cssText='position:absolute;width:14px;height:14px;border-radius:50%;border:2px solid #fff;z-index:2;transform:translate(-50%,-50%);background:'+pl[owner[i]].col;
-        m.style.left=(p.x*100)+'%'; m.style.top=(p.y*100 - (cellPos(i).y<0.5?-6:6)/5)+'%'; bd.appendChild(m); } }
+        m.style.cssText='position:absolute;width:12px;height:12px;border-radius:50%;border:2px solid #fff;z-index:2;transform:translate(-50%,-50%);background:'+pl[owner[i]].col;
+        m.style.left=(p.x*100)+'%'; m.style.top=(p.y*100)+'%'; bd.appendChild(m); } }
       for(let i=0;i<NB;i++){ if(houses[i]>0){ const p=cellPos(i); const n=houses[i]===5?1:houses[i]; const src=houses[i]===5?TH.hotel:TH.maison;
-        for(let h=0;h<n;h++){ const hi=new Image(); hi.src=src; hi.style.cssText='position:absolute;height:3.4%;z-index:2;transform:translate(-50%,-50%);filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))';
-          hi.style.left=(p.x*100 + (h-(n-1)/2)*2.6)+'%'; hi.style.top=(p.y*100 - 6)+'%'; bd.appendChild(hi); } } }
+        for(let h=0;h<n;h++){ const hi=new Image(); hi.src=src; hi.style.cssText='position:absolute;height:3%;z-index:2;transform:translate(-50%,-50%);filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))';
+          hi.style.left=(p.x*100+(h-(n-1)/2)*2.4)+'%'; hi.style.top=(p.y*100-5.5)+'%'; bd.appendChild(hi); } } }
       const hp=cellPos(pl[turn].pos); const hl=document.createElement('div'); hl.className='mo-hl'; hl.style.left=(hp.x*100)+'%'; hl.style.top=(hp.y*100)+'%'; bd.appendChild(hl);
       const byCell={}; pl.forEach((pw,i)=>{ if(!pw.alive)return; (byCell[pw.pos]=byCell[pw.pos]||[]).push(i); });
       Object.keys(byCell).forEach(k=>{ const list=byCell[k]; list.forEach((pi,j)=>{ const pw=pl[pi]; const p=cellPos(pw.pos);
-        const el=document.createElement('div'); el.className='mo-pawn'; const off=list.length>1?(j-(list.length-1)/2)*3:0;
+        const el=document.createElement('div'); el.className='mo-pawn'; const off=list.length>1?(j-(list.length-1)/2)*2.6:0;
         el.style.left=(p.x*100+off)+'%'; el.style.top=(p.y*100)+'%'; const im=new Image(); im.src=pw.pion[2]; el.appendChild(im); bd.appendChild(el); }); });
       wrap.appendChild(bd);
       const tray=document.createElement('div'); tray.className='dice-tray';
       (dice||[]).forEach(v=>{ const d=document.createElement('div'); d.className='die3d'+(dice.rolling?' roll':''); (PIPS[v]||[]).forEach(([x,y])=>{ const p=document.createElement('div'); p.className='pip'; p.style.left=x+'%'; p.style.top=y+'%'; d.appendChild(p); }); tray.appendChild(d); });
       wrap.appendChild(tray); c.appendChild(wrap); }
 
-    // grande carte générique avec boutons personnalisés -> renvoie l'id cliqué
-    function bigCard(opts){ return new Promise(res=>{ const bg=document.getElementById('moCardBg');
-      document.getElementById('moBand').textContent=opts.band||''; document.getElementById('moBand').style.background=opts.bandColor||'#555';
-      document.getElementById('moNm').textContent=opts.name||'';
-      document.getElementById('moPrice').textContent=opts.price||'';
-      document.getElementById('moSub').innerHTML=opts.sub||'';
+    function bigCard(o){ return new Promise(res=>{ const bg=document.getElementById('moCardBg');
+      document.getElementById('moBand').textContent=o.band||''; document.getElementById('moBand').style.background=o.bandColor||'#555';
+      document.getElementById('moNm').textContent=o.name||''; document.getElementById('moPrice').textContent=o.price||'';
+      document.getElementById('moRent').innerHTML=o.rent||''; document.getElementById('moSub').innerHTML=o.sub||'';
       const bx=document.getElementById('moBtns'); bx.innerHTML='';
-      (opts.buttons||[{id:'ok',label:'OK 👍'}]).forEach(b=>{ const x=document.createElement('button'); x.textContent=b.label; if(b.primary)x.style.background='var(--accent)';
+      (o.buttons||[{id:'ok',label:'OK 👍',primary:1}]).forEach(b=>{ const x=document.createElement('button'); x.textContent=b.label; if(b.primary)x.className='primary';
         x.addEventListener('click',()=>{ bg.classList.remove('show'); res(b.id); }); bx.appendChild(x); });
       bg.classList.add('show'); }); }
-    const TYPES={go:['DÉPART','#2e8b3d'],jail:['PRISON / VISITE','#555'],parking:['PARC GRATUIT','#2e8b3d'],gotojail:['ALLEZ EN PRISON','#c0392b'],chance:['CHANCE','#c9a227'],chest:['CAISSE DE COMMERCE','#12324f'],rail:['GARE','#333'],utility:['SERVICE PUBLIC','#3a6ea5'],street:['PROPRIÉTÉ','#7a5']};
+    const TY={go:['DÉPART','#2e8b3d'],jail:['PRISON / VISITE','#555'],parking:['PARKING GRATUIT','#2e8b3d'],gotojail:['ALLEZ EN PRISON','#c0392b'],chance:['CHANCE','#c9a227'],chest:['CAISSE DE COMMUNAUTÉ','#12324f'],rail:['GARE','#333'],utility:['SERVICE PUBLIC','#3a6ea5'],street:['PROPRIÉTÉ',''],tax:['TAXE','#8a1f1f']};
+    function rentLines(i){ const c=LAYOUT[i]; if(c.t!=='street') return '';
+      const lab=['Terrain seul','1 maison','2 maisons','3 maisons','4 maisons','HÔTEL'];
+      return c.r.map((v,k)=>lab[k]+' : <b>'+v+CUR+'</b>').join('<br>')+'<br><i>Hypothèque : '+c.m+CUR+'</i>'; }
 
-    function pay(pi, amount){ pl[pi].money-=amount; }
-    function bankruptCheck(pi){ if(pl[pi].money<0){ pl[pi].alive=false;
-      for(let i=0;i<NB;i++) if(owner[i]===pi){ owner[i]=-1; houses[i]=0; } // les biens reviennent à la banque
-      GC.combo(pl[pi].name+' est en faillite ! 💸'); return true; } return false; }
+    function bankruptCheck(pi){ if(pl[pi].money<0){ pl[pi].alive=false; for(let i=0;i<NB;i++) if(owner[i]===pi){owner[i]=-1;houses[i]=0;} GC.combo(pl[pi].name+' est en faillite ! 💸'); return true; } return false; }
 
-    async function resolveLanding(pi, diceTot, fromCard){ const i=pl[pi].pos; const c=LAYOUT[i]; const ty=TYPES[c.type];
-      if(c.type==='go'){ await bigCard({band:'DÉPART',bandColor:'#2e8b3d',name:nameOf(i,theme),sub:'Case Départ.'}); return; }
-      if(c.type==='parking'){ await bigCard({band:'PARC GRATUIT',bandColor:'#2e8b3d',name:nameOf(i,theme),sub:'Repos gratuit.'}); return; }
-      if(c.type==='jail'){ await bigCard({band:'PRISON / VISITE',bandColor:'#555',name:nameOf(i,theme),sub:'Simple visite.'}); return; }
-      if(c.type==='gotojail'){ await bigCard({band:'ALLEZ EN PRISON',bandColor:'#c0392b',name:nameOf(i,theme),sub:'Direction la prison !'}); pl[pi].pos=10; pl[pi].jail=3; board(); return; }
-      if(c.type==='chance'||c.type==='chest'){ if(fromCard) return; const isCh=c.type==='chance'; const card=draw(isCh?chanceDeck:chestDeck);
-        await bigCard({band:isCh?'CHANCE':'CAISSE DE COMMERCE',bandColor:isCh?'#c9a227':'#12324f',name:card[0]});
-        await applyCard(pi,card[1],diceTot); return; }
-      // propriété (street/rail/utility)
+    async function resolveLanding(pi,dice,fromCard){ const i=pl[pi].pos, c=LAYOUT[i], ty=TY[c.t];
+      if(c.t==='go'){ await bigCard({band:'DÉPART',bandColor:'#2e8b3d',name:nameOf(i,theme),sub:'Vous touchez 200'+CUR+' à chaque passage.'}); return; }
+      if(c.t==='parking'){ await bigCard({band:'PARKING GRATUIT',bandColor:'#2e8b3d',name:nameOf(i,theme),sub:'Repos gratuit.'}); return; }
+      if(c.t==='jail'){ await bigCard({band:'PRISON / VISITE',bandColor:'#555',name:nameOf(i,theme),sub:'Simple visite.'}); return; }
+      if(c.t==='gotojail'){ await bigCard({band:'ALLEZ EN PRISON',bandColor:'#c0392b',name:nameOf(i,theme),sub:'Direction la prison !'}); pl[pi].pos=10; pl[pi].jail=3; board(); return; }
+      if(c.t==='tax'){ await bigCard({band:'TAXE',bandColor:'#8a1f1f',name:nameOf(i,theme),price:'Payez '+c.tax+CUR}); pl[pi].money-=c.tax; bankruptCheck(pi); board(); return; }
+      if(c.t==='chance'||c.t==='chest'){ if(fromCard) return; const isCh=c.t==='chance'; const card=drawCard(isCh?chanceDeck:chestDeck);
+        await bigCard({band:isCh?(theme==='futur'?'IMPRÉVU':'CHANCE'):'CAISSE DE COMMUNAUTÉ',bandColor:isCh?'#c9a227':'#12324f',name:card[0]}); await applyCard(pi,card[1],dice); return; }
       const o=owner[i];
-      if(o<0){ const price=c.price; const canBuy=pl[pi].money>=price;
-        const r=await bigCard({band:ty[0],bandColor:c.group||ty[1],name:nameOf(i,theme),price:'Prix : '+price+' 💰',
-          sub: canBuy?'Voulez-vous l\u2019acheter ?':'Pas assez d\u2019argent.',
-          buttons: canBuy?[{id:'buy',label:'Acheter ('+price+')',primary:true},{id:'pass',label:'Passer'}]:[{id:'ok',label:'OK'}]});
-        if(r==='buy'){ pl[pi].money-=price; owner[i]=pi; GC.combo(pl[pi].name+' achète '+nameOf(i,theme)+' !'); board(); }
-        return; }
-      if(o===pi){ await bigCard({band:ty[0],bandColor:c.group||ty[1],name:nameOf(i,theme),sub:'Vous êtes chez vous.'}); return; }
-      // payer un loyer
-      const rent=rentOf(i,diceTot);
-      await bigCard({band:ty[0],bandColor:c.group||ty[1],name:nameOf(i,theme),price:'Loyer : '+rent+' 💰',sub:'Propriété de '+pl[o].name+'.'});
-      pay(pi,rent); if(!bankruptCheck(pi)) pl[o].money+=rent; board();
-    }
+      if(o<0){ const price=c.p, can=pl[pi].money>=price;
+        const r=await bigCard({band:ty[0],bandColor:c.g?G[c.g]:ty[1],name:nameOf(i,theme),price:'Prix : '+price+CUR,rent:rentLines(i),
+          sub:can?'Voulez-vous l\u2019acheter ?':'Pas assez d\u2019argent.',
+          buttons:can?[{id:'buy',label:'Acheter ('+price+CUR+')',primary:1},{id:'pass',label:'Passer'}]:[{id:'ok',label:'OK',primary:1}]});
+        if(r==='buy'){ pl[pi].money-=price; owner[i]=pi; GC.combo(pl[pi].name+' achète '+nameOf(i,theme)+' !'); board(); } return; }
+      if(o===pi){ await bigCard({band:ty[0],bandColor:c.g?G[c.g]:ty[1],name:nameOf(i,theme),rent:rentLines(i),sub:'Vous êtes chez vous.'}); return; }
+      const rent=rentOf(i,dice);
+      await bigCard({band:ty[0],bandColor:c.g?G[c.g]:ty[1],name:nameOf(i,theme),price:'Loyer : '+rent+CUR,sub:'Propriété de '+pl[o].name+'.'});
+      pl[pi].money-=rent; if(!bankruptCheck(pi)) pl[o].money+=rent; board(); }
 
-    async function applyCard(pi, fx, diceTot){ const pw=pl[pi];
-      if(fx.money){ pw.money+=fx.money; GC.combo((fx.money>0?'+':'')+fx.money+'💰 pour '+pw.name+'.'); bankruptCheck(pi); board(); await GC.sleep(500); return; }
+    async function applyCard(pi,fx,dice){ const pw=pl[pi];
+      if(fx.money){ pw.money+=fx.money; GC.combo((fx.money>0?'+':'')+fx.money+CUR+' pour '+pw.name+'.'); bankruptCheck(pi); board(); await GC.sleep(500); return; }
       if(fx.go0){ pw.pos=0; pw.money+=200; GC.combo(pw.name+' file au Départ (+200).'); board(); await GC.sleep(500); return; }
-      if(fx.move){ let np=(pw.pos+fx.move)%NB; if(np<0)np+=NB; const passed = fx.move>0 && pw.pos+fx.move>=NB; pw.pos=np; if(passed){pw.money+=200;} board(); await GC.sleep(400); await resolveLanding(pi,diceTot,true); return; }
+      if(fx.move){ let np=(pw.pos+fx.move)%NB; if(np<0)np+=NB; const passed=fx.move>0&&pw.pos+fx.move>=NB; pw.pos=np; if(passed)pw.money+=200; board(); await GC.sleep(400); await resolveLanding(pi,dice,true); return; }
       if(fx.tojail){ pw.pos=10; pw.jail=3; GC.combo(pw.name+' va en prison !'); board(); await GC.sleep(500); return; }
-      if(fx.nearestRail){ let d=1; while(LAYOUT[(pw.pos+d)%NB].type!=='rail'&&d<NB)d++; const passed=pw.pos+d>=NB; pw.pos=(pw.pos+d)%NB; if(passed)pw.money+=200; board(); await GC.sleep(400); await resolveLanding(pi,diceTot,true); return; }
+      if(fx.nearestRail){ let d=1; while(LAYOUT[(pw.pos+d)%NB].t!=='rail'&&d<NB)d++; const passed=pw.pos+d>=NB; pw.pos=(pw.pos+d)%NB; if(passed)pw.money+=200; board(); await GC.sleep(400); await resolveLanding(pi,dice,true); return; }
       if(fx.getout){ pw.getout++; GC.combo(pw.name+' garde une carte « sortie de prison ».'); return; }
       if(fx.birthday){ pl.forEach((q,j)=>{ if(j!==pi&&q.alive){ q.money-=fx.birthday; pw.money+=fx.birthday; } }); GC.combo('Joyeux anniversaire '+pw.name+' !'); board(); await GC.sleep(500); return; }
-      if(fx.repairs){ let cost=0; for(let i=0;i<NB;i++){ if(owner[i]===pi){ if(houses[i]===5) cost+=fx.repairs[1]; else cost+=houses[i]*fx.repairs[0]; } }
-        if(cost>0){ pw.money-=cost; GC.combo(pw.name+' paie '+cost+'💰 de réparations.'); bankruptCheck(pi); board(); await GC.sleep(500); } return; }
-    }
+      if(fx.repairs){ let cost=0; for(let i=0;i<NB;i++) if(owner[i]===pi){ cost+= houses[i]===5?fx.repairs[1]:houses[i]*fx.repairs[0]; } if(cost>0){ pw.money-=cost; GC.combo(pw.name+' paie '+cost+CUR+' de réparations.'); bankruptCheck(pi); board(); await GC.sleep(500);} return; } }
 
-    async function rollDice(){ const d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6);
-      for(let k=0;k<7;k++){ const a=[1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)]; a.rolling=true; board(a); await GC.sleep(75); }
+    async function rollDice(){ const d1=1+Math.floor(Math.random()*6),d2=1+Math.floor(Math.random()*6);
+      for(let k=0;k<7;k++){ const a=[1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)]; a.rolling=true; board(a); await GC.sleep(72); }
       board([d1,d2]); await GC.sleep(200); return {d1,d2}; }
-    async function stepMove(pi,steps){ for(let k=0;k<steps;k++){ const pw=pl[pi]; pw.pos=(pw.pos+1)%NB; if(pw.pos===0){ pw.money+=200; } board(); GC.play&&GC.play(); await GC.sleep(190); } }
-
+    async function stepMove(pi,steps){ for(let k=0;k<steps;k++){ const pw=pl[pi]; pw.pos=(pw.pos+1)%NB; if(pw.pos===0) pw.money+=200; board(); GC.play&&GC.play(); await GC.sleep(150); } }
     async function buildPhase(pi){ while(true){ const opts=[];
-        for(let i=0;i<NB;i++) if(canBuild(pi,i)) opts.push({id:''+i,label:(houses[i]===4?'🏨 Hôtel ':'🏠 ')+nameOf(i,theme)+' ('+houseCost(i)+'💰)'});
-        if(!opts.length){ GC.combo('Rien à construire pour l\u2019instant.'); await GC.sleep(500); return; }
-        opts.push({id:'done',label:'✅ Terminé'});
-        GC.say(pl[pi].name+' — construire une maison ? (couleur complète requise)');
-        const a=await GC.ask(opts); GC.setButtons([]);
-        if(a==='done') return;
-        const i=+a; pl[pi].money-=houseCost(i); houses[i]++; GC.combo(pl[pi].name+(houses[i]===5?' bâtit un HÔTEL sur ':' bâtit une maison sur ')+nameOf(i,theme)+' !'); board(); await GC.sleep(400);
-    } }
-    function aliveCount(){ return pl.filter(p=>p.alive).length; }
-    board(); GC.say('Bienvenue chez '+TH.title+' ! Chacun démarre avec '+START_MONEY+'💰.'); await GC.sleep(900);
-    while(aliveCount()>1){
-      const pw=pl[turn]; if(!pw.alive){ turn=(turn+1)%N; continue; }
-      board(); 
-      if(pw.jail>0){ // en prison : double pour sortir, sinon 50 au 3e essai
-        GC.say(pw.name+' est en prison. Lancez pour tenter un double !');
-        await GC.ask([{id:'roll',label:'🎲🎲 Lancer',primary:true}]); GC.setButtons([]);
-        const {d1,d2}=await rollDice();
-        if(d1===d2){ pw.jail=0; GC.combo('Double ! '+pw.name+' sort de prison.'); await GC.sleep(500); await stepMove(turn,d1+d2); await resolveLanding(turn,d1+d2,false); }
-        else { pw.jail--; if(pw.jail===0){ pw.money-=50; GC.combo(pw.name+' paie 50 et sort.'); bankruptCheck(turn); if(pw.alive){ await stepMove(turn,d1+d2); await resolveLanding(turn,d1+d2,false); } }
-          else { GC.combo('Pas de double… '+pw.name+' reste ('+pw.jail+' essai'+(pw.jail>1?'s':'')+').'); await GC.sleep(700); } }
-        turn=(turn+1)%N; continue;
-      }
+        for(let i=0;i<NB;i++) if(canBuild(pi,i)) opts.push({id:''+i,label:(houses[i]===4?'🏨 ':'🏠 ')+nameOf(i,theme)+' ('+LAYOUT[i].hc+CUR+')'});
+        if(!opts.length){ GC.combo('Rien à construire (couleur complète requise).'); await GC.sleep(600); return; }
+        opts.push({id:'done',label:'✅ Terminé',primary:1});
+        GC.say(pl[pi].name+' — construire ?'); const a=await GC.ask(opts); GC.setButtons([]);
+        if(a==='done') return; const i=+a; pl[pi].money-=LAYOUT[i].hc; houses[i]++; GC.combo(pl[pi].name+(houses[i]===5?' bâtit un HÔTEL !':' bâtit une maison !')); board(); await GC.sleep(400); } }
+    const aliveCount=()=>pl.filter(p=>p.alive).length;
+
+    board(); GC.say('Bienvenue — '+TH.title+' ! Chacun démarre avec '+START_MONEY+CUR+'.'); await GC.sleep(900);
+    while(aliveCount()>1){ const pw=pl[turn]; if(!pw.alive){ turn=(turn+1)%N; continue; } board();
+      if(pw.jail>0){ GC.say(pw.name+' est en prison — un double pour sortir !');
+        await GC.ask([{id:'roll',label:'🎲🎲 Lancer',primary:true}]); GC.setButtons([]); const {d1,d2}=await rollDice();
+        if(d1===d2){ pw.jail=0; GC.combo('Double ! Libéré.'); await GC.sleep(400); await stepMove(turn,d1+d2); await resolveLanding(turn,d1+d2,false); }
+        else { pw.jail--; if(pw.jail===0){ pw.money-=50; GC.combo(pw.name+' paie 50'+CUR+' et sort.'); bankruptCheck(turn); if(pw.alive){ await stepMove(turn,d1+d2); await resolveLanding(turn,d1+d2,false);} } else { GC.combo('Pas de double… ('+pw.jail+' essai'+(pw.jail>1?'s':'')+')'); await GC.sleep(700);} }
+        turn=(turn+1)%N; continue; }
       const canB=(()=>{ for(let i=0;i<NB;i++) if(canBuild(turn,i)) return true; return false; })();
-      GC.say('À '+pw.name+' de jouer.');
-      const acts=[{id:'roll',label:'🎲🎲 Lancer les dés',primary:true}]; if(canB) acts.push({id:'build',label:'🏠 Construire'});
-      const act=await GC.ask(acts); GC.setButtons([]);
-      if(act==='build'){ await buildPhase(turn); continue; }
-      const {d1,d2}=await rollDice(); const tot=d1+d2;
-      GC.combo(pw.name+' fait '+d1+' + '+d2+' = '+tot+(d1===d2?' (double !)':'')+'.'); await GC.sleep(450);
-      await stepMove(turn,tot);
-      await resolveLanding(turn,tot,false);
-      if(!pw.alive){ if(aliveCount()<=1) break; }
-      turn=(turn+1)%N; await GC.sleep(150);
-    }
-    const winner=pl.find(p=>p.alive);
-    board();
-    return GC.gameOver('Victoire de '+(winner?winner.name:'?')+' !', (winner?winner.name:'?')+' est le dernier marchand solvable ! 🎩💰', winner?winner.name:null);
+      GC.say('À '+pw.name+' de jouer.'); const acts=[{id:'roll',label:'🎲🎲 Lancer les dés',primary:true}]; if(canB) acts.push({id:'build',label:'🏠 Construire'});
+      const act=await GC.ask(acts); GC.setButtons([]); if(act==='build'){ await buildPhase(turn); continue; }
+      const {d1,d2}=await rollDice(); const tot=d1+d2; GC.combo(pw.name+' fait '+d1+' + '+d2+' = '+tot+(d1===d2?' (double !)':'')+'.'); await GC.sleep(450);
+      await stepMove(turn,tot); await resolveLanding(turn,tot,false);
+      if(!pw.alive && aliveCount()<=1) break;
+      turn=(turn+1)%N; await GC.sleep(150); }
+    const w=pl.find(p=>p.alive); board();
+    return GC.gameOver('Victoire de '+(w?w.name:'?')+' !',(w?w.name:'?')+' est le dernier propriétaire solvable ! 🎩💰', w?w.name:null);
   }
 });
 </script>
