@@ -45,9 +45,9 @@
 'use strict';
 const THEMES={
   ancien:{ board:'monopoly/plateau-ancien.webp', title:'Le Grand Marchand',
-    pions:[['chapeau','🎩','monopoly/anc-pion-chapeau.webp'],['montre','⏱️','monopoly/anc-pion-montre.webp'],['cle','🔑','monopoly/anc-pion-cle.webp'],['bateau','⛵','monopoly/anc-pion-bateau.webp'],['chat','🐱','monopoly/anc-pion-chat.webp']] },
+    pions:[['chapeau','🎩','monopoly/anc-pion-chapeau.webp'],['montre','⏱️','monopoly/anc-pion-montre.webp'],['cle','🔑','monopoly/anc-pion-cle.webp'],['bateau','⛵','monopoly/anc-pion-bateau.webp'],['chat','🐱','monopoly/anc-pion-chat.webp']], maison:'monopoly/anc-maison.webp', hotel:'monopoly/anc-hotel.webp' },
   futur:{ board:'monopoly/plateau-futur.webp', title:'Néo Marchand',
-    pions:[['p1','🚀','monopoly/fut-pion-1.webp'],['p2','🛸','monopoly/fut-pion-2.webp'],['p3','🤖','monopoly/fut-pion-3.webp'],['p4','👾','monopoly/fut-pion-4.webp'],['p5','⚡','monopoly/fut-pion-5.webp']] },
+    pions:[['p1','🚀','monopoly/fut-pion-1.webp'],['p2','🛸','monopoly/fut-pion-2.webp'],['p3','🤖','monopoly/fut-pion-3.webp'],['p4','👾','monopoly/fut-pion-4.webp'],['p5','⚡','monopoly/fut-pion-5.webp']], maison:'monopoly/fut-maison.webp', hotel:'monopoly/fut-hotel.webp' },
 };
 function curTheme(){ let id='ancien'; try{ id=localStorage.getItem('monoTheme')||'ancien'; }catch(e){} return THEMES[id]?id:'ancien'; }
 const MonoSkin={ buildSkinSelect(sel,onChange){ sel.innerHTML='';
@@ -170,6 +170,9 @@ CardShell({
 
     const pl=P.map((p,i)=>({pos:0, name:p.name, pion:TH.pions[i%TH.pions.length], money:START_MONEY, alive:true, jail:0, getout:0, col:PLAYER_COL[i%5]}));
     const owner=new Array(NB).fill(-1);   // propriétaire de chaque case (-1 = banque)
+    const houses=new Array(NB).fill(0);   // 0..4 maisons, 5 = hôtel
+    function houseCost(i){ const p=LAYOUT[i].price||0; return p<=140?50:(p<=260?100:150); }
+    function rentTiers(i){ const p=LAYOUT[i].price||0; const b=Math.max(2,Math.round(p/10)); return [b,b*5,b*15,b*40,b*55,b*70]; }
     let turn=0;
     let chanceDeck=shuffle(CHANCE.slice()), chestDeck=shuffle(CHEST.slice());
     const draw=deck=>{ if(!deck.length){ deck.push(...shuffle((deck===chanceDeck?CHANCE:CHEST).slice())); } return deck.shift(); };
@@ -179,7 +182,9 @@ CardShell({
     function rentOf(i, diceTot){ const c=LAYOUT[i]; const o=owner[i]; if(o<0) return 0;
       if(c.type==='rail'){ const cnt=railIdx.filter(x=>owner[x]===o).length; return 25*cnt; }
       if(c.type==='utility'){ const cnt=utilIdx.filter(x=>owner[x]===o).length; return diceTot*(cnt>=2?10:4); }
-      let base=Math.max(2,Math.round(c.price/12)); if(ownsAllGroup(o,c.group)) base*=2; return base; }
+      const t=rentTiers(i); if(houses[i]>0) return t[Math.min(5,houses[i])];
+      let base=t[0]; if(ownsAllGroup(o,c.group)) base*=2; return base; }
+    function canBuild(pi,i){ const c=LAYOUT[i]; return c.type==='street' && owner[i]===pi && ownsAllGroup(pi,c.group) && houses[i]<5 && pl[pi].money>=houseCost(i); }
 
     function bar(){ const b=document.createElement('div'); b.className='mo-players';
       pl.forEach((pw,i)=>{ if(!pw.alive) return; const d=document.createElement('div'); d.className='pp'+(i===turn?' turn':'');
@@ -191,6 +196,9 @@ CardShell({
       for(let i=0;i<NB;i++){ if(owner[i]>=0){ const p=cellPos(i); const m=document.createElement('div');
         m.style.cssText='position:absolute;width:14px;height:14px;border-radius:50%;border:2px solid #fff;z-index:2;transform:translate(-50%,-50%);background:'+pl[owner[i]].col;
         m.style.left=(p.x*100)+'%'; m.style.top=(p.y*100 - (cellPos(i).y<0.5?-6:6)/5)+'%'; bd.appendChild(m); } }
+      for(let i=0;i<NB;i++){ if(houses[i]>0){ const p=cellPos(i); const n=houses[i]===5?1:houses[i]; const src=houses[i]===5?TH.hotel:TH.maison;
+        for(let h=0;h<n;h++){ const hi=new Image(); hi.src=src; hi.style.cssText='position:absolute;height:3.4%;z-index:2;transform:translate(-50%,-50%);filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))';
+          hi.style.left=(p.x*100 + (h-(n-1)/2)*2.6)+'%'; hi.style.top=(p.y*100 - 6)+'%'; bd.appendChild(hi); } } }
       const hp=cellPos(pl[turn].pos); const hl=document.createElement('div'); hl.className='mo-hl'; hl.style.left=(hp.x*100)+'%'; hl.style.top=(hp.y*100)+'%'; bd.appendChild(hl);
       const byCell={}; pl.forEach((pw,i)=>{ if(!pw.alive)return; (byCell[pw.pos]=byCell[pw.pos]||[]).push(i); });
       Object.keys(byCell).forEach(k=>{ const list=byCell[k]; list.forEach((pi,j)=>{ const pw=pl[pi]; const p=cellPos(pw.pos);
@@ -215,7 +223,7 @@ CardShell({
 
     function pay(pi, amount){ pl[pi].money-=amount; }
     function bankruptCheck(pi){ if(pl[pi].money<0){ pl[pi].alive=false;
-      for(let i=0;i<NB;i++) if(owner[i]===pi) owner[i]=-1; // les biens reviennent à la banque
+      for(let i=0;i<NB;i++) if(owner[i]===pi){ owner[i]=-1; houses[i]=0; } // les biens reviennent à la banque
       GC.combo(pl[pi].name+' est en faillite ! 💸'); return true; } return false; }
 
     async function resolveLanding(pi, diceTot, fromCard){ const i=pl[pi].pos; const c=LAYOUT[i]; const ty=TYPES[c.type];
@@ -249,7 +257,8 @@ CardShell({
       if(fx.nearestRail){ let d=1; while(LAYOUT[(pw.pos+d)%NB].type!=='rail'&&d<NB)d++; const passed=pw.pos+d>=NB; pw.pos=(pw.pos+d)%NB; if(passed)pw.money+=200; board(); await GC.sleep(400); await resolveLanding(pi,diceTot,true); return; }
       if(fx.getout){ pw.getout++; GC.combo(pw.name+' garde une carte « sortie de prison ».'); return; }
       if(fx.birthday){ pl.forEach((q,j)=>{ if(j!==pi&&q.alive){ q.money-=fx.birthday; pw.money+=fx.birthday; } }); GC.combo('Joyeux anniversaire '+pw.name+' !'); board(); await GC.sleep(500); return; }
-      if(fx.repairs){ /* maisons/hôtels : étape 3 -> 0 pour l'instant */ return; }
+      if(fx.repairs){ let cost=0; for(let i=0;i<NB;i++){ if(owner[i]===pi){ if(houses[i]===5) cost+=fx.repairs[1]; else cost+=houses[i]*fx.repairs[0]; } }
+        if(cost>0){ pw.money-=cost; GC.combo(pw.name+' paie '+cost+'💰 de réparations.'); bankruptCheck(pi); board(); await GC.sleep(500); } return; }
     }
 
     async function rollDice(){ const d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6);
@@ -257,6 +266,15 @@ CardShell({
       board([d1,d2]); await GC.sleep(200); return {d1,d2}; }
     async function stepMove(pi,steps){ for(let k=0;k<steps;k++){ const pw=pl[pi]; pw.pos=(pw.pos+1)%NB; if(pw.pos===0){ pw.money+=200; } board(); GC.play&&GC.play(); await GC.sleep(190); } }
 
+    async function buildPhase(pi){ while(true){ const opts=[];
+        for(let i=0;i<NB;i++) if(canBuild(pi,i)) opts.push({id:''+i,label:(houses[i]===4?'🏨 Hôtel ':'🏠 ')+nameOf(i,theme)+' ('+houseCost(i)+'💰)'});
+        if(!opts.length){ GC.combo('Rien à construire pour l\u2019instant.'); await GC.sleep(500); return; }
+        opts.push({id:'done',label:'✅ Terminé'});
+        GC.say(pl[pi].name+' — construire une maison ? (couleur complète requise)');
+        const a=await GC.ask(opts); GC.setButtons([]);
+        if(a==='done') return;
+        const i=+a; pl[pi].money-=houseCost(i); houses[i]++; GC.combo(pl[pi].name+(houses[i]===5?' bâtit un HÔTEL sur ':' bâtit une maison sur ')+nameOf(i,theme)+' !'); board(); await GC.sleep(400);
+    } }
     function aliveCount(){ return pl.filter(p=>p.alive).length; }
     board(); GC.say('Bienvenue chez '+TH.title+' ! Chacun démarre avec '+START_MONEY+'💰.'); await GC.sleep(900);
     while(aliveCount()>1){
@@ -271,8 +289,11 @@ CardShell({
           else { GC.combo('Pas de double… '+pw.name+' reste ('+pw.jail+' essai'+(pw.jail>1?'s':'')+').'); await GC.sleep(700); } }
         turn=(turn+1)%N; continue;
       }
+      const canB=(()=>{ for(let i=0;i<NB;i++) if(canBuild(turn,i)) return true; return false; })();
       GC.say('À '+pw.name+' de jouer.');
-      await GC.ask([{id:'roll',label:'🎲🎲 Lancer les dés',primary:true}]); GC.setButtons([]);
+      const acts=[{id:'roll',label:'🎲🎲 Lancer les dés',primary:true}]; if(canB) acts.push({id:'build',label:'🏠 Construire'});
+      const act=await GC.ask(acts); GC.setButtons([]);
+      if(act==='build'){ await buildPhase(turn); continue; }
       const {d1,d2}=await rollDice(); const tot=d1+d2;
       GC.combo(pw.name+' fait '+d1+' + '+d2+' = '+tot+(d1===d2?' (double !)':'')+'.'); await GC.sleep(450);
       await stepMove(turn,tot);

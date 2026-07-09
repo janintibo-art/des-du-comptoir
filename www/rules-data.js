@@ -386,5 +386,5 @@ autre joueur, payez-lui un <b>loyer</b> (double si toute la couleur est \u00e0 l
 rapportent selon leur nombre). En passant par le <b>D\u00e9part</b>, touchez 200. Piochez <b>Chance</b> et
 <b>Caisse de Commerce</b>. La <b>prison</b> vous bloque jusqu\u2019\u00e0 un double (ou 50\ud83d\udcb0).</p>
 <p>Un joueur \u00e0 court d\u2019argent fait <b>faillite</b> : le dernier marchand solvable gagne !</p>
-<p><i>\u00c0 venir :</i> construire des <b>maisons et h\u00f4tels</b>, et le mode <b>r\u00e9seau</b>.</p>`},
+<p>Poss\u00e9dez toute une <b>couleur</b> pour b\u00e2tir des <b>maisons</b> puis un <b>h\u00f4tel</b> : les loyers grimpent en fl\u00e8che ! <i>\u00c0 venir : le mode r\u00e9seau.</i></p>`},
 };
