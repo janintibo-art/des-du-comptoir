@@ -125,7 +125,7 @@ de cartes, de dominos et de plateau du comptoir !</p>
 part par Bluetooth, WhatsApp ou tout autre canal, sans magasin d'applications.</p>
 <p><b>Styles de cartes.</b> En jeu, un s\u00e9lecteur permet de choisir parmi 5 jeux de
 cartes illustr\u00e9s (dont deux tarots complets de 78 cartes) — chacun choisit le sien
-sur son t\u00e9l\u00e9phone.</p>`},
+sur son t\u00e9l\u00e9phone.</p>\n<p><b>Nouveau — le mode Table :</b> \u00e0 la cr\u00e9ation, cochez \u00ab \ud83d\udcfa Cet appareil est la Table \u00bb. Posez cette tablette (ou ce t\u00e9l\u00e9phone) au centre : elle affiche le <b>plateau commun</b> que tout le monde voit. Chaque joueur rejoint avec le code et garde sa <b>main priv\u00e9e</b> sur son propre \u00e9cran \u2014 comme une vraie table de jeu !</p>`},
 
 huit: { title:'Le 8 am\u00e9ricain (cartes)', html:`
 <p>52 cartes, 2 \u00e0 4 joueurs, chacun sur son t\u00e9l\u00e9phone. Le premier \u00e0 <b>vider sa

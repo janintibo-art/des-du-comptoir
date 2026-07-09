@@ -53,6 +53,13 @@ grille calée au pixel sur l'image. Moteur validé par simulation (conservation 
 le hasard, gagne/bloque parfaitement), chute animée des jetons. En **réseau** aussi (`net-games6.js`).
 Plateau et jetons détourés (`www/p4/`), grille calée au pixel. Salon : **23 jeux**.
 
+## Mode « Table + Joueurs » 📺
+Dans le Salon, à la création on peut cocher **« Cet appareil est la Table »** : ce device devient
+l'**arbitre non-joueur** et affiche le **plateau public** que tout le monde voit (façon Jackbox/AirConsole) ;
+chaque joueur rejoint et garde sa **main privée** sur son téléphone. Implémenté par une **vue Table
+générique** dérivée de la vue publique (`renderTable`/`tableUI` dans `salon.html`) — fonctionne pour les
+**23 jeux** réseau, sans image dédiée. Embellissements par jeu possibles ensuite.
+
 ## UNO 🎴
 **UNO** (`uno.html`) : jeu complet (0-9, Passer, Inverser, +2, Jokers, +4), 2-4 joueurs contre
 l'IA ou à plusieurs, et **en réseau** (`net-games5.js`). 54 faces détourées de vos planches

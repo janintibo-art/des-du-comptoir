@@ -152,6 +152,13 @@ button.primary{font-size:16px;padding:11px 22px}
 .p4-cols{position:absolute;inset:0;z-index:3;display:flex}
 .p4-col{flex:1;cursor:pointer}
 .p4-col.play:hover{background:rgba(255,255,255,.10)}
+.tableopt{display:flex;align-items:center;gap:8px;font-size:13.5px;opacity:.9;margin:8px 0;text-align:left;line-height:1.4;cursor:pointer}
+.tableopt input{width:20px;height:20px;flex:none}
+.tablebanner{background:rgba(224,163,76,.14);border:1px solid rgba(224,163,76,.5);border-radius:12px;padding:10px 12px;margin:10px 0;font-size:14px}
+.tabletag{position:sticky;top:0;z-index:5;display:inline-block;background:var(--accent);color:#14140f;font-weight:bold;border-radius:999px;padding:4px 14px;margin-bottom:6px;letter-spacing:.1em}
+#vGame.is-table #ghand{display:none}
+#vGame.is-table #gcenter{transform:scale(1.04);transform-origin:top center}
+#vGame.is-table #gbtns{display:none}
 </style>
 </head>
 <body class="menu">
@@ -160,10 +167,13 @@ button.primary{font-size:16px;padding:11px 22px}
   <h1>🌐 LE SALON</h1>
 
   <div id="vHome">
-    <p>Chaque joueur sur <b>son propre téléphone</b>, chacun voit son propre jeu.
-    Créez une table, partagez le code, jouez.</p>
+    <p>Chaque joueur sur <b>son propre téléphone</b>. Deux façons de jouer :
+    en <b>mode classique</b> (l'hôte joue aussi), ou en <b>mode Table</b> : une tablette (ou un
+    téléphone posé au centre) affiche le <b>plateau que tout le monde voit</b>, et chacun garde
+    sa main privée sur son écran — comme une vraie table de jeu !</p>
     <div class="box"><h2>Créer une table</h2>
-      <input id="hName" class="big" maxlength="14" placeholder="Votre nom">
+      <input id="hName" class="big" maxlength="14" placeholder="Votre nom (ou « Table »)">
+      <label class="tableopt"><input type="checkbox" id="asTable"> 📺 <b>Cet appareil est la Table</b> — il affiche le plateau au centre et ne joue pas</label>
       <button class="primary" id="btnHost">Créer la table</button></div>
     <div class="box"><h2>Rejoindre une table</h2>
       <input id="jName" class="big" maxlength="14" placeholder="Votre nom">
@@ -178,6 +188,7 @@ button.primary{font-size:16px;padding:11px 22px}
     <div class="box">
       <h2>Code de la table</h2>
       <div class="roomcode" id="roomCode"></div>
+      <div id="tableBanner" class="tablebanner" style="display:none">📺 Cet appareil est la <b>Table</b> — posez-le au centre. Les joueurs rejoignent avec le code.</div>
       <div class="plist" id="plist"></div>
       <div id="lobbyWarn" class="warn"></div>
       <div id="hostPick" style="display:none">
@@ -190,6 +201,7 @@ button.primary{font-size:16px;padding:11px 22px}
   </div>
 
   <div id="vGame">
+    <div id="tableTag" class="tabletag" style="display:none">📺 TABLE</div>
     <div class="gtop"><span class="gtitle" id="gtitle"></span>
       <select id="gskin" style="display:none"></select></div>
     <div class="opps" id="gopps"></div>
@@ -211,31 +223,35 @@ button.primary{font-size:16px;padding:11px 22px}
 const $=id=>document.getElementById(id);
 const escp=s=>String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
 const show=v=>['vHome','vLobby','vGame'].forEach(x=>$(x).style.display=x===v?'block':'none');
-let net=null, myName=null, isHost=false;
+let net=null, myName=null, isHost=false, isTable=false;
+function gamePlayers(){ const ps=net?net.players():[]; return isTable? ps.filter(p=>!p.host) : ps; }
 let mod=null, state=null, pickedGameId=(NetGames.list[0]&&NetGames.list[0].id);
 
 function refreshLobby(names){ $('plist').innerHTML=names.map((n,i)=>(i===0?'👑 ':'🎲 ')+escp(n)).join('<br>'); updateStart(names.length); }
 function updateStart(count){ if(!isHost) return; const m=NetGames.list.find(g=>g.id===pickedGameId);
+  if(count==null) count=gamePlayers().length;
   $('btnStart').disabled=!(m&&count>=m.minP&&count<=m.maxP);
   $('btnStart').textContent=m?('Lancer : '+m.label+' ('+m.minP+'-'+m.maxP+' j.)'):'Lancer'; }
 function buildGamePick(){ const box=$('gamepick'); box.innerHTML='';
   NetGames.list.forEach(g=>{ const lab=document.createElement('label'); lab.className=(g.id===pickedGameId?'sel':'');
     lab.innerHTML='<input type="radio" name="game" value="'+g.id+'"'+(g.id===pickedGameId?' checked':'')+'> <b>'+g.label+'</b> <small style="opacity:.6">('+g.minP+'-'+g.maxP+' j.)</small>';
-    lab.querySelector('input').addEventListener('change',()=>{ pickedGameId=g.id; [...box.children].forEach(c=>c.classList.remove('sel')); lab.classList.add('sel'); updateStart(net.players().length); });
+    lab.querySelector('input').addEventListener('change',()=>{ pickedGameId=g.id; [...box.children].forEach(c=>c.classList.remove('sel')); lab.classList.add('sel'); updateStart(gamePlayers().length); });
     box.appendChild(lab); }); }
 
 $('btnHost').addEventListener('click',()=>{
   const name=$('hName').value.trim(); if(!name){ $('homeWarn').textContent='Entrez votre nom.'; return; }
-  myName=name; isHost=true; $('homeWarn').textContent='Création…';
+  isTable=$('asTable').checked; myName=name; isHost=true; $('homeWarn').textContent='Création…';
   net=Net.host(name,{
-    onReady(code){ $('roomCode').textContent=code; $('hostPick').style.display='block'; buildGamePick(); refreshLobby([name]); show('vLobby'); },
+    onReady(code){ $('roomCode').textContent=code; $('hostPick').style.display='block'; buildGamePick();
+      if(isTable){ $('tableBanner').style.display='block'; $('vGame').classList.add('is-table'); $('tableTag').style.display='inline-block'; }
+      refreshLobby(gamePlayers().map(p=>p.name)); show('vLobby'); },
     onJoin(){ syncLobby(); },
     onLeave(g){ if(state) endGame(escp(g.name)+' a quitté la table.'); else syncLobby(); },
     onMessage(g,msg){ if(state&&msg.t==='act') hostApply(g.name,msg.action); },
     onError(e){ $('homeWarn').textContent='Erreur réseau ('+(e.type||e)+').'; },
   });
 });
-function syncLobby(){ const names=net.players().map(p=>p.name); refreshLobby(names); net.broadcast({t:'lobby',players:names}); }
+function syncLobby(){ const names=gamePlayers().map(p=>p.name); refreshLobby(names); net.broadcast({t:'lobby',players:names}); }
 
 $('btnJoin').addEventListener('click',()=>{
   const name=$('jName').value.trim(), code=$('jCode').value.trim();
@@ -257,14 +273,15 @@ $('btnJoin').addEventListener('click',()=>{
 
 $('btnStart').addEventListener('click',()=>{
   mod=NetGames[pickedGameId]; net.broadcast({t:'start',game:mod.id}); setupSkin(); show('vGame');
-  $('gtitle').textContent=mod.label; state=mod.deal(net.players().map(p=>p.name)); pushViews();
+  $('gtitle').textContent=mod.label; state=mod.deal(gamePlayers().map(p=>p.name)); pushViews();
 });
 
-function hostApply(name,action){ if(!state) return; const r=mod.apply(state,name,action); if(!r.ok) return;
+function hostApply(name,action){ if(!state) return; let r; try{ r=mod.apply(state,name,action); }catch(e){ return; } if(!r||!r.ok) return;
   if(r.msg){ $('gcombo').textContent=r.msg; net.broadcast({t:'combo',text:r.msg}); } pushViews(); }
 function pushViews(){ const o=mod.isOver(state);
   if(o){ net.broadcast({t:'end',text:o.text}); showEnd(o.text,true); state=null; return; }
-  state.players.forEach(p=>{ const v=mod.view(state,p.name); if(p.name===myName) renderView(v); else net.sendTo(p.name,{t:'view',view:v}); }); }
+  state.players.forEach(p=>{ const v=mod.view(state,p.name); if(p.name===myName) renderView(v); else net.sendTo(p.name,{t:'view',view:v}); });
+  if(isTable) renderTable(); }
 
 const ui={
   get myName(){ return myName; },
@@ -280,6 +297,17 @@ const ui={
   send(action){ if(isHost) hostApply(myName,action); else net.send({t:'act',action}); },
 };
 function renderView(v){ $('endBox').style.display='none'; show('vGame'); $('gpick').innerHTML=''; const m=NetGames[v.game]||mod; m.render(v,ui); }
+const tableUI={ get myName(){ return '\u0000TABLE'; },
+  opps:(list)=>ui.opps(list), center:(n)=>ui.center(n), combo:(t)=>ui.combo(t),
+  hand(){ $('ghand').innerHTML=''; }, buttons(){ $('gbtns').innerHTML=''; },
+  say(){}, choose(){}, pickSuit(){}, send(){} };
+function renderTable(){ if(!state) return; $('endBox').style.display='none'; show('vGame');
+  const base=mod.view(state, state.players[0].name);
+  base.myTurn=false; base.hand=[]; base.legal=[]; base.moves=[]; base.drawn=null; base.canStay=false; base.isTable=true;
+  let cur=''; if(base.players){ const t=base.players.find(pp=>pp.turn); if(t) cur=t.name; }
+  try{ const m=NetGames[base.game]||mod; m.render(base, tableUI); }catch(e){}
+  $('gsay').textContent = cur? ('🎯 Au tour de '+cur) : 'Partie en cours…';
+}
 
 function setupSkin(){ const sel=$('gskin'); sel.style.display='none'; sel.innerHTML=''; if(!mod) return;
   const fam=mod.family || (['domino','matador'].includes(mod.id)?'domino':'cards');
@@ -296,7 +324,7 @@ function showEnd(text,host){ $('gsay').textContent=''; $('gbtns').innerHTML=''; 
   $('endTitle').textContent=text.replace(/<[^>]*>/g,' '); $('endBox').style.display='block';
   const eb=$('endBtns'); eb.innerHTML='';
   if(host){ const b=document.createElement('button'); b.className='primary'; b.textContent='🔁 Rejouer';
-    b.addEventListener('click',()=>{ $('endBox').style.display='none'; state=mod.deal(net.players().map(p=>p.name)); net.broadcast({t:'start',game:mod.id}); pushViews(); }); eb.appendChild(b);
+    b.addEventListener('click',()=>{ $('endBox').style.display='none'; state=mod.deal(gamePlayers().map(p=>p.name)); net.broadcast({t:'start',game:mod.id}); pushViews(); }); eb.appendChild(b);
     const c=document.createElement('button'); c.textContent='Changer de jeu'; c.addEventListener('click',()=>{ $('endBox').style.display='none'; state=null; show('vLobby'); }); eb.appendChild(c); }
   const q=document.createElement('button'); q.textContent='Quitter'; q.addEventListener('click',()=>{ if(net)net.close(); location.href='index.html'; }); eb.appendChild(q); }
 function endGame(text){ if(isHost) net.broadcast({t:'end',text}); showEnd(text,isHost); state=null; }
