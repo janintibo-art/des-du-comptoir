@@ -165,7 +165,7 @@ CardShell({
     const CFG3D={plateau:'echecs/plateau.webp',grid:GRID,size:8,pieceSrc:v=>v?('echecs/'+(v>0?'b':'n')+'-'+PNAME[Math.abs(v)]+'.webp'):null};
     window.__toggle3D=()=>{ if(typeof BABYLON==='undefined'){ GC.combo&&GC.combo('3D indisponible.'); return; } MODE3D=!MODE3D; const bt=document.getElementById('btn3d'); if(bt) bt.textContent=MODE3D?'🧈 Vue 2D':'🧊 Vue 3D'; if(!MODE3D&&window.Board3D)Board3D.unmount(); draw(curDrawOpts); };
     function draw(opts){ opts=opts||{}; curDrawOpts=opts;
-      if(MODE3D&&window.Board3D&&typeof BABYLON!=='undefined'){ const c=GC.center(''); Board3D.mount(c,CFG3D); const chkSq=inCheck(st)?kingSq(st.b,st.turn):-1; Board3D.update(st.b,{sel:(opts.sel!=null?opts.sel:-1),dests:opts.dests,picks:opts.picks,lastMv:lastMv?{from:lastMv.from,to:lastMv.to}:null,chkSq,onCell:i=>{ if(opts.dests&&opts.dests.has(i)&&opts.onDest)opts.onDest(i); else if(opts.picks&&opts.picks.has(i)&&opts.onPick)opts.onPick(i); },pieceSrc:CFG3D.pieceSrc}); return; }
+      if(MODE3D&&window.Board3D&&typeof BABYLON!=='undefined'){ const c=GC.center(''); Board3D.mount(c,CFG3D); const chkSq=inCheck(st)?kingSq(st.b,st.turn):-1; Board3D.update(st.b,{sel:(opts.sel!=null?opts.sel:-1),dests:opts.dests,picks:opts.picks,lastMv:lastMv?{from:lastMv.from,to:lastMv.to}:null,chkSq,onCell:i=>{ if(opts.dests&&opts.dests.has(i)&&opts.onDest)opts.onDest(i); else if(opts.picks&&opts.picks.has(i)&&opts.onPick)opts.onPick(i); },pieceSrc:CFG3D.pieceSrc,pieceType:v=>({t:PNAME[Math.abs(v)],c:v>0?'w':'b'})}); return; }
       const flip = humans>1 && st.turn===-1;
       const c=GC.center('');
       const board=document.createElement('div'); board.className='chess-board';

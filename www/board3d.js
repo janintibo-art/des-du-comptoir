@@ -35,6 +35,8 @@ B.mount=function(parent,cfg){ B.cfg=cfg;
   // couronne (dames) via texture dynamique
   const ct=new BABYLON.DynamicTexture('crown',{width:96,height:96},sc,false); ct.hasAlpha=true;
   const cx=ct.getContext(); cx.clearRect(0,0,96,96); cx.font='72px serif'; cx.textAlign='center'; cx.textBaseline='middle'; cx.fillText('👑',48,54); ct.update(); B.crownTex=ct;
+  const mkMat=(name,r,g,b,sp,pw)=>{ const m=new BABYLON.StandardMaterial(name,sc); m.diffuseColor=new BABYLON.Color3(r,g,b); m.specularColor=new BABYLON.Color3(sp,sp,sp); m.specularPower=pw||42; m.emissiveColor=new BABYLON.Color3(r*0.10,g*0.10,b*0.10); return m; };
+  B.matW=mkMat('pw',0.93,0.89,0.80,0.55,60); B.matB=mkMat('pb',0.11,0.10,0.11,0.6,70);
   // picking
   sc.onPointerObservable.add(pi=>{ if(pi.type!==BABYLON.PointerEventTypes.POINTERPICK) return; const r=pi.pickInfo; if(!r||!r.hit||!r.pickedMesh) return;
     const n=r.pickedMesh.name; let i=-1; if(n.startsWith('sq:')) i=+n.slice(3); else if(n.startsWith('pc:')) i=+n.slice(3); if(i>=0 && B._onPick) B._onPick(i); });
@@ -56,18 +58,37 @@ function addDisc(i,color,ring,alpha){ const S=B.cfg.size, r=Math.floor(i/S), c=i
   else { const d=BABYLON.MeshBuilder.CreateDisc('hl',{radius:w*0.20,tessellation:24},B.scene); d.rotation.x=Math.PI/2; d.position.set(p.x,0.06,p.z);
     const dm=new BABYLON.StandardMaterial('dm',B.scene); dm.emissiveColor=color; dm.disableLighting=true; dm.alpha=alpha||0.85; d.material=dm; d.isPickable=false; B.highlights.push(d); } }
 
+function P3D(type, w){ const sc=B.scene; const P=[];
+  const cyl=(db,dt,h,y)=>{ const m=BABYLON.MeshBuilder.CreateCylinder('p',{diameterBottom:db,diameterTop:dt,height:h,tessellation:20},sc); m.position.y=y; return m; };
+  const sph=(d,y)=>{ const m=BABYLON.MeshBuilder.CreateSphere('p',{diameter:d,segments:14},sc); m.position.y=y; return m; };
+  const box=(x,y2,z,py,pz,rx)=>{ const m=BABYLON.MeshBuilder.CreateBox('p',{width:x,height:y2,depth:z},sc); m.position.set(0,py,pz||0); if(rx)m.rotation.x=rx; return m; };
+  const tor=(d,t,y)=>{ const m=BABYLON.MeshBuilder.CreateTorus('p',{diameter:d,thickness:t,tessellation:18},sc); m.position.y=y; return m; };
+  P.push(cyl(w*0.74,w*0.6,w*0.14,w*0.07)); P.push(cyl(w*0.5,w*0.42,w*0.08,w*0.17));
+  if(type==='pion'){ P.push(cyl(w*0.34,w*0.24,w*0.42,w*0.42)); P.push(tor(w*0.34,w*0.06,w*0.64)); P.push(sph(w*0.4,w*0.86)); }
+  else if(type==='tour'){ P.push(cyl(w*0.44,w*0.4,w*0.6,w*0.5)); P.push(cyl(w*0.56,w*0.56,w*0.16,w*0.86));
+    for(let k=0;k<6;k++){ const a=k*Math.PI/3; const b=BABYLON.MeshBuilder.CreateBox('p',{width:w*0.12,height:w*0.16,depth:w*0.12},sc); b.position.set(Math.cos(a)*w*0.22,w*0.98,Math.sin(a)*w*0.22); P.push(b);} }
+  else if(type==='fou'){ P.push(cyl(w*0.46,w*0.16,w*0.82,w*0.55)); P.push(tor(w*0.3,w*0.05,w*0.9)); P.push(sph(w*0.26,w*1.06)); P.push(sph(w*0.1,w*1.24)); }
+  else if(type==='cavalier'){ P.push(cyl(w*0.44,w*0.34,w*0.4,w*0.36));
+    P.push(box(w*0.24,w*0.5,w*0.6,w*0.78,w*0.06,-0.5)); P.push(box(w*0.2,w*0.2,w*0.34,w*0.7,w*0.34,-0.2));
+    const ear=BABYLON.MeshBuilder.CreateCylinder('p',{diameterTop:0,diameterBottom:w*0.12,height:w*0.18,tessellation:10},sc); ear.position.set(-w*0.08,w*1.02,-w*0.16); P.push(ear);
+    const ear2=ear.clone('p'); ear2.position.set(w*0.08,w*1.02,-w*0.16); P.push(ear2); }
+  else if(type==='dame'){ P.push(cyl(w*0.48,w*0.3,w*1.0,w*0.6)); P.push(tor(w*0.44,w*0.06,w*1.12));
+    for(let k=0;k<6;k++){ const a=k*Math.PI/3; const sp2=sph(w*0.11,w*1.2); sp2.position.set(Math.cos(a)*w*0.2,w*1.2,Math.sin(a)*w*0.2); P.push(sp2);} P.push(sph(w*0.16,w*1.32)); }
+  else if(type==='roi'){ P.push(cyl(w*0.48,w*0.32,w*1.05,w*0.62)); P.push(tor(w*0.42,w*0.06,w*1.16)); P.push(sph(w*0.2,w*1.3));
+    P.push(box(w*0.1,w*0.34,w*0.1,w*1.5)); P.push(box(w*0.24,w*0.1,w*0.1,w*1.5)); }
+  else if(type==='man'){ P.push(cyl(w*0.82,w*0.78,w*0.26,w*0.13)); P.push(tor(w*0.66,w*0.06,w*0.26)); P.push(cyl(w*0.5,w*0.5,w*0.03,w*0.27)); }
+  else if(type==='king'){ P.push(cyl(w*0.82,w*0.78,w*0.24,w*0.12)); P.push(cyl(w*0.78,w*0.74,w*0.22,w*0.34)); P.push(tor(w*0.6,w*0.06,w*0.46)); P.push(sph(w*0.24,w*0.6)); }
+  else { P.push(sph(w*0.4,w*0.5)); }
+  return BABYLON.Mesh.MergeMeshes(P,true,true,undefined,false,false); }
 B.update=function(boardArr,opts){ if(!B.ready) return; opts=opts||{}; const S=B.cfg.size, PS=B.PS, w=sqWorld();
   B._onPick=(i)=>{ if(opts.onCell) opts.onCell(i); };
   clearDynamic();
-  // pièces (standees face caméra)
-  const pd=w*1.02;
-  for(let i=0;i<boardArr.length;i++){ const v=boardArr[i]; if(!v) continue; const r=Math.floor(i/S), c=i%S; const src=(opts.pieceSrc||B.cfg.pieceSrc)(v); if(!src) continue;
-    const pl=BABYLON.MeshBuilder.CreatePlane('pc:'+i,{width:pd,height:pd},B.scene); pl.rotation.x=Math.PI/2; // couché sur le plateau (art vu du dessus)
-    const p=sqPos(r,c); pl.position.set(p.x, 0.04, p.z); pl.material=pieceMat(src); pl.isPickable=true;
-    if(opts.ghost && opts.ghost.has(i)){ pl.visibility=0.4; }
-    B.shadow&&B.shadow.addShadowCaster(pl); B.pieces[i]=pl;
-    if(opts.king && opts.king(v)){ const cr=BABYLON.MeshBuilder.CreatePlane('crown',{width:w*0.42,height:w*0.42},B.scene); cr.rotation.x=Math.PI/2;
-      cr.position.set(p.x, 0.06, p.z - w*0.28); const cm=new BABYLON.StandardMaterial('cm',B.scene); cm.diffuseTexture=B.crownTex; cm.useAlphaFromDiffuseTexture=true; cm.emissiveColor=new BABYLON.Color3(1,1,1); cm.disableLighting=true; cm.backFaceCulling=false; cr.material=cm; cr.isPickable=false; B.pieces['k'+i]=cr; } }
+  // pièces 3D modélisées (debout)
+  for(let i=0;i<boardArr.length;i++){ const v=boardArr[i]; if(!v) continue; const r=Math.floor(i/S), c=i%S;
+    let type='pion', colW=v>0; if(opts.pieceType){ const pt=opts.pieceType(v); if(!pt) continue; type=pt.t; colW=(pt.c==='w'); }
+    const mesh=P3D(type,w); if(!mesh) continue; const p=sqPos(r,c); mesh.name='pc:'+i; mesh.position.set(p.x,0,p.z);
+    mesh.material=colW?B.matW:B.matB; mesh.isPickable=true; if(opts.ghost && opts.ghost.has(i)) mesh.visibility=0.4;
+    B.shadow&&B.shadow.addShadowCaster(mesh); B.pieces[i]=mesh; }
   // surbrillances
   const ACC=new BABYLON.Color3(0.90,0.66,0.32), RED=new BABYLON.Color3(0.90,0.36,0.30);
   if(opts.lastMv){ if(opts.lastMv.from>=0) addDisc(opts.lastMv.from,ACC.scale(0.5),true); if(opts.lastMv.to>=0) addDisc(opts.lastMv.to,ACC.scale(0.5),true); }
