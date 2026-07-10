@@ -6,7 +6,7 @@
 if(typeof window==='undefined') return;
 const G={ canvas:null, eng:null, scene:null, cam:null, ready:false, PS:12,
   pigs:{}, exitRing:null, HOLES:null, mat:{}, _dropSound:null };
-function holeWorld(h){ return new BABYLON.Vector3((h.x-0.5)*G.PS, 0, (h.y-0.5)*G.PS); }
+function holeWorld(h){ return new BABYLON.Vector3((h.x-0.5)*G.PS, 0, (0.5-h.y)*G.PS); } // Z inversé (miroir vertical de la texture)
 
 function makePig(name, tint){ const sc=G.scene; const root=new BABYLON.TransformNode(name,sc);
   const pink=G.mat[tint]||G.mat.clair;
@@ -44,7 +44,7 @@ G.mount=function(parent, HOLES, boardImg){ G.HOLES=HOLES;
   parent.appendChild(cv); G.canvas=cv;
   const eng=new BABYLON.Engine(cv,true,{stencil:true,preserveDrawingBuffer:true}); G.eng=eng;
   const sc=new BABYLON.Scene(eng); sc.clearColor=new BABYLON.Color4(0.05,0.05,0.045,1); G.scene=sc;
-  const cam=new BABYLON.ArcRotateCamera('c',-Math.PI/2,0.16,G.PS*0.82,new BABYLON.Vector3(0,0,0),sc);
+  const cam=new BABYLON.ArcRotateCamera('c',-Math.PI/2,0.30,G.PS*0.85,new BABYLON.Vector3(0,0,0),sc);
   cam.attachControl(cv,true); cam.lowerBetaLimit=0.02; cam.upperBetaLimit=0.9; cam.lowerRadiusLimit=G.PS*0.6; cam.upperRadiusLimit=G.PS*1.9;
   cam.wheelPrecision=36; cam.panningSensibility=0; cam.minZ=0.05; G.cam=cam;
   const hemi=new BABYLON.HemisphericLight('h',new BABYLON.Vector3(0,1,0.2),sc); hemi.intensity=0.98; hemi.groundColor=new BABYLON.Color3(0.12,0.1,0.1);
