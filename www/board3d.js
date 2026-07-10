@@ -60,14 +60,14 @@ B.update=function(boardArr,opts){ if(!B.ready) return; opts=opts||{}; const S=B.
   B._onPick=(i)=>{ if(opts.onCell) opts.onCell(i); };
   clearDynamic();
   // pièces (standees face caméra)
-  const pw=w*1.18, ph=w*1.7;
+  const pd=w*1.02;
   for(let i=0;i<boardArr.length;i++){ const v=boardArr[i]; if(!v) continue; const r=Math.floor(i/S), c=i%S; const src=(opts.pieceSrc||B.cfg.pieceSrc)(v); if(!src) continue;
-    const pl=BABYLON.MeshBuilder.CreatePlane('pc:'+i,{width:pw,height:ph},B.scene); pl.billboardMode=BABYLON.Mesh.BILLBOARDMODE_Y;
-    const p=sqPos(r,c); pl.position.set(p.x, ph*0.5, p.z); pl.material=pieceMat(src); pl.isPickable=true;
-    if(opts.ghost && opts.ghost.has(i)){ pl.visibility=0.35; }
+    const pl=BABYLON.MeshBuilder.CreatePlane('pc:'+i,{width:pd,height:pd},B.scene); pl.rotation.x=Math.PI/2; // couché sur le plateau (art vu du dessus)
+    const p=sqPos(r,c); pl.position.set(p.x, 0.04, p.z); pl.material=pieceMat(src); pl.isPickable=true;
+    if(opts.ghost && opts.ghost.has(i)){ pl.visibility=0.4; }
     B.shadow&&B.shadow.addShadowCaster(pl); B.pieces[i]=pl;
-    if(opts.king && opts.king(v)){ const cr=BABYLON.MeshBuilder.CreatePlane('crown',{width:w*0.5,height:w*0.5},B.scene); cr.billboardMode=BABYLON.Mesh.BILLBOARDMODE_Y;
-      cr.position.set(p.x, ph*0.96, p.z); const cm=new BABYLON.StandardMaterial('cm',B.scene); cm.diffuseTexture=B.crownTex; cm.useAlphaFromDiffuseTexture=true; cm.emissiveColor=new BABYLON.Color3(1,1,1); cm.disableLighting=true; cm.backFaceCulling=false; cr.material=cm; cr.isPickable=false; B.pieces['k'+i]=cr; } }
+    if(opts.king && opts.king(v)){ const cr=BABYLON.MeshBuilder.CreatePlane('crown',{width:w*0.42,height:w*0.42},B.scene); cr.rotation.x=Math.PI/2;
+      cr.position.set(p.x, 0.06, p.z - w*0.28); const cm=new BABYLON.StandardMaterial('cm',B.scene); cm.diffuseTexture=B.crownTex; cm.useAlphaFromDiffuseTexture=true; cm.emissiveColor=new BABYLON.Color3(1,1,1); cm.disableLighting=true; cm.backFaceCulling=false; cr.material=cm; cr.isPickable=false; B.pieces['k'+i]=cr; } }
   // surbrillances
   const ACC=new BABYLON.Color3(0.90,0.66,0.32), RED=new BABYLON.Color3(0.90,0.36,0.30);
   if(opts.lastMv){ if(opts.lastMv.from>=0) addDisc(opts.lastMv.from,ACC.scale(0.5),true); if(opts.lastMv.to>=0) addDisc(opts.lastMv.to,ACC.scale(0.5),true); }

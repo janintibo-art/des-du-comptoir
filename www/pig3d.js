@@ -11,29 +11,29 @@ function holeWorld(h){ return new BABYLON.Vector3((h.x-0.5)*G.PS, 0, (h.y-0.5)*G
 function makePig(name, tint){ const sc=G.scene; const root=new BABYLON.TransformNode(name,sc);
   const pink=G.mat[tint]||G.mat.clair;
   // bâtonnet
-  const stick=BABYLON.MeshBuilder.CreateCylinder(name+'_st',{height:1.5,diameter:0.16,tessellation:12},sc);
-  stick.material=G.mat.wood; stick.position.y=0.75; stick.parent=root;
+  const stick=BABYLON.MeshBuilder.CreateCylinder(name+'_st',{height:0.9,diameter:0.15,tessellation:12},sc);
+  stick.material=G.mat.wood; stick.position.y=0.45; stick.parent=root;
   // corps (ellipsoïde)
   const body=BABYLON.MeshBuilder.CreateSphere(name+'_bd',{diameter:1,segments:14},sc);
-  body.scaling=new BABYLON.Vector3(1.0,0.82,1.25); body.position.y=1.75; body.material=pink; body.parent=root;
+  body.scaling=new BABYLON.Vector3(1.0,0.82,1.25); body.position.y=1.05; body.material=pink; body.parent=root;
   // tête
   const head=BABYLON.MeshBuilder.CreateSphere(name+'_hd',{diameter:0.72,segments:14},sc);
-  head.position.set(0,1.85,0.62); head.material=pink; head.parent=root;
+  head.position.set(0,1.12,0.6); head.material=pink; head.parent=root;
   // groin
   const snout=BABYLON.MeshBuilder.CreateCylinder(name+'_sn',{height:0.14,diameter:0.34,tessellation:16},sc);
-  snout.rotation.x=Math.PI/2; snout.position.set(0,1.82,0.98); snout.material=pink; snout.parent=root;
-  const n1=BABYLON.MeshBuilder.CreateSphere(name+'_n1',{diameter:0.07},sc); n1.position.set(-0.07,1.82,1.05); n1.material=G.mat.black; n1.parent=root;
-  const n2=n1.clone(name+'_n2'); n2.position.set(0.07,1.82,1.05); n2.parent=root;
+  snout.rotation.x=Math.PI/2; snout.position.set(0,1.08,0.95); snout.material=pink; snout.parent=root;
+  const n1=BABYLON.MeshBuilder.CreateSphere(name+'_n1',{diameter:0.07},sc); n1.position.set(-0.07,1.08,1.02); n1.material=G.mat.black; n1.parent=root;
+  const n2=n1.clone(name+'_n2'); n2.position.set(0.07,1.08,1.02); n2.parent=root;
   // oreilles
   const ear=BABYLON.MeshBuilder.CreateCylinder(name+'_e1',{height:0.001,diameterTop:0,diameterBottom:0.3,tessellation:3},sc);
-  ear.position.set(-0.22,2.18,0.55); ear.rotation.x=-0.5; ear.material=pink; ear.parent=root;
-  const ear2=ear.clone(name+'_e2'); ear2.position.set(0.22,2.18,0.55); ear2.parent=root;
+  ear.position.set(-0.22,1.42,0.54); ear.rotation.x=-0.5; ear.material=pink; ear.parent=root;
+  const ear2=ear.clone(name+'_e2'); ear2.position.set(0.22,1.42,0.54); ear2.parent=root;
   // yeux
-  const eye=BABYLON.MeshBuilder.CreateSphere(name+'_y1',{diameter:0.1},sc); eye.position.set(-0.16,1.98,0.92); eye.material=G.mat.black; eye.parent=root;
-  const eye2=eye.clone(name+'_y2'); eye2.position.set(0.16,1.98,0.92); eye2.parent=root;
+  const eye=BABYLON.MeshBuilder.CreateSphere(name+'_y1',{diameter:0.1},sc); eye.position.set(-0.16,1.22,0.9); eye.material=G.mat.black; eye.parent=root;
+  const eye2=eye.clone(name+'_y2'); eye2.position.set(0.16,1.22,0.9); eye2.parent=root;
   // queue (petit tore)
   const tail=BABYLON.MeshBuilder.CreateTorus(name+'_tl',{diameter:0.22,thickness:0.05,tessellation:14},sc);
-  tail.position.set(0,1.9,-0.66); tail.rotation.y=Math.PI/2; tail.material=pink; tail.parent=root;
+  tail.position.set(0,1.15,-0.64); tail.rotation.y=Math.PI/2; tail.material=pink; tail.parent=root;
   [stick,body,head,snout].forEach(m=>G.shadow&&G.shadow.addShadowCaster(m));
   return root;
 }
@@ -44,7 +44,7 @@ G.mount=function(parent, HOLES, boardImg){ G.HOLES=HOLES;
   parent.appendChild(cv); G.canvas=cv;
   const eng=new BABYLON.Engine(cv,true,{stencil:true,preserveDrawingBuffer:true}); G.eng=eng;
   const sc=new BABYLON.Scene(eng); sc.clearColor=new BABYLON.Color4(0.05,0.05,0.045,1); G.scene=sc;
-  const cam=new BABYLON.ArcRotateCamera('c',-Math.PI/2,0.62,G.PS*1.05,new BABYLON.Vector3(0,0,0),sc);
+  const cam=new BABYLON.ArcRotateCamera('c',-Math.PI/2,0.42,G.PS*0.92,new BABYLON.Vector3(0,0,0),sc);
   cam.attachControl(cv,true); cam.lowerBetaLimit=0.12; cam.upperBetaLimit=1.30; cam.lowerRadiusLimit=G.PS*0.6; cam.upperRadiusLimit=G.PS*1.9;
   cam.wheelPrecision=36; cam.panningSensibility=0; cam.minZ=0.05; G.cam=cam;
   const hemi=new BABYLON.HemisphericLight('h',new BABYLON.Vector3(0,1,0.2),sc); hemi.intensity=0.98; hemi.groundColor=new BABYLON.Color3(0.12,0.1,0.1);
@@ -66,10 +66,10 @@ G.mount=function(parent, HOLES, boardImg){ G.HOLES=HOLES;
   G.ready=true;
 };
 
-function dropPig(i, tint){ const h=G.HOLES[i]; const p=holeWorld(h); const pig=makePig('pig'+i,tint);
+function dropPig(i, tint){ const h=G.HOLES[i]; const p=holeWorld(h); const pig=makePig('pig'+i,tint); pig.scaling.setAll(0.62);
   pig.position.set(p.x, 4.5, p.z); G.pigs[i]=pig;
   const fps=60,dur=16; const a=new BABYLON.Animation('d','position.y',fps,BABYLON.Animation.ANIMATIONTYPE_FLOAT,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
-  a.setKeys([{frame:0,value:4.5},{frame:dur,value:0},{frame:dur+3,value:0.25},{frame:dur+6,value:0}]);
+  a.setKeys([{frame:0,value:4.5},{frame:dur,value:-0.12},{frame:dur+3,value:0.12},{frame:dur+6,value:-0.12}]);
   const e=new BABYLON.QuadraticEase(); e.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEIN); a.setEasingFunction(e);
   G.scene.beginDirectAnimation(pig,[a],0,dur+6,false); }
 

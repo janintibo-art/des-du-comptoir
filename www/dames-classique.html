@@ -232,7 +232,7 @@ CardShell({
     scores(1); draw({}); await GC.sleep(1300);
     let guard=0;
     while(true){
-      if(++guard>600) clearSave(); return GC.gameOver('Match nul !','Partie interminable — égalité.');
+      if(++guard>600){ clearSave(); return GC.gameOver('Match nul !','Partie interminable — égalité.'); }
       const pIdx = turn===1?0:1;
       const {moves}=allMoves(b, turn);
       if(!moves.length){ const w=turn===1?1:0; scores(0); draw({});
