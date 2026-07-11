@@ -25,6 +25,17 @@ import java.io.OutputStream;
 /** Coquille WebView : sert l'app web depuis les assets via une origine https sûre. */
 public class MainActivity extends Activity {
     private WebView webView;
+    private static final String BASE = "https://appassets.androidplatform.net/assets/www/";
+
+    /** comptoir://salon -> salon.html (pages sûres uniquement) */
+    private String pageFromIntent(Intent intent) {
+        if (intent == null) return null;
+        Uri d = intent.getData();
+        if (d == null || !"comptoir".equals(d.getScheme())) return null;
+        String h = d.getHost();
+        if ("salon".equals(h) || "regles".equals(h) || "stats".equals(h) || "reglages".equals(h)) return h + ".html";
+        return null;
+    }
 
     /** Pont JS : window.AndroidApp.shareApk() partage l'application installée. */
     public class AppBridge {
@@ -94,7 +105,16 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(new AppBridge(), "AndroidApp");
 
         setContentView(webView);
-        webView.loadUrl("https://appassets.androidplatform.net/assets/www/index.html");
+        String page = pageFromIntent(getIntent());
+        webView.loadUrl(BASE + (page != null ? page : "index.html"));
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        String page = pageFromIntent(intent);
+        if (page != null && webView != null) webView.loadUrl(BASE + page);
     }
 
     @Override

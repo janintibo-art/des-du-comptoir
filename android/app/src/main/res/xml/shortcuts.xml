@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="salon"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/sc_salon"
+        android:shortcutLongLabel="@string/sc_salon_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="comptoir://salon"
+            android:targetPackage="com.comptoir.des"
+            android:targetClass="com.comptoir.des.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="regles"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/sc_regles"
+        android:shortcutLongLabel="@string/sc_regles_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="comptoir://regles"
+            android:targetPackage="com.comptoir.des"
+            android:targetClass="com.comptoir.des.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="stats"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/sc_stats"
+        android:shortcutLongLabel="@string/sc_stats_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="comptoir://stats"
+            android:targetPackage="com.comptoir.des"
+            android:targetClass="com.comptoir.des.MainActivity" />
+    </shortcut>
+</shortcuts>

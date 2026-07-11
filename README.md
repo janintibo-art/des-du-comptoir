@@ -5,6 +5,9 @@ La coquille Android est maintenant une **vraie application** : **splash screen**
 **icône adaptative** (toutes formes de launchers), **plein écran immersif** (barres masquées, glissement
 pour les réafficher), bouton **retour** naturel, **vibrations** (permission ajoutée), son sans geste requis,
 écran toujours allumé, liens externes ouverts hors de l'app, partage de l'APK intégré.
+**Raccourcis d'app** : un appui long sur l'icône propose **Salon**, **Règles** et **Statistiques**
+(liens profonds `comptoir://…`). **AAB Play Store** : avec le keystore configuré, le CI produit aussi le
+bundle `.aab` prêt à téléverser sur la Play Console.
 **Signature release (optionnelle)** : créez un keystore (`keytool -genkeypair -v -keystore release.keystore -alias comptoir -keyalg RSA -validity 10000`),
 puis sur GitHub ajoutez la variable `HAS_KEYSTORE=true` et les secrets `KEYSTORE_B64` (keystore en base64 :
 `base64 -w0 release.keystore`), `KEYSTORE_PASS`, `KEY_ALIAS`, `KEY_PASS` — le CI produira en plus un

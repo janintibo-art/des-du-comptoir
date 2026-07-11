@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Les Dés du Comptoir</string>
+    <string name="sc_salon">Salon</string>
+    <string name="sc_salon_long">Ouvrir le Salon multijoueur</string>
+    <string name="sc_regles">Règles</string>
+    <string name="sc_regles_long">Consulter les règles des jeux</string>
+    <string name="sc_stats">Statistiques</string>
+    <string name="sc_stats_long">Voir mes statistiques</string>
 </resources>
