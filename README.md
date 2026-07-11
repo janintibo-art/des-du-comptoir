@@ -130,7 +130,7 @@ le hasard, gagne/bloque parfaitement), chute animée des jetons. En **réseau** 
 Plateau et jetons détourés (`www/p4/`), grille calée au pixel. Salon : **23 jeux**.
 
 ## Monopoly 🎩🏠 (jeu complet 40 cases)
-**Monopoli** (`monopoly.html`) : vrai plateau **40 cases**, deux thèmes (Paris à l'ancienne / Néo Monopole futuriste) qui **correspondent aux cartes de propriété** fournies. Économie complète : achats, **loyers exacts** (barème par tableau + gares/compagnies), Départ +200, **Chance/Caisse**, **prison**, **taxes**, **maisons & hôtels** (loyers progressifs), **faillite**. Valeur hypothécaire affichée. À venir : hypothèques jouables + réseau.
+**Monopoli** (`monopoly.html`) : vrai plateau **40 cases**, deux thèmes (Paris à l'ancienne / Néo Monopole futuriste) qui **correspondent aux cartes de propriété** fournies. Économie complète : achats, **loyers exacts** (barème par tableau + gares/compagnies), Départ +200, **Chance/Caisse**, **prison**, **taxes**, **maisons & hôtels** (loyers progressifs), **faillite**. Valeur hypothécaire affichée, **hypothèques jouables**, et **mode réseau 2-5 joueurs** (`net-games8.js`) : l'hôte arbitre automatiquement (loyers, cartes, prison, faillites), décisions (achat/construction/hypothèque) sur le téléphone de chacun, compatible **mode Table**. Validé : 400 parties simulées (~300 000 actions), 0 anomalie.
 
 ## Cochon troué 3D 🐷
 Bouton **« Vue 3D »** : petits **cochons roses modélisés** (corps + groin + oreilles + queue) sur
