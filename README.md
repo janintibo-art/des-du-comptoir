@@ -1,5 +1,10 @@
 # Les Dés du Comptoir
 
+## Niveau de l'IA 🧠
+Dans **Réglages**, choisissez 😌 Facile / 🙂 Normale / 😈 Forte : la profondeur de réflexion des IA
+d'échecs, dames et Reversi s'adapte (le réglage `gc-ai` existait dans le moteur, il est maintenant exposé),
+et les IA des jeux de dés/cartes modulent leur prise de risque.
+
 ## Application Android native (v2.0) 📱
 La coquille Android est maintenant une **vraie application** : **splash screen** (logo sur fond sombre),
 **icône adaptative** (toutes formes de launchers), **plein écran immersif** (barres masquées, glissement

@@ -40,6 +40,17 @@
     <div class="sw" id="sw-vibrate"></div>
   </div>
 
+  <div class="sect">Intelligence artificielle</div>
+  <div class="opt">
+    <div><div class="lbl">🧠 Niveau de l'IA</div><div class="sub">S'applique à tous les jeux contre l'ordinateur
+    (échecs, dames, Reversi réfléchissent plus ou moins loin ; les IA de dés/cartes prennent plus ou moins de risques)</div></div>
+  </div>
+  <div class="btnrow" id="aiLevelRow">
+    <button data-ai="p">😌 Facile</button>
+    <button data-ai="n">🙂 Normale</button>
+    <button data-ai="a">😈 Forte</button>
+  </div>
+
   <div class="sect">Application</div>
   <div class="note">Une fois ouverte une première fois en ligne, l'appli fonctionne <b>hors connexion</b>.
   Utilisez « Installer » depuis l'accueil (ou « Ajouter à l'écran d'accueil ») pour l'installer comme une vraie app.</div>
@@ -56,6 +67,13 @@
 </div>
 <script>
 'use strict';
+function paintAi(){ const cur=LS.get('gc-ai','n');
+  document.querySelectorAll('#aiLevelRow [data-ai]').forEach(b=>{
+    const on=b.dataset.ai===cur;
+    b.style.background=on?'var(--accent)':''; b.style.color=on?'#14140f':''; b.style.fontWeight=on?'bold':''; }); }
+document.addEventListener('DOMContentLoaded',()=>{ 
+  document.querySelectorAll('#aiLevelRow [data-ai]').forEach(b=>b.addEventListener('click',()=>{ LS.set('gc-ai',b.dataset.ai); paintAi(); }));
+  paintAi(); });
 const LS={ get(k,d){ try{const v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch(e){return d;} },
            set(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} } };
 function bind(id,key,def){
