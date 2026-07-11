@@ -49,16 +49,25 @@ A.mount=function(parent, board, boardImg){ A.cfg={board,boardImg};
 function clearDyn(){ A.dyn.forEach(d=>d.dispose()); A.dyn=[]; }
 
 A.update=function(board, s, opts, seedFile){ if(!A.ready) return; opts=opts||{}; clearDyn();
+  const oldP=A._lastPits||null; let fromPit=-1;
+  if(oldP){ for(let i=0;i<12;i++){ if(oldP[i]>0 && s.pits[i]===0 && (oldP[i]>=s.pits[i]+2||true)){ fromPit=i; break; } } }
+  A._lastPits=s.pits.slice();
   A._onPick=(i)=>{ if(opts.legalPits && opts.legalPits.has(i) && opts.onPit) opts.onPit(i); };
   const PW=A.PW, pitR=board.pit*PW*0.42, seedR=board.pit*PW*0.11;
   // graines dans chaque trou
   for(let i=0;i<12;i++){ const cnt=s.pits[i]; const [fx,fy]=pitFrac(board,i); const p=toWorld(fx,fy);
     const showN=Math.min(cnt,16);
+    const oldCnt=oldP?Math.min(oldP[i],16):showN;
     for(let k=0;k<showN;k++){ const sp=BABYLON.MeshBuilder.CreateSphere('sd',{diameter:seedR*2,segments:10},A.scene);
-      // empilement : spirale + hauteur croissante
       const ring=Math.floor(k/6), idx=k%6, ang=idx*(Math.PI/3)+i*1.3+ring*0.5, rr=(showN>1?(0.35+ring*0.28):0)*pitR;
-      sp.position.set(p.x+Math.cos(ang)*rr, seedR + ring*seedR*1.2, p.z+Math.sin(ang)*rr);
-      sp.material=A.seedMats[(i*7+k)%A.seedMats.length]; A.shadow&&A.shadow.addShadowCaster(sp); A.dyn.push(sp); }
+      const ty=seedR + ring*seedR*1.2, tx=p.x+Math.cos(ang)*rr, tz=p.z+Math.sin(ang)*rr;
+      sp.material=A.seedMats[(i*7+k)%A.seedMats.length]; A.shadow&&A.shadow.addShadowCaster(sp); A.dyn.push(sp);
+      if(oldP && k>=oldCnt && fromPit>=0){ // nouvelle graine -> chute décalée (ordre du semis)
+        const stepIdx=((i-fromPit)+12)%12; sp.position.set(tx, ty+3, tz); sp.setEnabled(false);
+        const fps=60,dur=10; const a=new BABYLON.Animation('dr','position.y',fps,BABYLON.Animation.ANIMATIONTYPE_FLOAT,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+        a.setKeys([{frame:0,value:ty+3},{frame:dur,value:ty},{frame:dur+3,value:ty+seedR*0.7},{frame:dur+6,value:ty}]);
+        setTimeout(()=>{ try{ if(sp.isDisposed&&sp.isDisposed())return; sp.setEnabled(true); A.scene.beginDirectAnimation(sp,[a],0,dur+6,false); }catch(e){} }, 120*stepIdx);
+      } else { sp.position.set(tx, ty, tz); } }
     // surbrillance trou jouable
     if(opts.legalPits && opts.legalPits.has(i)){ const tor=BABYLON.MeshBuilder.CreateTorus('pl',{diameter:board.pit*PW*1.0,thickness:board.pit*PW*0.07,tessellation:26},A.scene);
       tor.position.set(p.x,0.06,p.z); const tm=new BABYLON.StandardMaterial('tm',A.scene); tm.emissiveColor=new BABYLON.Color3(0.9,0.66,0.32); tm.disableLighting=true; tor.material=tm; tor.isPickable=false; A.dyn.push(tor); }

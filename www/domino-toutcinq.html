@@ -25,6 +25,9 @@
 <script src="dominos.js"></script>
 <script src="rules-data.js"></script>
 <script src="card-shell.js"></script>
+<script src="lib/babylon.js"></script>
+<script>if(typeof BABYLON==='undefined')document.write('<script src="https://cdn.babylonjs.com/babylon.js"><\/script>')</script>
+<script src="dom3d.js"></script>
 </head>
 <body class="menu">
 <script>
@@ -52,7 +55,10 @@ CardShell({
       const playable=t=> t.a===L||t.b===L||t.a===R||t.b===R;
       function place(t,side){ if(side==='R'){const o=t.a===R?t.b:t.a;chain.push({a:R,b:o});R=o;}
         else{const o=t.a===L?t.b:t.a;chain.unshift({a:o,b:L});L=o;} }
+      let MODE3D=false, curHandArgs=null;
+      window.__toggle3D=()=>{ if(typeof BABYLON==='undefined'){ GC.combo&&GC.combo('3D indisponible.'); return; } MODE3D=!MODE3D; const bt=document.getElementById('btn3d'); if(bt) bt.textContent=MODE3D?'🧈 Vue 2D':'🧊 Vue 3D'; if(!MODE3D&&window.DOM3D)DOM3D.unmount(); renderBoard(); if(curHandArgs) renderHand(curHandArgs.p,curHandArgs.opts,curHandArgs.onPick); };
       function renderBoard(){
+        if(MODE3D&&window.DOM3D&&typeof BABYLON!=='undefined'){ const c=GC.center(''); DOM3D.mount(c); DOM3D.setChain(chain,L,R,Dominos.skin()); if(curHandArgs&&curHandArgs.p) DOM3D.setHand(curHandArgs.p.hand,curHandArgs.opts,curHandArgs.onPick,Dominos.skin()); return; }
         const wrap=document.createElement('div'); wrap.style.width='100%';
         const board=document.createElement('div'); board.className='board';
         const bl=document.createElement('div'); bl.className='endbadge'; bl.innerHTML='<small>gauche</small>'+L;
@@ -64,7 +70,7 @@ CardShell({
         wrap.appendChild(board); wrap.appendChild(yd); GC.center(wrap);
         requestAnimationFrame(()=>{ ch.scrollLeft=ch.scrollWidth; });
       }
-      function renderHand(p,opts,onPick){ const hand=document.getElementById('cHand'); hand.innerHTML='';
+      function renderHand(p,opts,onPick){ curHandArgs={p,opts,onPick}; if(MODE3D&&window.DOM3D&&typeof BABYLON!=='undefined'){ DOM3D.setHand(p.hand,opts,onPick,Dominos.skin()); return; } const hand=document.getElementById('cHand'); hand.innerHTML='';
         p.hand.forEach(t=>{ const ok=opts.includes(t); const el=Dominos.el(t,{onClick:ok?()=>onPick(t):null,disabled:!ok});
           if(ok) el.classList.add('play'); hand.appendChild(el); }); }
       function tallyScore(who){ const s=scoreEnds(chain); if(s%5===0&&s>0){ P[who].total+=s;
@@ -137,5 +143,7 @@ CardShell({
   }
 });
 </script>
+<button id="btn3d" style="position:fixed;top:8px;right:8px;z-index:80;background:rgba(20,20,16,.82);color:#f2e8d5;border:1px solid rgba(224,163,76,.55);border-radius:10px;padding:7px 12px;font-family:Georgia,serif;font-size:13px;cursor:pointer">🧊 Vue 3D</button>
+<script>document.getElementById('btn3d').addEventListener('click',function(){ if(window.__toggle3D) window.__toggle3D(); });</script>
 </body>
 </html>

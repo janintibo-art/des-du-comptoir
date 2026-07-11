@@ -89,6 +89,16 @@ B.update=function(boardArr,opts){ if(!B.ready) return; opts=opts||{}; const S=B.
     const mesh=P3D(type,w); if(!mesh) continue; const p=sqPos(r,c); mesh.name='pc:'+i; mesh.position.set(p.x,0,p.z);
     mesh.material=colW?B.matW:B.matB; mesh.isPickable=true; if(opts.ghost && opts.ghost.has(i)) mesh.visibility=0.4;
     B.shadow&&B.shadow.addShadowCaster(mesh); B.pieces[i]=mesh; }
+  // animation de glisse du dernier coup
+  if(opts.lastMv && opts.lastMv.from>=0 && opts.lastMv.to>=0 && B.pieces[opts.lastMv.to]){
+    const kk=opts.lastMv.from+':'+opts.lastMv.to;
+    if(B._lastAnim!==kk){ B._lastAnim=kk; const mesh=B.pieces[opts.lastMv.to];
+      const fr=Math.floor(opts.lastMv.from/S), fc=opts.lastMv.from%S; const fp=sqPos(fr,fc); const tp=mesh.position.clone();
+      mesh.position.set(fp.x,0,fp.z);
+      const fps=60,dur=14; const a=new BABYLON.Animation('gl','position',fps,BABYLON.Animation.ANIMATIONTYPE_VECTOR3,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+      a.setKeys([{frame:0,value:new BABYLON.Vector3(fp.x,0,fp.z)},{frame:dur,value:tp}]);
+      const e=new BABYLON.SineEase(); e.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT); a.setEasingFunction(e);
+      B.scene.beginDirectAnimation(mesh,[a],0,dur,false); } }
   // surbrillances
   const ACC=new BABYLON.Color3(0.90,0.66,0.32), RED=new BABYLON.Color3(0.90,0.36,0.30);
   if(opts.lastMv){ if(opts.lastMv.from>=0) addDisc(opts.lastMv.from,ACC.scale(0.5),true); if(opts.lastMv.to>=0) addDisc(opts.lastMv.to,ACC.scale(0.5),true); }

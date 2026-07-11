@@ -1,4 +1,15 @@
-# Les Dés du Comptoir 🎲
+# Les Dés du Comptoir
+
+## Application Android native (v2.0) 📱
+La coquille Android est maintenant une **vraie application** : **splash screen** (logo sur fond sombre),
+**icône adaptative** (toutes formes de launchers), **plein écran immersif** (barres masquées, glissement
+pour les réafficher), bouton **retour** naturel, **vibrations** (permission ajoutée), son sans geste requis,
+écran toujours allumé, liens externes ouverts hors de l'app, partage de l'APK intégré.
+**Signature release (optionnelle)** : créez un keystore (`keytool -genkeypair -v -keystore release.keystore -alias comptoir -keyalg RSA -validity 10000`),
+puis sur GitHub ajoutez la variable `HAS_KEYSTORE=true` et les secrets `KEYSTORE_B64` (keystore en base64 :
+`base64 -w0 release.keystore`), `KEYSTORE_PASS`, `KEY_ALIAS`, `KEY_PASS` — le CI produira en plus un
+**APK release signé** (installable en mise à jour, prêt pour un store). Sans keystore, l'APK debug
+continue d'être produit comme avant. 🎲
 
 **40 jeux de comptoir** — dés en 3D, cartes, dominos, Awalé, dames, échecs, UNO et Puissance 4 —
 jouables **dans le navigateur**, **installables** (appli hors-ligne) et jouables **à plusieurs téléphones**.
@@ -111,8 +122,7 @@ le trou de sortie. Le dé se lance en surimpression pour garder la scène 3D int
 
 ## Dominos 3D 🁢
 Bouton **« Vue 3D »** sur le **domino classique** : vraies **tuiles 3D** (vos textures) posées sur un
-**tapis de feutre**, chaîne auto-ajustée + main cliquable (`dom3d.js`). Extensible aux variantes
-(matador / tout-cinq / train) ensuite.
+**tapis de feutre**, chaîne auto-ajustée + main cliquable (`dom3d.js`). Aussi actif sur **Matador** et **Tout-cinq** (le Train, à chaînes multiples, reste en 2D). Les pièces d'échecs/dames 3D **glissent** vers leur case.
 
 ## Reversi 3D ⚫⚪
 Bouton **« Vue 3D »** : pions = disques 3D **à deux faces** (noir/blanc) qui se **retournent** physiquement
@@ -126,7 +136,7 @@ l'état). Bascule 2D⇄3D à tout moment.
 ## Awalé 3D 🌰
 Bouton **« Vue 3D »** sur les trois Awalé (Oware, Kalah, 2-3-4) : rendu **Babylon.js** (`awale3d.js`) avec
 de **vraies graines 3D** qui s'empilent dans les trous et les greniers, plateau orientable. Réutilise la
-géométrie et l'état du moteur 2D. (Animation de semis à venir.)
+géométrie et l'état du moteur 2D, avec **semis animé** (les graines tombent une à une dans l'ordre du semis).
 
 ## Mode 3D (échecs & dames) 🧊
 Bouton **« Vue 3D »** optionnel sur **Les Échecs** et **Les Dames** : un rendu **Babylon.js** (`board3d.js`)
