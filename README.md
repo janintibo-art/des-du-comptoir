@@ -5,6 +5,11 @@ La coquille Android est maintenant une **vraie application** : **splash screen**
 **icône adaptative** (toutes formes de launchers), **plein écran immersif** (barres masquées, glissement
 pour les réafficher), bouton **retour** naturel, **vibrations** (permission ajoutée), son sans geste requis,
 écran toujours allumé, liens externes ouverts hors de l'app, partage de l'APK intégré.
+**Serveur local embarqué (jeu sans Internet)** 📡 : dans le Salon (app Android), bouton
+**« Démarrer le serveur local »** — le téléphone sert le jeu sur le réseau (`LocalServer.java`, port 8765,
+sans dépendance). Activez le **point d'accès Wi-Fi** (ou même Wi-Fi), les invités scannent le **QR code**
+(lib embarquée par le CI) ou tapent l'adresse : tous les jeux, **rien à installer, zéro Internet**.
+Étape suivante : WebSockets locaux pour le multijoueur temps réel sans Internet.
 **Raccourcis d'app** : un appui long sur l'icône propose **Salon**, **Règles** et **Statistiques**
 (liens profonds `comptoir://…`). **AAB Play Store** : avec le keystore configuré, le CI produit aussi le
 bundle `.aab` prêt à téléverser sur la Play Console.

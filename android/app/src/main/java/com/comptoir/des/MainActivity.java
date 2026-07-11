@@ -25,6 +25,7 @@ import java.io.OutputStream;
 /** Coquille WebView : sert l'app web depuis les assets via une origine https sûre. */
 public class MainActivity extends Activity {
     private WebView webView;
+    private LocalServer localServer;
     private static final String BASE = "https://appassets.androidplatform.net/assets/www/";
 
     /** comptoir://salon -> salon.html (pages sûres uniquement) */
@@ -39,6 +40,21 @@ public class MainActivity extends Activity {
 
     /** Pont JS : window.AndroidApp.shareApk() partage l'application installée. */
     public class AppBridge {
+        /** Démarre le serveur local et renvoie son URL (ex. http://192.168.1.20:8765/), "" si échec. */
+        @JavascriptInterface
+        public String startLocalServer() {
+            if (localServer == null) localServer = new LocalServer(MainActivity.this);
+            return localServer.start();
+        }
+        @JavascriptInterface
+        public void stopLocalServer() { if (localServer != null) localServer.stop(); }
+        @JavascriptInterface
+        public String localServerUrl() {
+            if (localServer == null || !localServer.isRunning()) return "";
+            String ip = LocalServer.localIp();
+            return ip == null ? "" : ("http://" + ip + ":" + LocalServer.PORT + "/");
+        }
+
         @JavascriptInterface
         public void shareApk() {
             try {
@@ -130,6 +146,12 @@ public class MainActivity extends Activity {
                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_FULLSCREEN);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (localServer != null) localServer.stop();
+        super.onDestroy();
     }
 
     @Override
