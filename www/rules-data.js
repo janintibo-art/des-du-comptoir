@@ -386,7 +386,7 @@ lance <b>deux d\u00e9s</b> et fait le tour du plateau.</p>
 <b>loyer</b> ; poss\u00e9dez toute une <b>couleur</b> pour b\u00e2tir <b>maisons</b> et <b>h\u00f4tels</b>
 et faire flamber les loyers. Gares (25\u2192200) et compagnies (d\u00e9s \u00d74/\u00d710) selon leur nombre.</p>
 <p>D\u00e9part +200, <b>Chance</b> et <b>Caisse de Communaut\u00e9</b>, prison, taxes\u2026 Le dernier
-joueur solvable remporte la partie !</p>\n<p><b>Nouveau :</b> Monopoli se joue aussi <b>en r\u00e9seau</b> (2-5 joueurs) depuis le <b>Salon</b> \u2014 chacun sur son t\u00e9l\u00e9phone, ou en mode <b>Table</b> ! L\u2019h\u00f4te arbitre tout automatiquement (loyers, cartes, prison, faillites).</p>`},
+joueur solvable remporte la partie !</p>\n<p><b>Nouveau :</b> Monopoli se joue aussi <b>en r\u00e9seau</b> (2-5 joueurs) depuis le <b>Salon</b> \u2014 chacun sur son t\u00e9l\u00e9phone, ou en mode <b>Table</b> ! L\u2019h\u00f4te arbitre tout automatiquement (loyers, cartes, prison, faillites).</p>\n<p>La partie locale se <b>sauvegarde toute seule</b> \u00e0 chaque tour : fermez l\u2019appli, et on vous proposera de <b>reprendre</b> !</p>`},
 abalone: { title:'Abalone', html:`
 <p>2 joueurs, 14 billes chacun sur un plateau <b>hexagonal</b>. But : <b>éjecter 6 billes</b> adverses
 hors du plateau.</p>

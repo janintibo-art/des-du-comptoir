@@ -235,5 +235,17 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
   });
 }catch(e){} })();
 </script>
+<script>
+'use strict';
+(function(){ try{
+  if(localStorage.getItem('gc-welcomed')) return;
+  const b=document.createElement('div');
+  b.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:95;background:rgba(20,20,16,.96);border:1px solid rgba(224,163,76,.6);border-radius:16px;padding:14px 18px;max-width:420px;width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.6);font-size:14px;line-height:1.5';
+  b.innerHTML='<b style="color:var(--accent)">Bienvenue au comptoir ! 🎲</b><br>Dans chaque jeu, touchez <b>❓</b> pour les règles et l\u2019histoire. Le <b>🌐 Salon</b> permet de jouer à plusieurs téléphones, et <b>⚙️ Réglages</b> cache le niveau de l\u2019IA, les sons\u2026 Bonne partie !'+
+    '<div style="text-align:center;margin-top:10px"><button id="gcWelOk" style="font-family:inherit;background:var(--accent);color:#14140f;border:none;border-radius:999px;padding:8px 24px;font-weight:bold;font-size:14px">Compris !</button></div>';
+  document.body.appendChild(b);
+  document.getElementById('gcWelOk').addEventListener('click',()=>{ try{localStorage.setItem('gc-welcomed','1');}catch(e){} b.remove(); });
+}catch(e){} })();
+</script>
 </body>
 </html>

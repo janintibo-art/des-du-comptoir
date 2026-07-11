@@ -1,5 +1,11 @@
 # Les Dés du Comptoir
 
+## Reprise de partie & accueil 💾
+Les **échecs, dames, Reversi** sauvegardaient déjà leur partie (`gc-resume-*`) ; **Monopoli** le fait
+maintenant aussi (état complet sauvé à chaque tour, proposition « Reprendre » au lancement, purge en fin
+de partie — validé headless : sauvegarde + reprise sans crash). Une **bulle de bienvenue** s'affiche au
+tout premier lancement pour orienter (❓ règles, 🌐 Salon, ⚙️ Réglages).
+
 ## Niveau de l'IA 🧠
 Dans **Réglages**, choisissez 😌 Facile / 🙂 Normale / 😈 Forte : la profondeur de réflexion des IA
 d'échecs, dames et Reversi s'adapte (le réglage `gc-ai` existait dans le moteur, il est maintenant exposé),
