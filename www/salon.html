@@ -192,8 +192,7 @@ button.primary{font-size:16px;padding:11px 22px}
         <div style="font-size:13px;opacity:.8">Les invités ouvrent :</div>
         <div id="localSrvUrl" style="font-size:22px;font-weight:bold;color:var(--accent);margin:6px 0;word-break:break-all"></div>
         <div id="localSrvQr" style="display:flex;justify-content:center;margin:8px 0"></div>
-        <div style="font-size:12.5px;opacity:.7">Multijoueur local en direct : bientôt (étape suivante). Pour l'instant,
-        chaque invité profite de tous les jeux solo/table sans Internet.</div>
+        <div style="font-size:12.5px;opacity:.7">Multijoueur en direct actif : créez votre table ci-dessous, les invités entrent juste leur nom — <b>zéro Internet</b> !</div>
         <button id="btnLocalStop" style="margin-top:8px">Arrêter le serveur</button>
       </div>
     </div>
@@ -289,7 +288,8 @@ $('btnHost').addEventListener('click',()=>{
 function syncLobby(){ const names=gamePlayers().map(p=>p.name); refreshLobby(names); net.broadcast({t:'lobby',players:names}); }
 
 $('btnJoin').addEventListener('click',()=>{
-  const name=$('jName').value.trim(), code=$('jCode').value.trim();
+  const name=$('jName').value.trim(); let code=$('jCode').value.trim();
+  if(!code && window.Net && Net.isLocal && Net.isLocal()) code='LOCAL'; // table locale : pas de code nécessaire
   if(!name||code.length<4){ $('homeWarn').textContent='Nom et code de 4 lettres requis.'; return; }
   myName=name; isHost=false; $('homeWarn').textContent='Connexion…';
   net=Net.join(code,name,{
@@ -385,6 +385,18 @@ function endGame(text){ if(isHost) net.broadcast({t:'end',text}); showEnd(text,i
   // si déjà lancé (retour sur la page)
   try{ const u=AndroidApp.localServerUrl(); if(u) show(u); }catch(e){}
 })();
+</script>
+<script>
+'use strict';
+(function(){ try{
+  if(window.Net && Net.isLocal && Net.isLocal() && /:8765$/.test(location.host)){
+    const jc=document.getElementById('jCode');
+    if(jc){ jc.value='LOCAL'; jc.disabled=true; jc.style.opacity='0.6'; }
+    const box=jc && jc.closest('.box'); if(box){ const p=document.createElement('div');
+      p.style.cssText='font-size:12.5px;color:var(--accent);margin-top:6px';
+      p.textContent='📡 Table locale détectée — pas de code à saisir, entrez juste votre nom !'; box.appendChild(p); }
+  }
+}catch(e){} })();
 </script>
 </body>
 </html>

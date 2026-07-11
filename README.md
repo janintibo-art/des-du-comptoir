@@ -9,7 +9,11 @@ pour les réafficher), bouton **retour** naturel, **vibrations** (permission ajo
 **« Démarrer le serveur local »** — le téléphone sert le jeu sur le réseau (`LocalServer.java`, port 8765,
 sans dépendance). Activez le **point d'accès Wi-Fi** (ou même Wi-Fi), les invités scannent le **QR code**
 (lib embarquée par le CI) ou tapent l'adresse : tous les jeux, **rien à installer, zéro Internet**.
-Étape suivante : WebSockets locaux pour le multijoueur temps réel sans Internet.
+**Multijoueur temps réel sans Internet (étape B)** ✅ : relais **WebSocket** intégré au serveur
+(`/ws`, trames routées `@dest|json`, écrit à la main), et `net.js` bascule automatiquement dessus
+(même API que PeerJS). L'hôte crée sa table dans l'app, les invités (navigateur, page servie par le
+téléphone) entrent juste leur nom — les **24 jeux réseau + mode Table** fonctionnent en local pur.
+Protocole validé par simulation headless (hello/welcome, noms en double, vues privées, départs).
 **Raccourcis d'app** : un appui long sur l'icône propose **Salon**, **Règles** et **Statistiques**
 (liens profonds `comptoir://…`). **AAB Play Store** : avec le keystore configuré, le CI produit aussi le
 bundle `.aab` prêt à téléverser sur la Play Console.
