@@ -122,7 +122,7 @@ const canvas=document.getElementById('abaCanvas');
 let engine,scene,camera,shadow, marbleMat={}, marbles={}, arrows=[], sel=[], current=1, mode='2p', out={1:0,2:0}, busy=false;
 // --- Calage sur la grille de trous du plateau (mesuré sur l'image) ---
 const PS=12;            // taille du plan (= largeur de l'image du plateau)
-const CXG=0.481, CYG=0.500;   // centre de la grille de trous (fraction de l'image)
+const CXG=0.500, CYG=0.500;   // grille redessinée : parfaitement centrée et régulière
 const SPACING=0.0751;  // espacement horizontal (fraction) par pas de colonne
 const VS=0.0650;       // espacement vertical (fraction) par rangée
 const RAD=0.44, Y=0.30;// rayon des billes, hauteur au repos (nichées dans l'alvéole)
