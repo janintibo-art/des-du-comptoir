@@ -31,6 +31,9 @@
 <script src="dominos.js"></script>
 <script src="rules-data.js"></script>
 <script src="card-shell.js"></script>
+<script src="lib/babylon.js"></script>
+<script>if(typeof BABYLON==='undefined')document.write('<script src="https://cdn.babylonjs.com/babylon.js"><\/script>')</script>
+<script src="dom3d.js"></script>
 </head>
 <body class="menu">
 <script>
@@ -61,7 +64,15 @@ CardShell({
     const refresh=turn=>GC.scores(P.map((p,i)=>({label:p.name,value:p.hand.length,active:i===turn})));
     const showOpps=(me,turn)=>GC.opponents(P.filter(p=>p!==me).map(p=>({name:p.name,count:p.hand.length,turn:P.indexOf(p)===turn})));
 
+    let MODE3D=false, curHandArgs=null;
+    window.__toggle3D=()=>{ if(typeof BABYLON==='undefined'){ GC.combo&&GC.combo('3D indisponible.'); return; } MODE3D=!MODE3D; const bt=document.getElementById('btn3d'); if(bt) bt.textContent=MODE3D?'🧈 Vue 2D':'🧊 Vue 3D';
+      if(!MODE3D&&window.DOM3D)DOM3D.unmount(); if(lastTrainArgs) renderTrains.apply(null,lastTrainArgs); if(curHandArgs) renderHand.apply(null,curHandArgs); };
+    let lastTrainArgs=null;
     function renderTrains(me, targetSet, onPickTrain){
+      lastTrainArgs=[me,targetSet,onPickTrain];
+      if(MODE3D&&window.DOM3D&&typeof BABYLON!=='undefined'){ const c=GC.center(''); DOM3D.mount(c);
+        DOM3D.setTrains(trains.map((tr,ti)=>({tiles:tr.tiles, end:tr.end, target:!!(targetSet&&targetSet.has(ti))})), {skin:Dominos.skin(), onPickTrain:(ti)=>{ if(targetSet&&targetSet.has(ti)&&onPickTrain) onPickTrain(ti); }});
+        const cap=document.createElement('div'); cap.className='hub'; cap.textContent='Pioche : '+yard.length+' — touchez une pastille dorée pour poser'; c.appendChild(cap); return; }
       const wrap=document.createElement('div'); wrap.style.width='100%';
       const hub=document.createElement('div'); hub.className='hub'; hub.innerHTML='Moteur central : <b>6-6</b> — tous les trains démarrent sur 6';
       const list=document.createElement('div'); list.className='trains';
@@ -85,6 +96,9 @@ CardShell({
       GC.center(wrap);
     }
     function renderHand(p, me, onPick){
+      curHandArgs=[p,me,onPick];
+      if(MODE3D&&window.DOM3D&&typeof BABYLON!=='undefined'){ const playable=onPick? p.hand.filter(t=>legalTrains(t,me).length>0):[];
+        DOM3D.setHand(p.hand, playable, onPick, Dominos.skin()); return; }
       const hand=document.getElementById('cHand'); hand.innerHTML='';
       p.hand.forEach(t=>{ const ok=onPick&&legalTrains(t,me).length>0;
         const el=Dominos.el(t,{onClick: ok?()=>onPick(t):null, disabled:!ok});
@@ -180,5 +194,7 @@ CardShell({
   }
 });
 </script>
+<button id="btn3d" style="position:fixed;top:8px;right:8px;z-index:80;background:rgba(20,20,16,.82);color:#f2e8d5;border:1px solid rgba(224,163,76,.55);border-radius:10px;padding:7px 12px;font-family:Georgia,serif;font-size:13px;cursor:pointer">🧊 Vue 3D</button>
+<script>document.getElementById('btn3d').addEventListener('click',function(){ if(window.__toggle3D) window.__toggle3D(); });</script>
 </body>
 </html>

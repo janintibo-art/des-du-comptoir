@@ -145,7 +145,7 @@ le trou de sortie. Le dé se lance en surimpression pour garder la scène 3D int
 
 ## Dominos 3D 🁢
 Bouton **« Vue 3D »** sur le **domino classique** : vraies **tuiles 3D** (vos textures) posées sur un
-**tapis de feutre**, chaîne auto-ajustée + main cliquable (`dom3d.js`). Aussi actif sur **Matador** et **Tout-cinq** (le Train, à chaînes multiples, reste en 2D). Les pièces d'échecs/dames 3D **glissent** vers leur case.
+**tapis de feutre**, chaîne auto-ajustée + main cliquable (`dom3d.js`). Actif sur **les 4 jeux de dominos** : le Train mexicain a son rendu **en étoile** (moteur 6-6 central, trains rayonnants, pastilles dorées cliquables pour poser). Les pièces d'échecs/dames 3D **glissent** vers leur case.
 
 ## Reversi 3D ⚫⚪
 Bouton **« Vue 3D »** : pions = disques 3D **à deux faces** (noir/blanc) qui se **retournent** physiquement

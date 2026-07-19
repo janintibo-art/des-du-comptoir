@@ -27,7 +27,7 @@ D.mount=function(parent){ if(D.canvas){ if(D.canvas.parentNode!==parent) parent.
   const fm=new BABYLON.StandardMaterial('fm',sc); fm.diffuseColor=new BABYLON.Color3(0.10,0.32,0.16); fm.specularColor=new BABYLON.Color3(0.02,0.05,0.03); felt.material=fm; felt.receiveShadows=true;
   const border=BABYLON.MeshBuilder.CreateBox('bd',{width:35,height:0.6,depth:21},sc); border.position.y=-0.35; const bm=new BABYLON.StandardMaterial('bm',sc); bm.diffuseColor=new BABYLON.Color3(0.28,0.18,0.10); border.material=bm;
   sc.onPointerObservable.add(pi=>{ if(pi.type!==BABYLON.PointerEventTypes.POINTERPICK) return; const r=pi.pickInfo; if(!r||!r.hit||!r.pickedMesh) return;
-    const n=r.pickedMesh.name; if(n.startsWith('h:') && D._onPick){ const idx=+n.slice(2); D._onPick(idx); } });
+    const n=r.pickedMesh.name; if(n.startsWith('h:') && D._onPick){ const idx=+n.slice(2); D._onPick(idx); } else if(n.startsWith('tr:') && D._onPickTrain){ D._onPickTrain(+n.slice(3)); } });
   eng.runRenderLoop(()=>sc.render());
   D._resize=()=>{ try{ eng.resize(); }catch(e){} }; addEventListener('resize',D._resize); setTimeout(D._resize,60);
   D.ready=true;
@@ -60,6 +60,32 @@ D.setHand=function(hand, playable, onPick, skin){ if(!D.ready) return; D.handMes
     if(ok){ m.face.material.emissiveColor=new BABYLON.Color3(0.6,0.5,0.25); m.root.position.z=4.2; }
     else { m.face.material.emissiveColor=new BABYLON.Color3(0.22,0.22,0.22); }
     D.handMeshes.push(m); x+=step; });
+};
+
+
+D.setTrains=function(trainsData, opts){ if(!D.ready) return; opts=opts||{};
+  // trainsData: [{tiles:[{a,b}], end, label, target:bool}] ; moteur 6-6 au centre
+  D.chainMeshes.forEach(m=>m.root.dispose()); D.chainMeshes=[];
+  const n=trainsData.length; const skin=opts.skin||'ivoire';
+  // moteur central
+  const eng=makeTile('eng',{a:6,b:6},skin,0.9); eng.root.position.set(0,0.11,0); eng.root.rotation.y=Math.PI/2;
+  D.chainMeshes.push(eng);
+  const maxLen=Math.max(1,...trainsData.map(t=>t.tiles.length));
+  const step=Math.min(1.7, 13/(maxLen+2));
+  trainsData.forEach((tr,ti)=>{ const ang=(ti/n)*Math.PI*2 - Math.PI/2;
+    const dx=Math.cos(ang), dz=Math.sin(ang);
+    tr.tiles.forEach((t,k)=>{ const m=makeTile('t'+ti+'_'+k,t,skin,Math.min(0.85, step/(TW*0.55)));
+      const r=1.6+k*step; m.root.position.set(dx*r,0.10,dz*r); m.root.rotation.y=-ang; D.chainMeshes.push(m); });
+    // pastille de bout (cliquable si cible)
+    const endR=1.6+tr.tiles.length*step+step*0.6;
+    const disc=BABYLON.MeshBuilder.CreateCylinder('tr:'+ti,{diameter:1.0,height:0.06,tessellation:24},D.scene);
+    disc.position.set(dx*endR,0.05,dz*endR);
+    const dm=new BABYLON.StandardMaterial('trm'+ti,D.scene);
+    dm.emissiveColor= tr.target? new BABYLON.Color3(0.9,0.66,0.3): new BABYLON.Color3(0.22,0.28,0.22);
+    dm.disableLighting=true; disc.material=dm; disc.isPickable=!!tr.target; D.chainMeshes.push({root:disc});
+    if(tr.target){ let tm=Math.random()*6; D.scene.onBeforeRenderObservable.add(()=>{ tm+=0.06; if(!disc.isDisposed()) disc.scaling.setAll(1+Math.sin(tm)*0.1); }); }
+  });
+  D._onPickTrain=opts.onPickTrain||null;
 };
 
 D.unmount=function(){ try{ if(D._resize) removeEventListener('resize',D._resize); if(D.eng) D.eng.dispose(); }catch(e){}
